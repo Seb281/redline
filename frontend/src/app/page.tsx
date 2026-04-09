@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 
 import { Disclaimer } from "@/components/Disclaimer";
 import { FileUpload } from "@/components/FileUpload";
+import { ReportView } from "@/components/ReportView";
 import { TextPreview } from "@/components/TextPreview";
 import { analyzeContract, uploadContract } from "@/lib/api";
 import type { AnalyzeResponse, UploadResponse } from "@/types";
@@ -93,12 +94,7 @@ export default function Home() {
       )}
 
       {state.view === "report" && (
-        <div className="text-center text-gray-500">
-          Report screen — coming next.
-          <button onClick={handleReset} className="ml-4 text-blue-600 underline">
-            New contract
-          </button>
-        </div>
+        <ReportView data={state.analysis} onReset={handleReset} />
       )}
 
       <Disclaimer />

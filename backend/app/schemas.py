@@ -1,0 +1,98 @@
+"""Pydantic models for all API request/response shapes."""
+
+from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class FileType(str, Enum):
+    """Supported document file types."""
+
+    PDF = "pdf"
+    DOCX = "docx"
+
+
+class UploadResponse(BaseModel):
+    """Response from the upload endpoint after text extraction."""
+
+    filename: str
+    file_type: FileType
+    page_count: int
+    extracted_text: str
+    char_count: int
+
+
+class AnalyzeRequest(BaseModel):
+    """Request body for the analyze endpoint."""
+
+    text: str
+    think_hard: bool = False
+
+
+class RiskLevel(str, Enum):
+    """Risk assessment level for a clause."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class ClauseCategory(str, Enum):
+    """Classification category for a contract clause."""
+
+    NON_COMPETE = "non_compete"
+    LIABILITY = "liability"
+    TERMINATION = "termination"
+    IP_ASSIGNMENT = "ip_assignment"
+    CONFIDENTIALITY = "confidentiality"
+    GOVERNING_LAW = "governing_law"
+    INDEMNIFICATION = "indemnification"
+    DATA_PROTECTION = "data_protection"
+    PAYMENT_TERMS = "payment_terms"
+    LIMITATION_OF_LIABILITY = "limitation_of_liability"
+    FORCE_MAJEURE = "force_majeure"
+    DISPUTE_RESOLUTION = "dispute_resolution"
+    OTHER = "other"
+
+
+class ExtractedClause(BaseModel):
+    """A single clause extracted from a contract (Pass 1 output)."""
+
+    clause_text: str
+    section_reference: str | None = None
+
+
+class AnalyzedClause(BaseModel):
+    """A fully analyzed clause with risk assessment (Pass 2 output)."""
+
+    clause_text: str
+    category: ClauseCategory
+    title: str
+    plain_english: str
+    risk_level: RiskLevel
+    risk_explanation: str
+    negotiation_suggestion: str | None = None
+
+
+class RiskBreakdown(BaseModel):
+    """Count of clauses by risk level."""
+
+    high: int = Field(ge=0)
+    medium: int = Field(ge=0)
+    low: int = Field(ge=0)
+
+
+class AnalysisSummary(BaseModel):
+    """Summary statistics for the full contract analysis."""
+
+    total_clauses: int
+    risk_breakdown: RiskBreakdown
+    top_risks: list[str]
+
+
+class AnalyzeResponse(BaseModel):
+    """Full response from the analyze endpoint."""
+
+    summary: AnalysisSummary
+    clauses: list[AnalyzedClause]

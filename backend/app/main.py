@@ -3,6 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import upload
+
 app = FastAPI(
     title="Redline",
     description="AI contract clause analyzer",
@@ -15,6 +17,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(upload.router)
 
 
 @app.get("/api/health")

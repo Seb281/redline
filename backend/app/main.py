@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import upload
+from app.routers import analyze, upload
 
 app = FastAPI(
     title="Redline",
@@ -20,6 +20,7 @@ app.add_middleware(
 
 
 app.include_router(upload.router)
+app.include_router(analyze.router)
 
 
 @app.get("/api/health")

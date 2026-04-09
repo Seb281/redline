@@ -1,0 +1,22 @@
+[project]
+name = "redline-backend"
+version = "0.1.0"
+description = "AI contract clause analyzer — backend API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pdfplumber>=0.11.0",
+    "python-docx>=1.1.0",
+    "anthropic>=0.49.0",
+    "weasyprint>=63.0",
+    "python-multipart>=0.0.18",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+    "reportlab>=4.0",
+]

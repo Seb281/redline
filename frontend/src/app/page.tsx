@@ -6,7 +6,8 @@ import { useCallback, useState } from "react";
 
 import { Disclaimer } from "@/components/Disclaimer";
 import { FileUpload } from "@/components/FileUpload";
-import { uploadContract } from "@/lib/api";
+import { TextPreview } from "@/components/TextPreview";
+import { analyzeContract, uploadContract } from "@/lib/api";
 import type { AnalyzeResponse, UploadResponse } from "@/types";
 
 type AppState =
@@ -38,6 +39,21 @@ export default function Home() {
     setError(null);
   }, []);
 
+  const handleAnalyze = useCallback(
+    async (thinkHard: boolean) => {
+      if (state.view !== "preview") return;
+      setState({ view: "analyzing", upload: state.upload });
+      try {
+        const analysis = await analyzeContract(state.upload.extracted_text, thinkHard);
+        setState({ view: "report", upload: state.upload, analysis });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Analysis failed");
+        setState({ view: "preview", upload: state.upload });
+      }
+    },
+    [state]
+  );
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
       <header className="mb-10 text-center">
@@ -55,12 +71,32 @@ export default function Home() {
         />
       )}
 
-      {/* Preview, analyzing, and report views added in subsequent tasks */}
       {state.view === "preview" && (
+        <>
+          <TextPreview
+            data={state.upload}
+            onAnalyze={handleAnalyze}
+            onReset={handleReset}
+            isAnalyzing={false}
+          />
+          {error && (
+            <p className="mt-4 text-center text-sm text-red-600">{error}</p>
+          )}
+        </>
+      )}
+
+      {state.view === "analyzing" && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+          <p className="text-gray-500">Analyzing clauses...</p>
+        </div>
+      )}
+
+      {state.view === "report" && (
         <div className="text-center text-gray-500">
-          Preview screen — coming next.
+          Report screen — coming next.
           <button onClick={handleReset} className="ml-4 text-blue-600 underline">
-            Back
+            New contract
           </button>
         </div>
       )}

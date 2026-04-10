@@ -18,24 +18,24 @@ export function ContractOverview({ overview }: ContractOverviewProps) {
 
   return (
     <div className="mb-6 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-5 theme-transition">
-      <h2 className="mb-1 text-xl font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      <h2 className="mb-1 text-[22px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
         {overview.contract_type}
       </h2>
-      <p className="mb-3 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+      <p className="mb-3 text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
         {overview.parties.join(" · ")}
       </p>
 
       {details.length > 0 && (
-        <p className="mb-3 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
+        <p className="mb-3 text-sm text-[var(--text-secondary)] font-[var(--font-body)]">
           {details.join(" · ")}
         </p>
       )}
 
       <div>
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
           Key Terms
         </p>
-        <ul className="space-y-1 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
+        <ul className="space-y-1 text-sm text-[var(--text-secondary)] font-[var(--font-body)]">
           {overview.key_terms.map((term, i) => (
             <li key={i}>• {term}</li>
           ))}

@@ -48,7 +48,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 const selectClasses =
-  "rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-xs text-[var(--text-secondary)] font-[var(--font-body)] theme-transition focus:border-[var(--accent)] focus:outline-none";
+  "rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition focus:border-[var(--accent)] focus:outline-none";
 
 /** Filter bar above clause cards. */
 export function ClauseFilters({
@@ -97,7 +97,7 @@ export function ClauseFilters({
       </select>
 
       {filteredCount !== totalCount && (
-        <span className="text-xs text-[var(--text-muted)] font-[var(--font-body)]">
+        <span className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
           {filteredCount} of {totalCount} clauses
         </span>
       )}

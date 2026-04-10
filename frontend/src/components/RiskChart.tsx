@@ -68,7 +68,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
           {total}
         </text>
       </svg>
-      <p className="mt-1 text-xs text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
+      <p className="mt-1 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
     </div>
   );
 }

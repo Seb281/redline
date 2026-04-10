@@ -81,10 +81,10 @@ export function FileUpload({
           </svg>
         </div>
 
-        <p className="mb-1 text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
+        <p className="mb-1 text-base font-medium text-[var(--text-primary)] font-[var(--font-body)]">
           Drop your contract here
         </p>
-        <p className="mb-5 text-xs text-[var(--text-muted)] font-[var(--font-body)]">
+        <p className="mb-5 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
           PDF or DOCX — up to 10 MB
         </p>
 
@@ -93,21 +93,21 @@ export function FileUpload({
             <div className="mb-2 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
               <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style={{ width: "60%" }} />
             </div>
-            <p className="text-xs text-[var(--text-tertiary)] font-[var(--font-body)]">Uploading...</p>
+            <p className="text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">Uploading...</p>
           </div>
         ) : (
           <>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="rounded bg-[var(--text-primary)] px-6 py-2.5 text-[13px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
+              className="rounded bg-[var(--text-primary)] px-6 py-2.5 text-sm font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
             >
               Browse files
             </button>
 
             {/* Think Hard toggle */}
             <div className="group relative mt-5">
-              <label className="flex cursor-pointer items-center justify-center gap-2 text-xs text-[var(--text-tertiary)] font-[var(--font-body)]">
+              <label className="flex cursor-pointer items-center justify-center gap-2 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
                 <button
                   type="button"
                   role="switch"
@@ -126,7 +126,7 @@ export function FileUpload({
                 Think Hard
               </label>
               {/* Tooltip */}
-              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3 py-1.5 text-xs text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
+              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3 py-1.5 text-[13px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
                 Analyzes each clause individually for deeper insight
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--text-primary)]" />
               </div>
@@ -143,7 +143,7 @@ export function FileUpload({
         />
       </div>
       {error && (
-        <p className="mt-4 text-sm text-[var(--accent)] font-[var(--font-body)]">{error}</p>
+        <p className="mt-4 text-[15px] text-[var(--accent)] font-[var(--font-body)]">{error}</p>
       )}
     </div>
   );

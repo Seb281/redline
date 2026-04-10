@@ -48,13 +48,13 @@ export default function Home() {
         <>
           {/* Hero */}
           <div className="pb-10 pt-16 text-center">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
               AI-Powered Contract Analysis
             </p>
-            <h1 className="mx-auto mb-3 max-w-[480px] text-[32px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
+            <h1 className="mx-auto mb-3 max-w-[480px] text-[36px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
               Know what you&apos;re signing — before you sign it.
             </h1>
-            <p className="mx-auto max-w-[400px] text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+            <p className="mx-auto max-w-[400px] text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
               Upload a contract. Get a clause-by-clause risk breakdown written in plain English.
             </p>
           </div>
@@ -68,28 +68,28 @@ export default function Home() {
 
           {/* How it works */}
           <div className="mx-auto mt-12 max-w-[480px]">
-            <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
               How it works
             </p>
             <div className="flex gap-3">
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 theme-transition">
-                <p className="text-xs font-semibold text-[var(--text-primary)] font-[var(--font-body)]">1. Upload</p>
-                <p className="mt-1 text-[11px] text-[var(--text-muted)] font-[var(--font-body)]">Your contract, PDF or DOCX</p>
+                <p className="text-[13px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">1. Upload</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)] font-[var(--font-body)]">Your contract, PDF or DOCX</p>
               </div>
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 theme-transition">
-                <p className="text-xs font-semibold text-[var(--text-primary)] font-[var(--font-body)]">2. Analyze</p>
-                <p className="mt-1 text-[11px] text-[var(--text-muted)] font-[var(--font-body)]">AI reads every clause and assesses risk</p>
+                <p className="text-[13px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">2. Analyze</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)] font-[var(--font-body)]">AI reads every clause and assesses risk</p>
               </div>
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 theme-transition">
-                <p className="text-xs font-semibold text-[var(--text-primary)] font-[var(--font-body)]">3. Review</p>
-                <p className="mt-1 text-[11px] text-[var(--text-muted)] font-[var(--font-body)]">Plain-English risk report with export options</p>
+                <p className="text-[13px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">3. Review</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)] font-[var(--font-body)]">Plain-English risk report with export options</p>
               </div>
             </div>
           </div>
 
           {/* Built-by line */}
           <div className="mx-auto mt-10 max-w-[480px] border-t border-[var(--border-primary)] pt-4 text-center">
-            <p className="text-[13px] italic text-[var(--text-muted)] font-[var(--font-heading)]">
+            <p className="text-sm italic text-[var(--text-muted)] font-[var(--font-heading)]">
               Built by a corporate lawyer turned developer. Not legal advice.
             </p>
           </div>
@@ -99,7 +99,7 @@ export default function Home() {
       {state.view === "analyzing" && (
         <div className="flex flex-col items-center justify-center py-20">
           {/* File info bar */}
-          <div className="mb-8 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
+          <div className="mb-8 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-sm text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
             {state.upload.filename} · {state.upload.page_count} {state.upload.page_count === 1 ? "page" : "pages"} · {state.upload.char_count.toLocaleString()} chars
           </div>
 
@@ -110,11 +110,11 @@ export default function Home() {
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-              <p className="text-sm font-medium text-[var(--text-primary)] font-[var(--font-body)]">Extracting clauses...</p>
+              <p className="text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">Extracting clauses...</p>
             </div>
             <div className="flex items-center gap-2 opacity-40">
               <div className="h-1.5 w-1.5 rounded-full bg-[var(--border-secondary)]" />
-              <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">Analyzing risk...</p>
+              <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">Analyzing risk...</p>
             </div>
           </div>
 

@@ -57,12 +57,9 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
-      <header className="mb-10 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Redline</h1>
-        <p className="mt-1 text-gray-500">
-          Upload a contract. Understand what you&apos;re signing.
-        </p>
-      </header>
+      <p className="mb-10 text-center text-sm text-[var(--text-tertiary)]">
+        Upload a contract. Understand what you&apos;re signing.
+      </p>
 
       {state.view === "upload" && (
         <FileUpload

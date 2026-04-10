@@ -31,6 +31,11 @@ export function ClauseCard({ clause }: ClauseCardProps) {
         <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
           {categoryLabel}
         </span>
+        {clause.is_unusual && (
+          <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+            ATYPICAL
+          </span>
+        )}
       </div>
 
       <h3 className="mb-1 text-sm font-semibold text-gray-800">
@@ -60,6 +65,12 @@ export function ClauseCard({ clause }: ClauseCardProps) {
             <p className="mt-2">
               <strong className="text-blue-600">Suggestion:</strong>{" "}
               {clause.negotiation_suggestion}
+            </p>
+          )}
+          {clause.unusual_explanation && (
+            <p className="mt-2">
+              <strong className="text-purple-600">Unusual:</strong>{" "}
+              {clause.unusual_explanation}
             </p>
           )}
           <details className="mt-2">

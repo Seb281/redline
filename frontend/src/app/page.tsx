@@ -56,7 +56,7 @@ export default function Home() {
   );
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12">
+    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <p className="mb-10 text-center text-sm text-[var(--text-tertiary)]">
         Upload a contract. Understand what you&apos;re signing.
       </p>
@@ -85,8 +85,37 @@ export default function Home() {
 
       {state.view === "analyzing" && (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
-          <p className="text-gray-500">Analyzing clauses...</p>
+          {/* Spinner */}
+          <div className="mb-6 h-10 w-10 animate-spin rounded-full border-[3px] border-[var(--border-primary)] border-t-[var(--accent)]" />
+
+          {/* Multi-step progress */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+              <p className="text-sm font-medium text-[var(--text-primary)]">Extracting clauses...</p>
+            </div>
+            <div className="flex items-center gap-2 opacity-40">
+              <div className="h-2 w-2 rounded-full bg-[var(--border-secondary)]" />
+              <p className="text-sm text-[var(--text-tertiary)]">Analyzing risk...</p>
+            </div>
+          </div>
+
+          {/* Skeleton cards */}
+          <div className="mt-10 w-full max-w-2xl space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"
+              >
+                <div className="mb-3 flex gap-2">
+                  <div className="h-5 w-16 rounded bg-[var(--bg-tertiary)]" />
+                  <div className="h-5 w-24 rounded bg-[var(--bg-tertiary)]" />
+                </div>
+                <div className="mb-2 h-4 w-48 rounded bg-[var(--bg-tertiary)]" />
+                <div className="h-3 w-full rounded bg-[var(--bg-tertiary)]" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

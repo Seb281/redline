@@ -1,40 +1,72 @@
 @import "tailwindcss";
 
-/* --- Theme tokens --- */
+/* --- Light theme tokens --- */
 :root {
   --bg-primary: #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-tertiary: #f3f4f6;
+  --bg-secondary: #f9f8f6;
+  --bg-tertiary: #f2f0ec;
   --bg-card: #ffffff;
-  --border-primary: #e5e7eb;
-  --border-secondary: #d1d5db;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
-  --text-muted: #9ca3af;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
+  --border-primary: #e8e4de;
+  --border-secondary: #d4cfc7;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4540;
+  --text-tertiary: #7a756d;
+  --text-muted: #a8a29e;
+  --accent: #b91c1c;
+  --accent-hover: #991b1b;
+  --accent-subtle: #fef2f2;
+
+  /* Risk colors */
+  --risk-high: #b91c1c;
+  --risk-high-bg: #fef2f2;
+  --risk-high-border: #fecaca;
+  --risk-medium: #a16207;
+  --risk-medium-bg: #fefce8;
+  --risk-medium-border: #fde68a;
+  --risk-low: #15803d;
+  --risk-low-bg: #f0fdf4;
+  --risk-low-border: #bbf7d0;
+  --risk-unusual: #7c3aed;
+  --risk-unusual-bg: #faf5ff;
+  --risk-unusual-border: #e9d5ff;
 }
 
+/* --- Dark theme tokens --- */
 .dark {
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1d27;
-  --bg-tertiary: #242734;
-  --bg-card: #1a1d27;
-  --border-primary: #2e3140;
-  --border-secondary: #3b3f51;
-  --text-primary: #f1f2f4;
-  --text-secondary: #b0b4c0;
-  --text-tertiary: #8b90a0;
-  --text-muted: #5f6477;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
+  --bg-primary: #141210;
+  --bg-secondary: #1c1a17;
+  --bg-tertiary: #252320;
+  --bg-card: #1c1a17;
+  --border-primary: #2e2b27;
+  --border-secondary: #3d3a34;
+  --text-primary: #f0ede8;
+  --text-secondary: #b5b0a8;
+  --text-tertiary: #8a857d;
+  --text-muted: #5f5b54;
+  --accent: #dc2626;
+  --accent-hover: #b91c1c;
+  --accent-subtle: #2a1515;
+
+  /* Risk colors — brighter for dark bg contrast */
+  --risk-high: #fca5a5;
+  --risk-high-bg: #2a1515;
+  --risk-high-border: #5c2020;
+  --risk-medium: #fcd34d;
+  --risk-medium-bg: #2a2515;
+  --risk-medium-border: #5c4a15;
+  --risk-low: #86efac;
+  --risk-low-bg: #152a1a;
+  --risk-low-border: #1a4a2a;
+  --risk-unusual: #c4b5fd;
+  --risk-unusual-bg: #1f1529;
+  --risk-unusual-border: #3b2960;
 }
 
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -43,7 +75,6 @@
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 

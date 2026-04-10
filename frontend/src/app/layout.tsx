@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Lora, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 
-const inter = Inter({ subsets: ["latin"] });
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Redline — AI Contract Analyzer",
@@ -16,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased theme-transition`}>
+    <html lang="en" suppressHydrationWarning className={`${lora.variable} ${dmSans.variable}`}>
+      <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased theme-transition font-[var(--font-body)]">
         <Header />
         {children}
       </body>

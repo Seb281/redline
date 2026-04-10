@@ -16,6 +16,17 @@ export interface AnalyzeRequest {
   think_hard: boolean;
 }
 
+/** High-level contract metadata extracted in Pass 0. */
+export interface ContractOverview {
+  contract_type: string;
+  parties: string[];
+  effective_date: string | null;
+  duration: string | null;
+  total_value: string | null;
+  governing_jurisdiction: string | null;
+  key_terms: string[];
+}
+
 /** Risk assessment level for a clause. */
 export type RiskLevel = "low" | "medium" | "high";
 
@@ -44,6 +55,8 @@ export interface AnalyzedClause {
   risk_level: RiskLevel;
   risk_explanation: string;
   negotiation_suggestion: string | null;
+  is_unusual: boolean;
+  unusual_explanation: string | null;
 }
 
 /** Count of clauses by risk level. */
@@ -62,6 +75,7 @@ export interface AnalysisSummary {
 
 /** Full response from POST /api/analyze. */
 export interface AnalyzeResponse {
+  overview: ContractOverview;
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
 }

@@ -66,30 +66,30 @@ export function ReportView({ data, onReset }: ReportViewProps) {
   };
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       {/* Contract overview */}
       <ContractOverview overview={data.overview} />
 
       {/* Risk summary — cards + chart */}
-      <div className="mb-6 flex gap-4">
-        <div className="grid flex-1 grid-cols-3 gap-3">
-          <div className="rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] p-4 text-center theme-transition">
-            <p className="text-[32px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
+      <div className="mb-7 flex gap-5">
+        <div className="grid flex-1 grid-cols-3 gap-4">
+          <div className="rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] p-5 text-center theme-transition">
+            <p className="text-[36px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
               {summary.risk_breakdown.high}
             </p>
-            <p className="text-xs text-[var(--risk-high)] opacity-70 font-[var(--font-body)]">High Risk</p>
+            <p className="text-sm text-[var(--risk-high)] opacity-70 font-[var(--font-body)]">High Risk</p>
           </div>
-          <div className="rounded border border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)] p-4 text-center theme-transition">
-            <p className="text-[32px] font-bold text-[var(--risk-medium)] font-[var(--font-body)]">
+          <div className="rounded border border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)] p-5 text-center theme-transition">
+            <p className="text-[36px] font-bold text-[var(--risk-medium)] font-[var(--font-body)]">
               {summary.risk_breakdown.medium}
             </p>
-            <p className="text-xs text-[var(--risk-medium)] opacity-70 font-[var(--font-body)]">Medium Risk</p>
+            <p className="text-sm text-[var(--risk-medium)] opacity-70 font-[var(--font-body)]">Medium Risk</p>
           </div>
-          <div className="rounded border border-[var(--risk-low-border)] bg-[var(--risk-low-bg)] p-4 text-center theme-transition">
-            <p className="text-[32px] font-bold text-[var(--risk-low)] font-[var(--font-body)]">
+          <div className="rounded border border-[var(--risk-low-border)] bg-[var(--risk-low-bg)] p-5 text-center theme-transition">
+            <p className="text-[36px] font-bold text-[var(--risk-low)] font-[var(--font-body)]">
               {summary.risk_breakdown.low}
             </p>
-            <p className="text-xs text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">Low Risk</p>
+            <p className="text-sm text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">Low Risk</p>
           </div>
         </div>
         <RiskChart breakdown={summary.risk_breakdown} />
@@ -97,11 +97,11 @@ export function ReportView({ data, onReset }: ReportViewProps) {
 
       {/* Top risks callout */}
       {summary.top_risks.length > 0 && (
-        <div className="mb-6 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-4 py-3 theme-transition">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+        <div className="mb-7 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-5 py-3.5 theme-transition">
+          <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
             Top Risks
           </p>
-          <ul className="text-sm text-[var(--text-secondary)] font-[var(--font-body)]">
+          <ul className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
             {summary.top_risks.map((risk, i) => (
               <li key={i}>• {risk}</li>
             ))}
@@ -125,12 +125,12 @@ export function ReportView({ data, onReset }: ReportViewProps) {
       />
 
       {/* Clause cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filteredClauses.map((clause) => (
           <ClauseCard key={`${clause.title}-${clause.risk_level}`} clause={clause} />
         ))}
         {filteredClauses.length === 0 && (
-          <p className="py-8 text-center text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
+          <p className="py-9 text-center text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
             No clauses match the current filters.
           </p>
         )}
@@ -141,12 +141,12 @@ export function ReportView({ data, onReset }: ReportViewProps) {
 
       {/* Sticky export bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex gap-2">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5 sm:px-7">
+          <div className="flex gap-2.5">
             <button
               type="button"
               onClick={() => downloadMarkdown(data)}
-              className="rounded border border-[var(--border-primary)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
+              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
             >
               Export Markdown
             </button>
@@ -154,19 +154,19 @@ export function ReportView({ data, onReset }: ReportViewProps) {
               type="button"
               onClick={handlePdfExport}
               disabled={exporting}
-              className="rounded border border-[var(--border-primary)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
+              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
             >
               {exporting ? "Generating..." : "Export PDF"}
             </button>
             <button
               type="button"
               onClick={onReset}
-              className="rounded px-4 py-2 text-sm text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
+              className="rounded px-5 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
             >
               New Contract
             </button>
           </div>
-          <span className="text-xs text-[var(--text-muted)] font-[var(--font-body)]">Not legal advice</span>
+          <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">Not legal advice</span>
         </div>
       </div>
     </div>

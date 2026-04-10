@@ -16,7 +16,7 @@ interface RiskBadgeProps {
 export function RiskBadge({ level }: RiskBadgeProps) {
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
+      className={`inline-block rounded px-2.5 py-1 text-sm font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
     >
       {level} risk
     </span>

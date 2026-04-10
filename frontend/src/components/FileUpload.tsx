@@ -64,15 +64,15 @@ export function FileUpload({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`w-full max-w-[480px] rounded border-2 border-dashed px-10 py-14 text-center transition-all duration-200 ${
+        className={`w-full max-w-[540px] rounded border-2 border-dashed px-12 py-16 text-center transition-all duration-200 ${
           isDragging
             ? "border-[var(--accent)] bg-[var(--accent-subtle)]"
             : "border-[var(--border-secondary)] bg-[var(--bg-secondary)] hover:border-[var(--text-muted)]"
         }`}
       >
         {/* Document icon */}
-        <div className="mb-4 flex justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+        <div className="mb-5 flex justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="16" y1="13" x2="8" y2="13" />
@@ -81,52 +81,52 @@ export function FileUpload({
           </svg>
         </div>
 
-        <p className="mb-1 text-base font-medium text-[var(--text-primary)] font-[var(--font-body)]">
+        <p className="mb-1.5 text-lg font-medium text-[var(--text-primary)] font-[var(--font-body)]">
           Drop your contract here
         </p>
-        <p className="mb-5 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
+        <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
           PDF or DOCX — up to 10 MB
         </p>
 
         {isUploading ? (
-          <div className="mx-auto w-48">
-            <div className="mb-2 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
+          <div className="mx-auto w-56">
+            <div className="mb-2.5 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
               <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style={{ width: "60%" }} />
             </div>
-            <p className="text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">Uploading...</p>
+            <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">Uploading...</p>
           </div>
         ) : (
           <>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="rounded bg-[var(--text-primary)] px-6 py-2.5 text-sm font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
+              className="rounded bg-[var(--text-primary)] px-7 py-3 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
             >
               Browse files
             </button>
 
             {/* Think Hard toggle */}
-            <div className="group relative mt-5">
-              <label className="flex cursor-pointer items-center justify-center gap-2 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+            <div className="group relative mt-6">
+              <label className="flex cursor-pointer items-center justify-center gap-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
                 <button
                   type="button"
                   role="switch"
                   aria-checked={thinkHard}
                   onClick={() => setThinkHard(!thinkHard)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors ${
                     thinkHard ? "bg-[var(--accent)]" : "bg-[var(--border-secondary)]"
                   }`}
                 >
                   <span
-                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                      thinkHard ? "translate-x-4" : "translate-x-0.5"
+                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                      thinkHard ? "translate-x-[18px]" : "translate-x-0.5"
                     }`}
                   />
                 </button>
                 Think Hard
               </label>
               {/* Tooltip */}
-              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3 py-1.5 text-[13px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
+              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3.5 py-2 text-[15px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
                 Analyzes each clause individually for deeper insight
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--text-primary)]" />
               </div>
@@ -143,7 +143,7 @@ export function FileUpload({
         />
       </div>
       {error && (
-        <p className="mt-4 text-[15px] text-[var(--accent)] font-[var(--font-body)]">{error}</p>
+        <p className="mt-5 text-[17px] text-[var(--accent)] font-[var(--font-body)]">{error}</p>
       )}
     </div>
   );

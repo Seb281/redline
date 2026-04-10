@@ -29,7 +29,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low`}>
+      <svg width="90" height="90" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low`}>
         <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
         {/* Low (green) — drawn first (bottom layer) */}
         {lowPct > 0 && (
@@ -64,11 +64,11 @@ export function RiskChart({ breakdown }: RiskChartProps) {
             transform="rotate(-90 40 40)"
           />
         )}
-        <text x="40" y="44" textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--text-primary)" style={{ fontFamily: "var(--font-body)" }}>
+        <text x="40" y="44" textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--text-primary)" style={{ fontFamily: "var(--font-body)" }}>
           {total}
         </text>
       </svg>
-      <p className="mt-1 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
+      <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
     </div>
   );
 }

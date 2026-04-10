@@ -17,25 +17,25 @@ export function ContractOverview({ overview }: ContractOverviewProps) {
   }
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-5">
-      <h2 className="mb-1 text-lg font-semibold text-gray-800">
+    <div className="mb-6 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-5 theme-transition">
+      <h2 className="mb-1 text-lg font-semibold text-[var(--text-primary)]">
         {overview.contract_type}
       </h2>
-      <p className="mb-3 text-sm text-gray-500">
+      <p className="mb-3 text-sm text-[var(--text-tertiary)]">
         {overview.parties.join(" · ")}
       </p>
 
       {details.length > 0 && (
-        <p className="mb-3 text-sm text-gray-600">
+        <p className="mb-3 text-sm text-[var(--text-secondary)]">
           {details.join(" · ")}
         </p>
       )}
 
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase text-gray-400">
+        <p className="mb-1 text-xs font-semibold uppercase text-[var(--text-muted)]">
           Key Terms
         </p>
-        <ul className="space-y-1 text-sm text-gray-600">
+        <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
           {overview.key_terms.map((term, i) => (
             <li key={i}>• {term}</li>
           ))}

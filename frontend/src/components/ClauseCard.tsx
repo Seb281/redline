@@ -24,11 +24,11 @@ export function ClauseCard({ clause }: ClauseCardProps) {
 
   return (
     <div
-      className={`rounded-lg border border-gray-200 border-l-4 bg-white p-4 ${BORDER_COLORS[clause.risk_level]}`}
+      className={`rounded-lg border border-[var(--border-primary)] border-l-4 bg-[var(--bg-card)] p-4 theme-transition ${BORDER_COLORS[clause.risk_level]}`}
     >
       <div className="mb-2 flex items-start gap-2">
         <RiskBadge level={clause.risk_level} />
-        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+        <span className="rounded bg-[var(--bg-tertiary)] px-2 py-0.5 text-xs text-[var(--text-tertiary)]">
           {categoryLabel}
         </span>
         {clause.is_unusual && (
@@ -38,10 +38,10 @@ export function ClauseCard({ clause }: ClauseCardProps) {
         )}
       </div>
 
-      <h3 className="mb-1 text-sm font-semibold text-gray-800">
+      <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">
         {clause.title}
       </h3>
-      <p className="text-sm leading-relaxed text-gray-600">
+      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
         {clause.plain_english}
       </p>
 
@@ -56,7 +56,7 @@ export function ClauseCard({ clause }: ClauseCardProps) {
       )}
 
       {expanded && (
-        <div className="mt-3 rounded-md bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">
+        <div className="mt-3 rounded-md bg-[var(--bg-secondary)] p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
           <p>
             <strong className="text-red-600">Risk:</strong>{" "}
             {clause.risk_explanation}
@@ -74,10 +74,10 @@ export function ClauseCard({ clause }: ClauseCardProps) {
             </p>
           )}
           <details className="mt-2">
-            <summary className="cursor-pointer text-gray-400 hover:text-gray-600">
+            <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
               Original clause text
             </summary>
-            <p className="mt-1 whitespace-pre-wrap font-mono text-gray-500">
+            <p className="mt-1 whitespace-pre-wrap font-mono text-[var(--text-tertiary)]">
               {clause.clause_text}
             </p>
           </details>

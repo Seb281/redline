@@ -56,6 +56,19 @@ def empty_pdf_bytes() -> bytes:
     return buffer.getvalue()
 
 
+MOCK_OVERVIEW_RESPONSE = {
+    "contract_type": "Consulting Agreement",
+    "parties": ["Acme Corp", "The Consultant"],
+    "effective_date": None,
+    "duration": None,
+    "total_value": None,
+    "governing_jurisdiction": "State of Delaware",
+    "key_terms": [
+        "Non-compete restriction covering Europe for 2 years",
+        "Governed by Delaware law",
+    ],
+}
+
 MOCK_EXTRACTION_RESPONSE = {
     "clauses": [
         {
@@ -79,6 +92,8 @@ MOCK_ANALYSIS_RESPONSE = {
             "risk_level": "high",
             "risk_explanation": "2-year duration and Europe-wide scope is unusually broad.",
             "negotiation_suggestion": "Request reduction to 6 months and limit to your city.",
+            "is_unusual": True,
+            "unusual_explanation": "Most non-competes are limited to 6-12 months and a specific region, not an entire continent.",
         },
         {
             "clause_text": "This Agreement shall be governed by the laws of the State of Delaware.",
@@ -88,6 +103,8 @@ MOCK_ANALYSIS_RESPONSE = {
             "risk_level": "low",
             "risk_explanation": "Standard governing law clause. Delaware is a common and neutral choice.",
             "negotiation_suggestion": None,
+            "is_unusual": False,
+            "unusual_explanation": None,
         },
     ]
 }
@@ -100,7 +117,15 @@ MOCK_SINGLE_ANALYSIS_RESPONSE = {
     "risk_level": "high",
     "risk_explanation": "2-year duration and Europe-wide scope is unusually broad.",
     "negotiation_suggestion": "Request reduction to 6 months and limit to your city.",
+    "is_unusual": True,
+    "unusual_explanation": "Most non-competes are limited to 6-12 months and a specific region, not an entire continent.",
 }
+
+
+@pytest.fixture
+def mock_overview_response():
+    """Mock Anthropic API response for contract overview."""
+    return MOCK_OVERVIEW_RESPONSE
 
 
 @pytest.fixture
@@ -127,6 +152,8 @@ def sample_analyzed_clauses() -> list[AnalyzedClause]:
             risk_level=RiskLevel.HIGH,
             risk_explanation="2-year duration and Europe-wide scope is unusually broad.",
             negotiation_suggestion="Request reduction to 6 months and limit to your city.",
+            is_unusual=True,
+            unusual_explanation="Most non-competes are limited to 6-12 months and a specific region.",
         ),
         AnalyzedClause(
             clause_text="This Agreement shall be governed by the laws of the State of Delaware.",
@@ -136,5 +163,7 @@ def sample_analyzed_clauses() -> list[AnalyzedClause]:
             risk_level=RiskLevel.LOW,
             risk_explanation="Standard governing law clause.",
             negotiation_suggestion=None,
+            is_unusual=False,
+            unusual_explanation=None,
         ),
     ]

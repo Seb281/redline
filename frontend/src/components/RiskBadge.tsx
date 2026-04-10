@@ -1,21 +1,22 @@
-/** Color-coded risk level badge. */
+/** Color-coded risk level badge using CSS variable risk tokens. */
 
 import type { RiskLevel } from "@/types";
 
 const STYLES: Record<RiskLevel, string> = {
-  high: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400",
-  medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400",
-  low: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400",
+  high: "bg-[var(--risk-high-bg)] text-[var(--risk-high)] border border-[var(--risk-high-border)]",
+  medium: "bg-[var(--risk-medium-bg)] text-[var(--risk-medium)] border border-[var(--risk-medium-border)]",
+  low: "bg-[var(--risk-low-bg)] text-[var(--risk-low)] border border-[var(--risk-low-border)]",
 };
 
 interface RiskBadgeProps {
   level: RiskLevel;
 }
 
+/** Renders a small colored badge indicating risk level. */
 export function RiskBadge({ level }: RiskBadgeProps) {
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold uppercase ${STYLES[level]}`}
+      className={`inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
     >
       {level} risk
     </span>

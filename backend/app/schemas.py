@@ -63,6 +63,18 @@ class ExtractedClause(BaseModel):
     section_reference: str | None = None
 
 
+class ContractOverview(BaseModel):
+    """High-level contract metadata extracted in Pass 0."""
+
+    contract_type: str
+    parties: list[str]
+    effective_date: str | None = None
+    duration: str | None = None
+    total_value: str | None = None
+    governing_jurisdiction: str | None = None
+    key_terms: list[str]
+
+
 class AnalyzedClause(BaseModel):
     """A fully analyzed clause with risk assessment (Pass 2 output)."""
 
@@ -73,6 +85,8 @@ class AnalyzedClause(BaseModel):
     risk_level: RiskLevel
     risk_explanation: str
     negotiation_suggestion: str | None = None
+    is_unusual: bool = False
+    unusual_explanation: str | None = None
 
 
 class RiskBreakdown(BaseModel):
@@ -94,5 +108,6 @@ class AnalysisSummary(BaseModel):
 class AnalyzeResponse(BaseModel):
     """Full response from the analyze endpoint."""
 
+    overview: ContractOverview
     summary: AnalysisSummary
     clauses: list[AnalyzedClause]

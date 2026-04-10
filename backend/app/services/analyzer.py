@@ -18,10 +18,16 @@ from app.prompts.extract import (
     EXTRACTION_TOOL,
     EXTRACTION_USER_PROMPT,
 )
+from app.prompts.overview import (
+    OVERVIEW_SYSTEM_PROMPT,
+    OVERVIEW_TOOL,
+    OVERVIEW_USER_PROMPT,
+)
 from app.schemas import (
     AnalyzedClause,
     AnalyzeResponse,
     AnalysisSummary,
+    ContractOverview,
     ExtractedClause,
     RiskBreakdown,
     RiskLevel,
@@ -31,6 +37,28 @@ client = AsyncAnthropic()
 MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-4-20250514")
 DEFAULT_TIMEOUT = 60.0
 FAN_OUT_TIMEOUT = 30.0
+
+
+async def extract_overview(text: str) -> ContractOverview:
+    """Pass 0: Extract high-level contract metadata."""
+    response = await asyncio.wait_for(
+        client.messages.create(
+            model=MODEL,
+            max_tokens=2048,
+            system=OVERVIEW_SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": OVERVIEW_USER_PROMPT.format(contract_text=text),
+                }
+            ],
+            tools=[OVERVIEW_TOOL],
+            tool_choice={"type": "tool", "name": "extract_overview"},
+        ),
+        timeout=DEFAULT_TIMEOUT,
+    )
+    tool_block = next(b for b in response.content if b.type == "tool_use")
+    return ContractOverview(**tool_block.input)
 
 
 async def extract_clauses(text: str) -> list[ExtractedClause]:
@@ -133,7 +161,8 @@ def build_summary(clauses: list[AnalyzedClause]) -> AnalysisSummary:
 
 
 async def analyze_contract(text: str, think_hard: bool = False) -> AnalyzeResponse:
-    """Full pipeline: extract clauses, analyze them, build summary."""
+    """Full pipeline: overview, extract clauses, analyze them, build summary."""
+    overview = await extract_overview(text)
     extracted = await extract_clauses(text)
 
     if think_hard:
@@ -142,4 +171,4 @@ async def analyze_contract(text: str, think_hard: bool = False) -> AnalyzeRespon
         analyzed = await _analyze_batch(extracted)
 
     summary = build_summary(analyzed)
-    return AnalyzeResponse(summary=summary, clauses=analyzed)
+    return AnalyzeResponse(overview=overview, summary=summary, clauses=analyzed)

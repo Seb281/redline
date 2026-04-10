@@ -11,14 +11,18 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-        <span className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
-          Redline
-        </span>
+        {/* Red dash + wordmark */}
+        <div className="flex items-center gap-2">
+          <div className="h-[3px] w-4 bg-[var(--accent)]" />
+          <span className="font-[var(--font-body)] text-sm font-semibold uppercase tracking-[1.5px] text-[var(--text-primary)]">
+            Redline
+          </span>
+        </div>
         <button
           type="button"
           onClick={toggle}
           aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          className="rounded-md p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          className="rounded p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
         >
           {theme === "light" ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

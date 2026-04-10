@@ -10,6 +10,32 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     "",
     "> **Disclaimer:** This tool provides analysis only — not legal advice.",
     "",
+  ];
+
+  // Overview section
+  lines.push("## Contract Overview", "");
+  lines.push(`**Type:** ${data.overview.contract_type}`);
+  lines.push(`**Parties:** ${data.overview.parties.join(", ")}`);
+  if (data.overview.effective_date) {
+    lines.push(`**Effective Date:** ${data.overview.effective_date}`);
+  }
+  if (data.overview.duration) {
+    lines.push(`**Duration:** ${data.overview.duration}`);
+  }
+  if (data.overview.total_value) {
+    lines.push(`**Value:** ${data.overview.total_value}`);
+  }
+  if (data.overview.governing_jurisdiction) {
+    lines.push(`**Jurisdiction:** ${data.overview.governing_jurisdiction}`);
+  }
+  lines.push("");
+  lines.push("### Key Terms", "");
+  for (const term of data.overview.key_terms) {
+    lines.push(`- ${term}`);
+  }
+  lines.push("");
+
+  lines.push(
     "## Summary",
     "",
     `- **Total Clauses:** ${data.summary.total_clauses}`,
@@ -17,12 +43,21 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     `- **Medium Risk:** ${data.summary.risk_breakdown.medium}`,
     `- **Low Risk:** ${data.summary.risk_breakdown.low}`,
     "",
-  ];
+  );
 
   if (data.summary.top_risks.length > 0) {
     lines.push("### Top Risks", "");
     for (const risk of data.summary.top_risks) {
       lines.push(`- ${risk}`);
+    }
+    lines.push("");
+  }
+
+  const unusualClauses = data.clauses.filter((c) => c.is_unusual);
+  if (unusualClauses.length > 0) {
+    lines.push("### Unusual Clauses", "");
+    for (const clause of unusualClauses) {
+      lines.push(`- **${clause.title}**: ${clause.unusual_explanation ?? "Atypical for its category."}`);
     }
     lines.push("");
   }
@@ -34,6 +69,9 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     const category = clause.category.replace(/_/g, " ").toUpperCase();
     lines.push(`### ${clause.title}`);
     lines.push(`**${level} RISK** · ${category}`, "");
+    if (clause.is_unusual) {
+      lines.push(`**ATYPICAL** — ${clause.unusual_explanation ?? "This clause is unusual for its category."}`, "");
+    }
     lines.push(clause.plain_english, "");
     lines.push(`**Risk:** ${clause.risk_explanation}`, "");
     if (clause.negotiation_suggestion) {

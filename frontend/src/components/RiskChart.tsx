@@ -28,7 +28,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="80" height="80" viewBox="0 0 80 80">
+      <svg width="80" height="80" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low`}>
         <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
         {/* Low (green) — drawn first (bottom layer) */}
         {lowPct > 0 && (

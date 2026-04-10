@@ -57,7 +57,9 @@ async def extract_overview(text: str) -> ContractOverview:
         ),
         timeout=DEFAULT_TIMEOUT,
     )
-    tool_block = next(b for b in response.content if b.type == "tool_use")
+    tool_block = next((b for b in response.content if b.type == "tool_use"), None)
+    if tool_block is None:
+        raise ValueError("LLM did not return a tool_use block for overview extraction.")
     return ContractOverview(**tool_block.input)
 
 
@@ -79,7 +81,9 @@ async def extract_clauses(text: str) -> list[ExtractedClause]:
         ),
         timeout=DEFAULT_TIMEOUT,
     )
-    tool_block = next(b for b in response.content if b.type == "tool_use")
+    tool_block = next((b for b in response.content if b.type == "tool_use"), None)
+    if tool_block is None:
+        raise ValueError("LLM did not return a tool_use block for clause extraction.")
     return [ExtractedClause(**clause) for clause in tool_block.input["clauses"]]
 
 
@@ -106,7 +110,9 @@ async def _analyze_batch(clauses: list[ExtractedClause]) -> list[AnalyzedClause]
         ),
         timeout=DEFAULT_TIMEOUT,
     )
-    tool_block = next(b for b in response.content if b.type == "tool_use")
+    tool_block = next((b for b in response.content if b.type == "tool_use"), None)
+    if tool_block is None:
+        raise ValueError("LLM did not return a tool_use block for batch analysis.")
     return [AnalyzedClause(**clause) for clause in tool_block.input["clauses"]]
 
 
@@ -131,7 +137,9 @@ async def _analyze_single(clause: ExtractedClause) -> AnalyzedClause:
         ),
         timeout=FAN_OUT_TIMEOUT,
     )
-    tool_block = next(b for b in response.content if b.type == "tool_use")
+    tool_block = next((b for b in response.content if b.type == "tool_use"), None)
+    if tool_block is None:
+        raise ValueError("LLM did not return a tool_use block for clause analysis.")
     return AnalyzedClause(**tool_block.input)
 
 

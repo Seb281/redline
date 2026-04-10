@@ -34,6 +34,34 @@ const extractionResultSchema = z.object({
   clauses: z.array(extractedClauseSchema),
 });
 
+const contractOverviewSchema = z.object({
+  contract_type: z
+    .string()
+    .describe("Type of contract, e.g. 'Freelance Services Agreement'"),
+  parties: z
+    .array(z.string())
+    .describe("Names of the parties involved"),
+  effective_date: z
+    .string()
+    .nullable()
+    .describe("Effective or start date if stated"),
+  duration: z
+    .string()
+    .nullable()
+    .describe("Contract duration if stated, e.g. '12 months'"),
+  total_value: z
+    .string()
+    .nullable()
+    .describe("Total contract value if stated, e.g. '$120,000'"),
+  governing_jurisdiction: z
+    .string()
+    .nullable()
+    .describe("Governing law jurisdiction if stated"),
+  key_terms: z
+    .array(z.string())
+    .describe("3-5 most important terms, one sentence each, plain English"),
+});
+
 const clauseCategoryEnum = z.enum([
   "non_compete",
   "liability",
@@ -65,6 +93,13 @@ const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("Suggestion for medium/high risk. Null for low risk."),
+  is_unusual: z
+    .boolean()
+    .describe("True if this clause deviates from standard contract norms"),
+  unusual_explanation: z
+    .string()
+    .nullable()
+    .describe("What is atypical and why it matters. Null if not unusual."),
 });
 
 const batchAnalysisSchema = z.object({
@@ -136,7 +171,24 @@ Risk calibration:
 - limitation_of_liability: excludes gross negligence/willful misconduct = high; \
   standard exclusions = low
 - For other categories: assess how much the clause restricts the weaker party's \
-  rights or creates asymmetric obligations.`;
+  rights or creates asymmetric obligations.
+7. Whether this clause is unusual compared to standard contracts of this type. \
+   A clause is unusual if its terms, scope, duration, or obligations deviate \
+   significantly from what is typical for its category.
+8. If unusual, a brief explanation of what specifically is atypical and why it \
+   matters. Set to null if the clause is not unusual.`;
+
+const OVERVIEW_SYSTEM_PROMPT = `\
+You are a legal document analyst. Your task is to extract high-level metadata \
+from a contract. Identify the type of contract, the parties involved, key dates, \
+financial terms, and the most important terms at a glance.
+
+Rules:
+- Extract only what is explicitly stated in the text. Do not infer or guess.
+- If a field is not clearly stated, set it to null.
+- For key_terms, list 3-5 of the most important substantive terms — the things \
+  someone would want to know before reading the full contract.
+- Keep key_terms concise: one sentence each, plain English, no legal jargon.`;
 
 // ---------------------------------------------------------------------------
 // Pipeline
@@ -152,6 +204,14 @@ export async function analyzeContract(
   text: string,
   thinkHard: boolean
 ): Promise<AnalyzeResponse> {
+  // Pass 0 — extract contract overview
+  const { object: overview } = await generateObject({
+    model,
+    schema: contractOverviewSchema,
+    system: OVERVIEW_SYSTEM_PROMPT,
+    prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+  });
+
   // Pass 1 — extract clauses
   const { object: extraction } = await generateObject({
     model,
@@ -200,5 +260,5 @@ export async function analyzeContract(
       .map((c) => `${c.title}: ${c.risk_explanation}`),
   };
 
-  return { summary, clauses: analyzedClauses };
+  return { overview, summary, clauses: analyzedClauses };
 }

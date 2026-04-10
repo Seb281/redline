@@ -29,20 +29,20 @@ export function ClauseCard({ clause }: ClauseCardProps) {
     >
       <div className="mb-2 flex items-start gap-2">
         <RiskBadge level={clause.risk_level} />
-        <span className="rounded bg-[var(--bg-tertiary)] px-2 py-0.5 text-[11px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+        <span className="rounded bg-[var(--bg-tertiary)] px-2 py-0.5 text-xs text-[var(--text-tertiary)] font-[var(--font-body)]">
           {categoryLabel}
         </span>
         {clause.is_unusual && (
-          <span className="rounded border border-[var(--risk-unusual-border)] bg-[var(--risk-unusual-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--risk-unusual)] font-[var(--font-body)]">
+          <span className="rounded border border-[var(--risk-unusual-border)] bg-[var(--risk-unusual-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--risk-unusual)] font-[var(--font-body)]">
             ATYPICAL
           </span>
         )}
       </div>
 
-      <h3 className="mb-1 text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
         {clause.title}
       </h3>
-      <p className="text-[13px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
+      <p className="text-sm leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
         {clause.plain_english}
       </p>
 
@@ -50,14 +50,14 @@ export function ClauseCard({ clause }: ClauseCardProps) {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-xs text-[var(--accent)] font-[var(--font-body)] hover:underline"
+          className="mt-2 text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
         >
           {expanded ? "Hide details" : "Show details"}
         </button>
       )}
 
       {expanded && (
-        <div className="mt-3 rounded bg-[var(--bg-secondary)] p-3 text-xs leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
+        <div className="mt-3 rounded bg-[var(--bg-secondary)] p-3 text-[13px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
           <p>
             <strong className="text-[var(--accent)]">Risk:</strong>{" "}
             {clause.risk_explanation}
@@ -78,7 +78,7 @@ export function ClauseCard({ clause }: ClauseCardProps) {
             <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
               Original clause text
             </summary>
-            <p className="mt-1 whitespace-pre-wrap font-mono text-[11px] text-[var(--text-tertiary)]">
+            <p className="mt-1 whitespace-pre-wrap font-mono text-xs text-[var(--text-tertiary)]">
               {clause.clause_text}
             </p>
           </details>

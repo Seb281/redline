@@ -22,12 +22,16 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
   return res.json();
 }
 
-/** Run clause extraction and risk analysis on contract text. */
+/** Run clause extraction and risk analysis on contract text.
+ *
+ * Calls the local Next.js API route which uses Vercel AI SDK.
+ * Upload and export still go to the FastAPI backend.
+ */
 export async function analyzeContract(
   text: string,
   thinkHard: boolean
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${API_BASE}/api/analyze`, {
+  const res = await fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, think_hard: thinkHard }),

@@ -13,16 +13,16 @@ export function UnusualClausesCallout({ clauses }: UnusualClausesCalloutProps) {
   if (unusualClauses.length === 0) return null;
 
   return (
-    <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3">
+    <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 dark:border-purple-900 dark:bg-purple-950/30">
       <p className="mb-1 text-xs font-semibold uppercase text-purple-600">
         Unusual Clauses
       </p>
-      <ul className="text-sm text-gray-700">
+      <ul className="text-sm text-[var(--text-secondary)]">
         {unusualClauses.map((clause, i) => (
           <li key={i}>
             • <span className="font-medium">{clause.title}</span>
             {clause.unusual_explanation && (
-              <span className="text-gray-500">
+              <span className="text-[var(--text-tertiary)]">
                 {" "}— {clause.unusual_explanation}
               </span>
             )}

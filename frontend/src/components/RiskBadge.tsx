@@ -3,9 +3,9 @@
 import type { RiskLevel } from "@/types";
 
 const STYLES: Record<RiskLevel, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  low: "bg-green-100 text-green-700",
+  high: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400",
+  medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400",
+  low: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400",
 };
 
 interface RiskBadgeProps {

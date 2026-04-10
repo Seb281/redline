@@ -5,15 +5,19 @@ from app.schemas import (
     AnalyzeResponse,
     AnalysisSummary,
     ClauseCategory,
+    ContractOverview,
     RiskBreakdown,
     RiskLevel,
 )
 from app.services.exporter import generate_pdf, render_report_html
+from tests.conftest import MOCK_OVERVIEW_RESPONSE
 
 
 def _make_sample_response() -> AnalyzeResponse:
     """Build a sample AnalyzeResponse for testing."""
+    overview = ContractOverview(**MOCK_OVERVIEW_RESPONSE)
     return AnalyzeResponse(
+        overview=overview,
         summary=AnalysisSummary(
             total_clauses=2,
             risk_breakdown=RiskBreakdown(high=1, medium=0, low=1),

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from app.main import app
-from tests.conftest import MOCK_ANALYSIS_RESPONSE, MOCK_EXTRACTION_RESPONSE
+from tests.conftest import MOCK_ANALYSIS_RESPONSE, MOCK_EXTRACTION_RESPONSE, MOCK_OVERVIEW_RESPONSE
 
 client = TestClient(app)
 
@@ -25,6 +25,7 @@ def test_analyze_returns_report(mock_client):
     """POST /api/analyze returns a structured analysis report."""
     mock_client.messages.create = AsyncMock(
         side_effect=[
+            _make_tool_response("extract_overview", MOCK_OVERVIEW_RESPONSE),
             _make_tool_response("extract_clauses", MOCK_EXTRACTION_RESPONSE),
             _make_tool_response("analyze_clauses", MOCK_ANALYSIS_RESPONSE),
         ]
@@ -46,6 +47,7 @@ def test_analyze_think_hard(mock_client):
     """POST /api/analyze with think_hard=true uses fan-out mode."""
     mock_client.messages.create = AsyncMock(
         side_effect=[
+            _make_tool_response("extract_overview", MOCK_OVERVIEW_RESPONSE),
             _make_tool_response("extract_clauses", MOCK_EXTRACTION_RESPONSE),
             _make_tool_response("analyze_clause", MOCK_ANALYSIS_RESPONSE["clauses"][0]),
             _make_tool_response("analyze_clause", MOCK_ANALYSIS_RESPONSE["clauses"][1]),

@@ -6,7 +6,8 @@ interface RiskChartProps {
   breakdown: RiskBreakdown;
 }
 
-/** SVG donut chart for risk distribution — renders inline at 80x80. */
+/** SVG donut chart for risk distribution — renders inline at 80x80.
+ *  Uses CSS variables for stroke colors so dark mode adapts automatically. */
 export function RiskChart({ breakdown }: RiskChartProps) {
   const total = breakdown.high + breakdown.medium + breakdown.low;
   if (total === 0) return null;
@@ -34,7 +35,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
         {lowPct > 0 && (
           <circle
             cx="40" cy="40" r={radius}
-            fill="none" stroke="#22c55e" strokeWidth="8"
+            fill="none" stroke="var(--risk-low)" strokeWidth="8"
             strokeDasharray={`${lowLen} ${circumference - lowLen}`}
             strokeDashoffset={lowOffset}
             strokeLinecap="round"
@@ -45,7 +46,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
         {medPct > 0 && (
           <circle
             cx="40" cy="40" r={radius}
-            fill="none" stroke="#eab308" strokeWidth="8"
+            fill="none" stroke="var(--risk-medium)" strokeWidth="8"
             strokeDasharray={`${medLen} ${circumference - medLen}`}
             strokeDashoffset={medOffset}
             strokeLinecap="round"
@@ -56,18 +57,18 @@ export function RiskChart({ breakdown }: RiskChartProps) {
         {highPct > 0 && (
           <circle
             cx="40" cy="40" r={radius}
-            fill="none" stroke="#ef4444" strokeWidth="8"
+            fill="none" stroke="var(--risk-high)" strokeWidth="8"
             strokeDasharray={`${highLen} ${circumference - highLen}`}
             strokeDashoffset={highOffset}
             strokeLinecap="round"
             transform="rotate(-90 40 40)"
           />
         )}
-        <text x="40" y="44" textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--text-primary)">
+        <text x="40" y="44" textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--text-primary)" style={{ fontFamily: "var(--font-body)" }}>
           {total}
         </text>
       </svg>
-      <p className="mt-1 text-xs text-[var(--text-muted)]">clauses</p>
+      <p className="mt-1 text-xs text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
     </div>
   );
 }

@@ -13,11 +13,11 @@ export function UnusualClausesCallout({ clauses }: UnusualClausesCalloutProps) {
   if (unusualClauses.length === 0) return null;
 
   return (
-    <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 dark:border-purple-900 dark:bg-purple-950/30 theme-transition">
-      <p className="mb-1 text-xs font-semibold uppercase text-purple-600 dark:text-purple-400">
+    <div className="mb-6 rounded border border-[var(--risk-unusual-border)] bg-[var(--risk-unusual-bg)] px-4 py-3 theme-transition">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[2px] text-[var(--risk-unusual)] font-[var(--font-body)]">
         Unusual Clauses
       </p>
-      <ul className="text-sm text-[var(--text-secondary)]">
+      <ul className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
         {unusualClauses.map((clause, i) => (
           <li key={i}>
             • <span className="font-medium">{clause.title}</span>

@@ -32,7 +32,7 @@ export function ClauseCard({ clause }: ClauseCardProps) {
           {categoryLabel}
         </span>
         {clause.is_unusual && (
-          <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+          <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700 dark:bg-purple-950/50 dark:text-purple-400">
             ATYPICAL
           </span>
         )}
@@ -49,7 +49,7 @@ export function ClauseCard({ clause }: ClauseCardProps) {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-xs text-blue-600 hover:underline"
+          className="mt-2 text-xs text-blue-600 hover:underline dark:text-blue-400"
         >
           {expanded ? "Hide details" : "Show details"}
         </button>
@@ -58,18 +58,18 @@ export function ClauseCard({ clause }: ClauseCardProps) {
       {expanded && (
         <div className="mt-3 rounded-md bg-[var(--bg-secondary)] p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
           <p>
-            <strong className="text-red-600">Risk:</strong>{" "}
+            <strong className="text-red-600 dark:text-red-400">Risk:</strong>{" "}
             {clause.risk_explanation}
           </p>
           {clause.negotiation_suggestion && (
             <p className="mt-2">
-              <strong className="text-blue-600">Suggestion:</strong>{" "}
+              <strong className="text-blue-600 dark:text-blue-400">Suggestion:</strong>{" "}
               {clause.negotiation_suggestion}
             </p>
           )}
           {clause.unusual_explanation && (
             <p className="mt-2">
-              <strong className="text-purple-600">Unusual:</strong>{" "}
+              <strong className="text-purple-600 dark:text-purple-400">Unusual:</strong>{" "}
               {clause.unusual_explanation}
             </p>
           )}

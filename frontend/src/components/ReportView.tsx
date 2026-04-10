@@ -125,8 +125,8 @@ export function ReportView({ data, onReset }: ReportViewProps) {
 
       {/* Clause cards */}
       <div className="space-y-3">
-        {filteredClauses.map((clause, i) => (
-          <ClauseCard key={i} clause={clause} />
+        {filteredClauses.map((clause) => (
+          <ClauseCard key={`${clause.title}-${clause.risk_level}`} clause={clause} />
         ))}
         {filteredClauses.length === 0 && (
           <p className="py-8 text-center text-sm text-[var(--text-muted)]">

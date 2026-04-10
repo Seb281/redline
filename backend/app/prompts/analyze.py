@@ -28,6 +28,11 @@ For each clause, provide:
 5. A specific risk explanation — why this level, what makes it risky or safe
 6. A negotiation suggestion — ONLY for medium and high risk clauses. \
    Set to null for low risk.
+7. Whether this clause is unusual compared to standard contracts of this type. \
+   A clause is unusual if its terms, scope, duration, or obligations deviate \
+   significantly from what is typical for its category.
+8. If unusual, a brief explanation of what specifically is atypical and why it \
+   matters. Set to null if the clause is not unusual.
 
 Risk calibration:
 - non_compete: >12 months or nationwide/continental scope = high; \
@@ -76,6 +81,14 @@ _ANALYZED_CLAUSE_SCHEMA = {
             "type": ["string", "null"],
             "description": "Suggestion for medium/high risk. Null for low risk.",
         },
+        "is_unusual": {
+            "type": "boolean",
+            "description": "True if this clause deviates from standard contract norms for its category.",
+        },
+        "unusual_explanation": {
+            "type": ["string", "null"],
+            "description": "What is atypical and why it matters. Null if not unusual.",
+        },
     },
     "required": [
         "clause_text",
@@ -85,6 +98,8 @@ _ANALYZED_CLAUSE_SCHEMA = {
         "risk_level",
         "risk_explanation",
         "negotiation_suggestion",
+        "is_unusual",
+        "unusual_explanation",
     ],
 }
 

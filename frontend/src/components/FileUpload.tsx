@@ -127,7 +127,7 @@ export function FileUpload({
         />
       </div>
       {error && (
-        <p className="mt-4 text-sm text-red-500">{error}</p>
+        <p className="mt-4 text-sm text-red-500 dark:text-red-400">{error}</p>
       )}
     </div>
   );

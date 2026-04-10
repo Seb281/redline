@@ -67,6 +67,7 @@ export function ClauseFilters({
         value={riskFilter}
         onChange={(e) => onRiskFilterChange(e.target.value as RiskLevel | "all")}
         className={selectClasses}
+        aria-label="Filter by risk level"
       >
         {RISK_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -77,6 +78,7 @@ export function ClauseFilters({
         value={categoryFilter}
         onChange={(e) => onCategoryFilterChange(e.target.value as ClauseCategory | "all")}
         className={selectClasses}
+        aria-label="Filter by category"
       >
         {CATEGORY_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -87,6 +89,7 @@ export function ClauseFilters({
         value={sort}
         onChange={(e) => onSortChange(e.target.value as SortOption)}
         className={selectClasses}
+        aria-label="Sort clauses"
       >
         {SORT_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>

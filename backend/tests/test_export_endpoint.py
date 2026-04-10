@@ -10,6 +10,15 @@ client = TestClient(app)
 def _sample_request_body() -> dict:
     """Build a valid request body matching AnalyzeResponse shape."""
     return {
+        "overview": {
+            "contract_type": "Consulting Agreement",
+            "parties": ["Company", "Consultant"],
+            "effective_date": None,
+            "duration": None,
+            "total_value": None,
+            "governing_jurisdiction": None,
+            "key_terms": ["Non-compete"],
+        },
         "summary": {
             "total_clauses": 1,
             "risk_breakdown": {"high": 1, "medium": 0, "low": 0},
@@ -24,6 +33,8 @@ def _sample_request_body() -> dict:
                 "risk_level": "high",
                 "risk_explanation": "Too broad.",
                 "negotiation_suggestion": "Narrow the scope.",
+                "is_unusual": True,
+                "unusual_explanation": "Unusually broad geographic scope.",
             }
         ],
     }

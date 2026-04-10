@@ -7,9 +7,9 @@ import type { AnalyzedClause } from "@/types";
 import { RiskBadge } from "@/components/RiskBadge";
 
 const BORDER_COLORS = {
-  high: "border-l-red-500",
-  medium: "border-l-yellow-500",
-  low: "border-l-green-500",
+  high: "border-l-red-500 dark:border-l-red-400",
+  medium: "border-l-yellow-500 dark:border-l-yellow-400",
+  low: "border-l-green-500 dark:border-l-green-400",
 } as const;
 
 interface ClauseCardProps {

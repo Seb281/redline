@@ -20,7 +20,56 @@ _RISK_BORDER = {
 
 
 def render_report_html(data: AnalyzeResponse) -> str:
-    """Render the analysis data as an HTML report for PDF conversion."""
+    """Render the analysis data as an HTML report for PDF conversion.
+
+    Builds a fully self-contained HTML string (inline styles) that WeasyPrint
+    can convert to a PDF. Includes:
+      - Disclaimer banner
+      - Contract overview card (type, parties, metadata, key terms)
+      - Risk summary cards and top-risks list
+      - Clause cards with risk badge, category label, optional ATYPICAL badge,
+        negotiation suggestion, and unusual-clause explanation
+    """
+    # Build overview section
+    parties_html = ", ".join(html_module.escape(p) for p in data.overview.parties)
+    key_terms_html = "".join(
+        f"<li>{html_module.escape(term)}</li>" for term in data.overview.key_terms
+    )
+
+    overview_details = []
+    if data.overview.effective_date:
+        overview_details.append(
+            f"<span><strong>Effective:</strong> {html_module.escape(data.overview.effective_date)}</span>"
+        )
+    if data.overview.duration:
+        overview_details.append(
+            f"<span><strong>Duration:</strong> {html_module.escape(data.overview.duration)}</span>"
+        )
+    if data.overview.total_value:
+        overview_details.append(
+            f"<span><strong>Value:</strong> {html_module.escape(data.overview.total_value)}</span>"
+        )
+    if data.overview.governing_jurisdiction:
+        overview_details.append(
+            f"<span><strong>Jurisdiction:</strong> {html_module.escape(data.overview.governing_jurisdiction)}</span>"
+        )
+    details_html = " &middot; ".join(overview_details) if overview_details else ""
+
+    overview_html = f"""
+    <div style="background:#f9fafb;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin-bottom:24px;">
+        <h2 style="margin:0 0 8px 0;font-size:16px;">
+            {html_module.escape(data.overview.contract_type)}
+        </h2>
+        <p style="margin:0 0 8px 0;font-size:13px;color:#4b5563;">
+            <strong>Parties:</strong> {parties_html}
+        </p>
+        {f'<p style="margin:0 0 8px 0;font-size:13px;color:#4b5563;">{details_html}</p>' if details_html else ''}
+        <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;color:#6b7280;">KEY TERMS</p>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:#4b5563;">{key_terms_html}</ul>
+    </div>
+    """
+
+    # Build clause cards
     clauses_html = ""
     for clause in data.clauses:
         colors = _RISK_COLORS[clause.risk_level]
@@ -33,6 +82,24 @@ def render_report_html(data: AnalyzeResponse) -> str:
                 f'<p style="margin-top:8px;color:#2563eb;">'
                 f"<strong>Suggestion:</strong> "
                 f"{html_module.escape(clause.negotiation_suggestion)}</p>"
+            )
+
+        # ATYPICAL badge shown when the clause deviates from market norms
+        unusual_badge_html = ""
+        if clause.is_unusual:
+            unusual_badge_html = (
+                '<span style="display:inline-block;padding:2px 8px;border-radius:4px;'
+                'font-size:11px;font-weight:600;background:#ede9fe;'
+                'color:#7c3aed;margin-left:6px;">ATYPICAL</span>'
+            )
+
+        # Additional detail block for unusual-clause rationale
+        unusual_detail_html = ""
+        if clause.unusual_explanation:
+            unusual_detail_html = (
+                f'<p style="margin-top:8px;color:#7c3aed;">'
+                f"<strong>Unusual:</strong> "
+                f"{html_module.escape(clause.unusual_explanation)}</p>"
             )
 
         clauses_html += f"""
@@ -48,6 +115,7 @@ def render_report_html(data: AnalyzeResponse) -> str:
                             font-size:11px;background:#f3f4f6;color:#6b7280;margin-left:6px;">
                     {category_label}
                 </span>
+                {unusual_badge_html}
             </div>
             <h3 style="margin:0 0 6px 0;font-size:15px;">
                 {html_module.escape(clause.title)}
@@ -60,6 +128,7 @@ def render_report_html(data: AnalyzeResponse) -> str:
                 {html_module.escape(clause.risk_explanation)}
             </p>
             {suggestion_html}
+            {unusual_detail_html}
         </div>
         """
 
@@ -137,6 +206,8 @@ def render_report_html(data: AnalyzeResponse) -> str:
         This tool provides analysis only — not legal advice.
         Consult a qualified lawyer before making legal decisions.
     </div>
+
+    {overview_html}
 
     <div class="summary">
         <div class="summary-card" style="background:#fef2f2;border:1px solid #fecaca;">

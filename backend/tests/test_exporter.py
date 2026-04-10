@@ -10,6 +10,7 @@ from app.schemas import (
     RiskLevel,
 )
 from app.services.exporter import generate_pdf, render_report_html
+from app.services.analyzer import build_summary
 from tests.conftest import MOCK_OVERVIEW_RESPONSE
 
 
@@ -72,3 +73,51 @@ def test_generate_pdf_returns_bytes():
     assert isinstance(pdf_bytes, bytes)
     assert pdf_bytes[:5] == b"%PDF-"
     assert len(pdf_bytes) > 100
+
+
+def test_render_report_html_includes_overview(sample_analyzed_clauses):
+    """PDF HTML template includes contract overview section."""
+    from app.schemas import ContractOverview
+
+    overview = ContractOverview(
+        contract_type="Consulting Agreement",
+        parties=["Acme Corp", "The Consultant"],
+        effective_date="2026-01-15",
+        duration="12 months",
+        total_value="$120,000",
+        governing_jurisdiction="State of Delaware",
+        key_terms=["Non-compete for 2 years", "IP assignment of all work"],
+    )
+    data = AnalyzeResponse(
+        overview=overview,
+        summary=build_summary(sample_analyzed_clauses),
+        clauses=sample_analyzed_clauses,
+    )
+    html = render_report_html(data)
+    assert "Consulting Agreement" in html
+    assert "Acme Corp" in html
+    assert "The Consultant" in html
+    assert "$120,000" in html
+    assert "Non-compete for 2 years" in html
+
+
+def test_render_report_html_includes_unusual_badge(sample_analyzed_clauses):
+    """PDF HTML template shows ATYPICAL badge for unusual clauses."""
+    from app.schemas import ContractOverview
+
+    overview = ContractOverview(
+        contract_type="Agreement",
+        parties=["A", "B"],
+        effective_date=None,
+        duration=None,
+        total_value=None,
+        governing_jurisdiction=None,
+        key_terms=["Term 1"],
+    )
+    data = AnalyzeResponse(
+        overview=overview,
+        summary=build_summary(sample_analyzed_clauses),
+        clauses=sample_analyzed_clauses,
+    )
+    html = render_report_html(data)
+    assert "ATYPICAL" in html

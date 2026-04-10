@@ -5,6 +5,8 @@
 import { useState } from "react";
 import type { AnalyzeResponse } from "@/types";
 import { ClauseCard } from "@/components/ClauseCard";
+import { ContractOverview } from "@/components/ContractOverview";
+import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { downloadMarkdown, downloadPdf } from "@/lib/export";
 
 interface ReportViewProps {
@@ -29,6 +31,9 @@ export function ReportView({ data, onReset }: ReportViewProps) {
 
   return (
     <div>
+      {/* Contract overview */}
+      <ContractOverview overview={data.overview} />
+
       {/* Summary bar */}
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
@@ -64,6 +69,9 @@ export function ReportView({ data, onReset }: ReportViewProps) {
           </ul>
         </div>
       )}
+
+      {/* Unusual clauses */}
+      <UnusualClausesCallout clauses={clauses} />
 
       {/* Clause cards */}
       <div className="space-y-3">

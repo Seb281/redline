@@ -4,6 +4,23 @@ import type { AnalyzeResponse, UploadResponse } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+/**
+ * Wake the backend ahead of the first real request.
+ *
+ * Railway runs the backend in serverless mode — it sleeps after idle
+ * and cold-starts on the first incoming request, which can leave the
+ * edge proxy returning 502 before the container is ready. Firing a
+ * cheap `/api/health` GET on page mount warms the container while the
+ * user is still reading the hero, so the subsequent upload lands on a
+ * warm process. Fire-and-forget: errors are swallowed because nothing
+ * depends on this succeeding.
+ */
+export function warmBackend(): void {
+  fetch(`${API_BASE}/api/health`, { method: "GET" }).catch(() => {
+    // Intentionally ignored — this is a best-effort pre-warm.
+  });
+}
+
 /** Upload a contract file and extract text. */
 export async function uploadContract(file: File): Promise<UploadResponse> {
   const formData = new FormData();

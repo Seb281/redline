@@ -15,6 +15,8 @@ import { downloadMarkdown, downloadPdf } from "@/lib/export";
 interface ReportViewProps {
   data: AnalyzeResponse;
   onReset: () => void;
+  onOpenChat?: () => void;
+  onAskAboutClause?: (clause: AnalyzedClause) => void;
 }
 
 const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2 };
@@ -45,7 +47,7 @@ function useFilteredClauses(
 }
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
-export function ReportView({ data, onReset }: ReportViewProps) {
+export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: ReportViewProps) {
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ClauseCategory | "all">("all");
@@ -127,7 +129,7 @@ export function ReportView({ data, onReset }: ReportViewProps) {
       {/* Clause cards */}
       <div className="space-y-4">
         {filteredClauses.map((clause) => (
-          <ClauseCard key={`${clause.title}-${clause.risk_level}`} clause={clause} />
+          <ClauseCard key={`${clause.title}-${clause.risk_level}`} clause={clause} onAskAbout={onAskAboutClause} />
         ))}
         {filteredClauses.length === 0 && (
           <p className="py-9 text-center text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
@@ -166,7 +168,18 @@ export function ReportView({ data, onReset }: ReportViewProps) {
               New Contract
             </button>
           </div>
-          <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">Not legal advice</span>
+          <div className="flex items-center gap-3">
+            {onOpenChat && (
+              <button
+                type="button"
+                onClick={onOpenChat}
+                className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+              >
+                Ask AI
+              </button>
+            )}
+            <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">Not legal advice</span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,0 +1,126 @@
+/**
+ * Streaming version of the LLM analysis pipeline.
+ *
+ * Returns a ReadableStream of NDJSON events so the client can render
+ * clauses progressively as they are analyzed.
+ */
+
+import { generateObject, Output, streamText } from "ai";
+import type { ContractOverview, AnalyzedClause, AnalysisSummary } from "@/types";
+import {
+  model,
+  contractOverviewSchema,
+  extractionResultSchema,
+  analyzedClauseSchema,
+  OVERVIEW_SYSTEM_PROMPT,
+  EXTRACTION_SYSTEM_PROMPT,
+  ANALYSIS_SYSTEM_PROMPT,
+} from "@/lib/analyzer";
+
+/** Events emitted over the NDJSON stream. */
+export type AnalysisEvent =
+  | { type: "overview"; data: ContractOverview }
+  | { type: "extraction-complete"; data: { clauseCount: number } }
+  | { type: "clause"; data: AnalyzedClause }
+  | { type: "complete"; data: AnalysisSummary }
+  | { type: "error"; data: { message: string } };
+
+/** Encode an event as an NDJSON line (UTF-8). */
+const encoder = new TextEncoder();
+function encode(event: AnalysisEvent): Uint8Array {
+  return encoder.encode(JSON.stringify(event) + "\n");
+}
+
+/**
+ * Run the three-pass analysis pipeline, streaming results back as NDJSON.
+ *
+ * Pass 0 (overview) and Pass 1 (extraction) run as normal generateObject calls.
+ * Pass 2 (analysis) streams clause-by-clause:
+ *   - Batch mode: uses streamText + Output.array to emit elements as they complete
+ *   - Fan-out mode: fires one generateObject per clause in parallel, pushing each
+ *     result to the stream as it resolves
+ */
+export function streamAnalyzeContract(
+  text: string,
+  thinkHard: boolean
+): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        // Pass 0 — extract contract overview
+        const { object: overview } = await generateObject({
+          model,
+          schema: contractOverviewSchema,
+          system: OVERVIEW_SYSTEM_PROMPT,
+          prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+        });
+        controller.enqueue(encode({ type: "overview", data: overview as ContractOverview }));
+
+        // Pass 1 — extract clauses
+        const { object: extraction } = await generateObject({
+          model,
+          schema: extractionResultSchema,
+          system: EXTRACTION_SYSTEM_PROMPT,
+          prompt: `Extract all significant clauses from this contract:\n\n${text}`,
+        });
+        controller.enqueue(
+          encode({ type: "extraction-complete", data: { clauseCount: extraction.clauses.length } })
+        );
+
+        // Pass 2 — analyze clauses
+        let allClauses: AnalyzedClause[];
+
+        if (thinkHard) {
+          // Fan-out: one LLM call per clause, stream each as it resolves
+          const results: AnalyzedClause[] = [];
+          const promises = extraction.clauses.map(async (clause) => {
+            const { object } = await generateObject({
+              model,
+              schema: analyzedClauseSchema,
+              system: ANALYSIS_SYSTEM_PROMPT,
+              prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
+            });
+            const analyzed = object as AnalyzedClause;
+            results.push(analyzed);
+            controller.enqueue(encode({ type: "clause", data: analyzed }));
+            return analyzed;
+          });
+          allClauses = await Promise.all(promises);
+        } else {
+          // Batch: stream elements from a single LLM call via Output.array
+          allClauses = [];
+          const result = streamText({
+            model,
+            output: Output.array({ element: analyzedClauseSchema }),
+            system: ANALYSIS_SYSTEM_PROMPT,
+            prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
+          });
+          for await (const clause of result.elementStream) {
+            const analyzed = clause as AnalyzedClause;
+            allClauses.push(analyzed);
+            controller.enqueue(encode({ type: "clause", data: analyzed }));
+          }
+        }
+
+        // Build and emit summary
+        const summary: AnalysisSummary = {
+          total_clauses: allClauses.length,
+          risk_breakdown: {
+            high: allClauses.filter((c) => c.risk_level === "high").length,
+            medium: allClauses.filter((c) => c.risk_level === "medium").length,
+            low: allClauses.filter((c) => c.risk_level === "low").length,
+          },
+          top_risks: allClauses
+            .filter((c) => c.risk_level === "high")
+            .map((c) => `${c.title}: ${c.risk_explanation}`),
+        };
+        controller.enqueue(encode({ type: "complete", data: summary }));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Analysis failed";
+        controller.enqueue(encode({ type: "error", data: { message } }));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}

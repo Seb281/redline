@@ -2,7 +2,54 @@
 
 import type { AnalyzeResponse, UploadResponse } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+/**
+ * Normalize the configured backend URL so trailing slashes and missing
+ * schemes can't turn an absolute URL into a relative path.
+ *
+ * If `NEXT_PUBLIC_API_URL` is set to e.g. `redline.up.railway.app` (no
+ * scheme), `fetch` will resolve it against the current page origin and
+ * produce a 404 from the frontend host instead of hitting the backend.
+ * Prepending `https://` when no scheme is present keeps deploys robust
+ * to that misconfiguration.
+ */
+function normalizeBase(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+const API_BASE = normalizeBase(
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001"
+);
+
+/**
+ * Extract a human-readable error message from a failed `fetch` response.
+ *
+ * Tries the backend's JSON `{detail}` shape first, falls back to raw text
+ * (truncated), and finally to the HTTP status line. This matters because
+ * HTML error pages (e.g. a 404 from the wrong origin) would otherwise be
+ * swallowed by `res.json()` and collapse into a generic "Upload failed".
+ */
+async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+  const contentType = res.headers.get("content-type") ?? "";
+  try {
+    if (contentType.includes("application/json")) {
+      const body = (await res.json()) as { detail?: unknown };
+      if (typeof body.detail === "string" && body.detail.length > 0) {
+        return body.detail;
+      }
+    } else {
+      const text = (await res.text()).trim();
+      if (text.length > 0) {
+        const snippet = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+        return `${fallback} (${res.status} ${res.statusText}): ${snippet}`;
+      }
+    }
+  } catch {
+    // fall through to the status-based fallback
+  }
+  return `${fallback} (${res.status} ${res.statusText})`;
+}
 
 /**
  * Wake the backend ahead of the first real request.
@@ -26,14 +73,21 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_BASE}/api/upload`, {
-    method: "POST",
-    body: formData,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (err) {
+    // Network-level failure (DNS, CORS preflight, offline, etc.) never
+    // produces a Response, so surface the underlying message directly.
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(`Upload failed: ${reason}`);
+  }
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: "Upload failed" }));
-    throw new Error(error.detail ?? "Upload failed");
+    throw new Error(await extractErrorMessage(res, "Upload failed"));
   }
 
   return res.json();
@@ -55,8 +109,7 @@ export async function analyzeContract(
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: "Analysis failed" }));
-    throw new Error(error.detail ?? "Analysis failed");
+    throw new Error(await extractErrorMessage(res, "Analysis failed"));
   }
 
   return res.json();
@@ -71,7 +124,7 @@ export async function exportPdf(data: AnalyzeResponse): Promise<Blob> {
   });
 
   if (!res.ok) {
-    throw new Error("PDF export failed");
+    throw new Error(await extractErrorMessage(res, "PDF export failed"));
   }
 
   return res.blob();

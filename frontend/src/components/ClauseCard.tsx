@@ -14,10 +14,11 @@ const BORDER_COLORS = {
 
 interface ClauseCardProps {
   clause: AnalyzedClause;
+  onAskAbout?: (clause: AnalyzedClause) => void;
 }
 
 /** Renders a single clause with risk badge, category, and expandable details. */
-export function ClauseCard({ clause }: ClauseCardProps) {
+export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const categoryLabel = clause.category.replace(/_/g, " ").toUpperCase();
   const hasDetails =
@@ -82,6 +83,15 @@ export function ClauseCard({ clause }: ClauseCardProps) {
               {clause.clause_text}
             </p>
           </details>
+          {onAskAbout && (
+            <button
+              type="button"
+              onClick={() => onAskAbout(clause)}
+              className="mt-3 text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+            >
+              Ask about this clause →
+            </button>
+          )}
         </div>
       )}
     </div>

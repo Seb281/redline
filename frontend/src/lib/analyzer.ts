@@ -158,7 +158,35 @@ const CATEGORIES = [
   "other",
 ].join(", ");
 
-export const ANALYSIS_SYSTEM_PROMPT = `\
+/**
+ * Build the analysis system prompt.
+ *
+ * When `withCitations` is true, the model is instructed to emit inline
+ * `[^N]` markers and a populated `citations` array for every clause. When
+ * false, it must always emit `citations: []` and no markers — the schema
+ * field remains required (OpenAI strict mode demands it) but stays empty,
+ * which skips the downstream rendering of the footnote UI.
+ */
+export function buildAnalysisSystemPrompt(withCitations: boolean): string {
+  const citationsSection = withCitations
+    ? `\
+Citations (for every clause):
+- Insert inline markers [^1], [^2], etc. in \`plain_english\` after each \
+  factual claim that quotes or paraphrases the clause, and add a matching \
+  entry in the \`citations\` array with the EXACT verbatim phrase from the \
+  clause — copy-paste, do not paraphrase.
+- Use the shortest phrase that fully supports the claim.
+- If no verbatim phrase supports a claim, omit BOTH the marker and the \
+  citation for it. Never fabricate.
+- \`citations\` is always required: return an empty array if no verbatim \
+  phrase supports any claim in a given clause.`
+    : `\
+Citations (disabled for this run):
+- Always emit \`citations: []\` (an empty array).
+- Do NOT insert any [^N] markers in \`plain_english\`.
+- The \`citations\` field is still required by the schema — just leave it empty.`;
+
+  return `\
 You are a legal risk analyst. You assess contract clauses from the perspective \
 of the weaker/non-drafting party — the freelancer, employee, or smaller company.
 
@@ -196,17 +224,14 @@ Risk calibration:
 8. If unusual, a brief explanation of what specifically is atypical and why it \
    matters. Set to null if the clause is not unusual.
 
-Citations (ONLY for medium and high risk clauses):
-- For LOW risk clauses: emit \`citations: []\` and do NOT insert any [^N] \
-  markers in \`plain_english\`. Skip this section entirely.
-- For MEDIUM and HIGH risk clauses: insert inline markers [^1], [^2], etc. \
-  in \`plain_english\` after each factual claim that quotes or paraphrases \
-  the clause, and add a matching entry in the \`citations\` array with the \
-  EXACT verbatim phrase from the clause — copy-paste, do not paraphrase.
-- Use the shortest phrase that fully supports the claim.
-- If no verbatim phrase supports a claim, omit BOTH the marker and the \
-  citation for it. Never fabricate.
-- \`citations\` is always required: return an empty array if none apply.`;
+${citationsSection}`;
+}
+
+/**
+ * @deprecated Retained for backwards compatibility — prefer
+ * {@link buildAnalysisSystemPrompt}. Defaults to citations enabled.
+ */
+export const ANALYSIS_SYSTEM_PROMPT = buildAnalysisSystemPrompt(true);
 
 export const OVERVIEW_SYSTEM_PROMPT = `\
 You are a legal document analyst. Your task is to extract high-level metadata \
@@ -229,11 +254,18 @@ Rules:
  *
  * Pass 1: Extract clauses from raw contract text.
  * Pass 2: Classify and risk-assess each clause (batch or fan-out).
+ *
+ * @param withCitations When true (default), the model emits verbatim
+ *   citation quotes alongside each clause; when false, the citations
+ *   array is forced to stay empty (see buildAnalysisSystemPrompt).
  */
 export async function analyzeContract(
   text: string,
-  thinkHard: boolean
+  thinkHard: boolean,
+  withCitations: boolean = true
 ): Promise<AnalyzeResponse> {
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations);
+
   // Pass 0 — extract contract overview
   const { object: overview } = await generateObject({
     model,
@@ -260,7 +292,7 @@ export async function analyzeContract(
         const { object } = await generateObject({
           model,
           schema: analyzedClauseSchema,
-          system: ANALYSIS_SYSTEM_PROMPT,
+          system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
         });
         return object;
@@ -271,7 +303,7 @@ export async function analyzeContract(
     const { object: analysis } = await generateObject({
       model,
       schema: batchAnalysisSchema,
-      system: ANALYSIS_SYSTEM_PROMPT,
+      system: analysisSystemPrompt,
       prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
     });
     analyzedClauses = analysis.clauses;

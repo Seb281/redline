@@ -14,7 +14,7 @@ import {
   analyzedClauseSchema,
   OVERVIEW_SYSTEM_PROMPT,
   EXTRACTION_SYSTEM_PROMPT,
-  ANALYSIS_SYSTEM_PROMPT,
+  buildAnalysisSystemPrompt,
 } from "@/lib/analyzer";
 
 /** Events emitted over the NDJSON stream. */
@@ -42,8 +42,10 @@ function encode(event: AnalysisEvent): Uint8Array {
  */
 export function streamAnalyzeContract(
   text: string,
-  thinkHard: boolean
+  thinkHard: boolean,
+  withCitations: boolean = true
 ): ReadableStream<Uint8Array> {
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations);
   return new ReadableStream({
     async start(controller) {
       try {
@@ -77,7 +79,7 @@ export function streamAnalyzeContract(
             const { object } = await generateObject({
               model,
               schema: analyzedClauseSchema,
-              system: ANALYSIS_SYSTEM_PROMPT,
+              system: analysisSystemPrompt,
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
             });
             const analyzed = object as AnalyzedClause;
@@ -92,7 +94,7 @@ export function streamAnalyzeContract(
           const result = streamText({
             model,
             output: Output.array({ element: analyzedClauseSchema }),
-            system: ANALYSIS_SYSTEM_PROMPT,
+            system: analysisSystemPrompt,
             prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
           });
           for await (const clause of result.elementStream) {

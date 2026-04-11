@@ -1,4 +1,3 @@
-.superpowers/
 backend/.venv/
 backend/**/__pycache__/
 backend/*.egg-info/
@@ -6,5 +5,10 @@ backend/*.egg-info/
 
 docs/
 .claude/
+.superpowers/
 
+# Claude Code / agent workflow files (any depth)
 CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md

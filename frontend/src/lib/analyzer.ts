@@ -14,13 +14,13 @@ import type { AnalyzeResponse } from "@/types";
 // Model configuration — single place to swap provider and model
 // ---------------------------------------------------------------------------
 
-const model = openai("gpt-4.1-nano");
+export const model = openai("gpt-4.1-nano");
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
 // ---------------------------------------------------------------------------
 
-const extractedClauseSchema = z.object({
+export const extractedClauseSchema = z.object({
   clause_text: z
     .string()
     .describe("Exact original text of the clause — do not paraphrase"),
@@ -30,11 +30,11 @@ const extractedClauseSchema = z.object({
     .describe("Section number if identifiable, e.g. 'Section 3.1'"),
 });
 
-const extractionResultSchema = z.object({
+export const extractionResultSchema = z.object({
   clauses: z.array(extractedClauseSchema),
 });
 
-const contractOverviewSchema = z.object({
+export const contractOverviewSchema = z.object({
   contract_type: z
     .string()
     .describe("Type of contract, e.g. 'Freelance Services Agreement'"),
@@ -62,7 +62,7 @@ const contractOverviewSchema = z.object({
     .describe("3-5 most important terms, one sentence each, plain English"),
 });
 
-const clauseCategoryEnum = z.enum([
+export const clauseCategoryEnum = z.enum([
   "non_compete",
   "liability",
   "termination",
@@ -78,7 +78,7 @@ const clauseCategoryEnum = z.enum([
   "other",
 ]);
 
-const analyzedClauseSchema = z.object({
+export const analyzedClauseSchema = z.object({
   clause_text: z.string().describe("Original clause text"),
   category: clauseCategoryEnum,
   title: z.string().describe("Short descriptive title, 3-6 words"),
@@ -102,7 +102,7 @@ const analyzedClauseSchema = z.object({
     .describe("What is atypical and why it matters. Null if not unusual."),
 });
 
-const batchAnalysisSchema = z.object({
+export const batchAnalysisSchema = z.object({
   clauses: z.array(analyzedClauseSchema),
 });
 
@@ -110,7 +110,7 @@ const batchAnalysisSchema = z.object({
 // System prompts
 // ---------------------------------------------------------------------------
 
-const EXTRACTION_SYSTEM_PROMPT = `\
+export const EXTRACTION_SYSTEM_PROMPT = `\
 You are a legal document analyzer. Your task is to identify and extract every \
 significant clause from the provided contract text.
 
@@ -140,7 +140,7 @@ const CATEGORIES = [
   "other",
 ].join(", ");
 
-const ANALYSIS_SYSTEM_PROMPT = `\
+export const ANALYSIS_SYSTEM_PROMPT = `\
 You are a legal risk analyst. You assess contract clauses from the perspective \
 of the weaker/non-drafting party — the freelancer, employee, or smaller company.
 
@@ -178,7 +178,7 @@ Risk calibration:
 8. If unusual, a brief explanation of what specifically is atypical and why it \
    matters. Set to null if the clause is not unusual.`;
 
-const OVERVIEW_SYSTEM_PROMPT = `\
+export const OVERVIEW_SYSTEM_PROMPT = `\
 You are a legal document analyst. Your task is to extract high-level metadata \
 from a contract. Identify the type of contract, the parties involved, key dates, \
 financial terms, and the most important terms at a glance.

@@ -97,3 +97,13 @@ body {
 .clause-enter {
   animation: clause-enter 0.3s ease-out forwards;
 }
+
+/* Brief highlight flash when jumping to/from a citation target. */
+@keyframes citation-flash {
+  0%   { background-color: var(--accent-subtle); }
+  100% { background-color: transparent; }
+}
+.citation-flash {
+  animation: citation-flash 800ms ease-out;
+  border-radius: 4px;
+}

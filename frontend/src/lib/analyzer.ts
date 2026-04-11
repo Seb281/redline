@@ -196,25 +196,17 @@ Risk calibration:
 8. If unusual, a brief explanation of what specifically is atypical and why it \
    matters. Set to null if the clause is not unusual.
 
-Citations:
-- When writing \`plain_english\`, insert inline citation markers of the form \
-  [^1], [^2], etc. directly after each factual claim that quotes or paraphrases \
-  the clause.
-- For every marker you insert, add a matching entry in the \`citations\` array \
-  with the EXACT verbatim phrase from the clause — copy-paste, do not paraphrase, \
-  do not reformat.
+Citations (ONLY for medium and high risk clauses):
+- For LOW risk clauses: emit \`citations: []\` and do NOT insert any [^N] \
+  markers in \`plain_english\`. Skip this section entirely.
+- For MEDIUM and HIGH risk clauses: insert inline markers [^1], [^2], etc. \
+  in \`plain_english\` after each factual claim that quotes or paraphrases \
+  the clause, and add a matching entry in the \`citations\` array with the \
+  EXACT verbatim phrase from the clause — copy-paste, do not paraphrase.
 - Use the shortest phrase that fully supports the claim.
-- If you cannot find a verbatim phrase that supports a claim, omit BOTH the \
-  marker and the citation for that claim. Never fabricate.
-- The \`citations\` field is ALWAYS required. If no factual claim has verbatim \
-  support, return an empty array \`[]\` — do not omit the field.
-- Example:
-    Clause text: "Either party may terminate this agreement with thirty (30) \
-    days written notice. The Landlord reserves the sole right to increase rent."
-    Good plain_english: "Either party can end the agreement [^1], but the \
-    landlord alone controls rent changes [^2]."
-    Good citations: [{id:1, quoted_text:"thirty (30) days written notice"}, \
-    {id:2, quoted_text:"sole right to increase rent"}]`;
+- If no verbatim phrase supports a claim, omit BOTH the marker and the \
+  citation for it. Never fabricate.
+- \`citations\` is always required: return an empty array if none apply.`;
 
 export const OVERVIEW_SYSTEM_PROMPT = `\
 You are a legal document analyst. Your task is to extract high-level metadata \

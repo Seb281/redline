@@ -100,6 +100,9 @@ export const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("What is atypical and why it matters. Null if not unusual."),
+  // Required (not optional) because OpenAI's strict structured-output mode
+  // forces every property into `required`. Emit an empty array when no
+  // factual claim has verbatim support.
   citations: z
     .array(
       z.object({
@@ -112,9 +115,8 @@ export const analyzedClauseSchema = z.object({
           ),
       }),
     )
-    .optional()
     .describe(
-      "Citations for [^N] markers in plain_english. Omit markers and citations together if no verbatim quote supports the claim.",
+      "Citations for [^N] markers in plain_english. Empty array if no verbatim quote supports any claim.",
     ),
 });
 
@@ -204,6 +206,8 @@ Citations:
 - Use the shortest phrase that fully supports the claim.
 - If you cannot find a verbatim phrase that supports a claim, omit BOTH the \
   marker and the citation for that claim. Never fabricate.
+- The \`citations\` field is ALWAYS required. If no factual claim has verbatim \
+  support, return an empty array \`[]\` — do not omit the field.
 - Example:
     Clause text: "Either party may terminate this agreement with thirty (30) \
     days written notice. The Landlord reserves the sole right to increase rent."

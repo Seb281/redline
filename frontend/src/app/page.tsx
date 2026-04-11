@@ -36,9 +36,14 @@ export default function Home() {
 
   /** Start streaming analysis and transition to report when done. */
   const startAnalysis = useCallback(
-    async (upload: UploadResponse, contractText: string, thinkHard: boolean) => {
+    async (
+      upload: UploadResponse,
+      contractText: string,
+      thinkHard: boolean,
+      withCitations: boolean
+    ) => {
       setState({ view: "analyzing", upload, contractText });
-      const result = await streaming.analyze(contractText, thinkHard);
+      const result = await streaming.analyze(contractText, thinkHard, withCitations);
       if (result) {
         setState((prev) =>
           prev.view === "analyzing"
@@ -52,13 +57,18 @@ export default function Home() {
 
   /** Upload file, then kick off streaming analysis. */
   const handleFileSelected = useCallback(
-    async (file: File, thinkHard: boolean) => {
+    async (file: File, thinkHard: boolean, withCitations: boolean) => {
       setIsUploading(true);
       setError(null);
       try {
         const uploadResult = await uploadContract(file);
         setIsUploading(false);
-        startAnalysis(uploadResult, uploadResult.extracted_text, thinkHard);
+        startAnalysis(
+          uploadResult,
+          uploadResult.extracted_text,
+          thinkHard,
+          withCitations
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
         setState({ view: "upload" });
@@ -71,7 +81,7 @@ export default function Home() {
   /** Run the live LLM pipeline on a sample contract (demo mode). */
   const handleDemo = useCallback(() => {
     setError(null);
-    startAnalysis(SAMPLE_UPLOAD_RESPONSE, SAMPLE_CONTRACT_TEXT, false);
+    startAnalysis(SAMPLE_UPLOAD_RESPONSE, SAMPLE_CONTRACT_TEXT, false, true);
   }, [startAnalysis]);
 
   const handleReset = useCallback(() => {

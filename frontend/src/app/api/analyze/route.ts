@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const text: string = body.text ?? "";
   const thinkHard: boolean = body.think_hard ?? false;
+  const withCitations: boolean = body.with_citations ?? true;
 
   if (!text.trim()) {
     return NextResponse.json(
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await analyzeContract(text, thinkHard);
+    const result = await analyzeContract(text, thinkHard, withCitations);
     return NextResponse.json(result);
   } catch (error) {
     const message =

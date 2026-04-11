@@ -53,7 +53,11 @@ export function useStreamingAnalysis() {
    * on success, or null on error/abort.
    */
   const analyze = useCallback(
-    async (text: string, thinkHard: boolean): Promise<AnalyzeResponse | null> => {
+    async (
+      text: string,
+      thinkHard: boolean,
+      withCitations: boolean
+    ): Promise<AnalyzeResponse | null> => {
       abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -76,7 +80,11 @@ export function useStreamingAnalysis() {
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, think_hard: thinkHard }),
+          body: JSON.stringify({
+            text,
+            think_hard: thinkHard,
+            with_citations: withCitations,
+          }),
           signal: controller.signal,
         });
 

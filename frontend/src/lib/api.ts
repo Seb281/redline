@@ -100,12 +100,17 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
  */
 export async function analyzeContract(
   text: string,
-  thinkHard: boolean
+  thinkHard: boolean,
+  withCitations: boolean = true
 ): Promise<AnalyzeResponse> {
   const res = await fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, think_hard: thinkHard }),
+    body: JSON.stringify({
+      text,
+      think_hard: thinkHard,
+      with_citations: withCitations,
+    }),
   });
 
   if (!res.ok) {

@@ -57,6 +57,16 @@ export interface AnalyzedClause {
   negotiation_suggestion: string | null;
   is_unusual: boolean;
   unusual_explanation: string | null;
+  /**
+   * Optional verbatim citations for claims in `plain_english`.
+   * Each entry maps to an inline `[^id]` marker in the narrative.
+   * Present only when the analyzer emitted citations; missing on
+   * older cached responses and on the backend path.
+   */
+  citations?: Array<{
+    id: number;
+    quoted_text: string;
+  }>;
 }
 
 /** Count of clauses by risk level. */

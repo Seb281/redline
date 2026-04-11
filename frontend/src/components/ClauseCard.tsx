@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { AnalyzedClause } from "@/types";
 import { RiskBadge } from "@/components/RiskBadge";
+import { ClauseExplanation } from "@/components/ClauseExplanation";
 
 const BORDER_COLORS = {
   high: "border-l-[var(--risk-high)]",
@@ -20,6 +21,7 @@ interface ClauseCardProps {
 /** Renders a single clause with risk badge, category, and expandable details. */
 export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const cardId = useId().replace(/:/g, "-");
   const categoryLabel = clause.category.replace(/_/g, " ").toUpperCase();
   const hasDetails =
     clause.risk_level !== "low" || clause.risk_explanation.length > 0;
@@ -43,9 +45,13 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
       <h3 className="mb-1.5 text-lg font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
         {clause.title}
       </h3>
-      <p className="text-[15px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
-        {clause.plain_english}
-      </p>
+
+      <ClauseExplanation
+        plainEnglish={clause.plain_english}
+        citations={clause.citations}
+        clauseText={clause.clause_text}
+        cardId={cardId}
+      />
 
       {hasDetails && (
         <button

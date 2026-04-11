@@ -2,44 +2,96 @@
 
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
 import { ReportView } from "@/components/ReportView";
-import { analyzeContract, uploadContract } from "@/lib/api";
-import type { AnalyzeResponse, UploadResponse } from "@/types";
+import { StreamingReportView } from "@/components/StreamingReportView";
+import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contract";
+import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
+import { uploadContract, warmBackend } from "@/lib/api";
+import type { AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
 
 type AppState =
   | { view: "upload" }
-  | { view: "analyzing"; upload: UploadResponse }
-  | { view: "report"; upload: UploadResponse; analysis: AnalyzeResponse };
+  | { view: "analyzing"; upload: UploadResponse; contractText: string }
+  | { view: "report"; upload: UploadResponse; contractText: string; analysis: AnalyzeResponse };
 
 export default function Home() {
   const [state, setState] = useState<AppState>({ view: "upload" });
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const streaming = useStreamingAnalysis();
 
-  /** Upload file, then immediately begin analysis. */
-  const handleFileSelected = useCallback(async (file: File, thinkHard: boolean) => {
-    setIsUploading(true);
-    setError(null);
-    try {
-      const uploadResult = await uploadContract(file);
-      setState({ view: "analyzing", upload: uploadResult });
-      setIsUploading(false);
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatQuestion, setChatQuestion] = useState<string | null>(null);
 
-      const analysis = await analyzeContract(uploadResult.extracted_text, thinkHard);
-      setState({ view: "report", upload: uploadResult, analysis });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setState({ view: "upload" });
-      setIsUploading(false);
-    }
+  // Pre-warm the backend on mount so its cold-start latency overlaps
+  // with the user reading the hero instead of blocking the first upload.
+  useEffect(() => {
+    warmBackend();
   }, []);
 
+  /** Start streaming analysis and transition to report when done. */
+  const startAnalysis = useCallback(
+    async (upload: UploadResponse, contractText: string, thinkHard: boolean) => {
+      setState({ view: "analyzing", upload, contractText });
+      const result = await streaming.analyze(contractText, thinkHard);
+      if (result) {
+        setState((prev) =>
+          prev.view === "analyzing"
+            ? { view: "report", upload: prev.upload, contractText: prev.contractText, analysis: result }
+            : prev
+        );
+      }
+    },
+    [streaming]
+  );
+
+  /** Upload file, then kick off streaming analysis. */
+  const handleFileSelected = useCallback(
+    async (file: File, thinkHard: boolean) => {
+      setIsUploading(true);
+      setError(null);
+      try {
+        const uploadResult = await uploadContract(file);
+        setIsUploading(false);
+        startAnalysis(uploadResult, uploadResult.extracted_text, thinkHard);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+        setState({ view: "upload" });
+        setIsUploading(false);
+      }
+    },
+    [startAnalysis]
+  );
+
+  /** Run the live LLM pipeline on a sample contract (demo mode). */
+  const handleDemo = useCallback(() => {
+    setError(null);
+    startAnalysis(SAMPLE_UPLOAD_RESPONSE, SAMPLE_CONTRACT_TEXT, false);
+  }, [startAnalysis]);
+
   const handleReset = useCallback(() => {
+    streaming.reset();
+    setChatOpen(false);
+    setChatQuestion(null);
     setState({ view: "upload" });
     setError(null);
+  }, [streaming]);
+
+  /** Open chat with a pre-populated question about a specific clause. */
+  const handleAskAboutClause = useCallback((clause: AnalyzedClause) => {
+    setChatQuestion(
+      `What are the risks of the "${clause.title}" clause, and how could I negotiate better terms?`
+    );
+    setChatOpen(true);
+  }, []);
+
+  const handleOpenChat = useCallback(() => {
+    setChatOpen(true);
   }, []);
 
   return (
@@ -65,6 +117,18 @@ export default function Home() {
             isUploading={isUploading}
             error={error}
           />
+
+          {/* Demo CTA */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={handleDemo}
+              disabled={isUploading}
+              className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              or try a demo with a sample contract
+            </button>
+          </div>
 
           {/* How it works */}
           <div className="mx-auto mt-14 max-w-[540px]">
@@ -97,48 +161,30 @@ export default function Home() {
       )}
 
       {state.view === "analyzing" && (
-        <div className="flex flex-col items-center justify-center py-24">
-          {/* File info bar */}
-          <div className="mb-9 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-3 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
-            {state.upload.filename} · {state.upload.page_count} {state.upload.page_count === 1 ? "page" : "pages"} · {state.upload.char_count.toLocaleString()} chars
-          </div>
-
-          {/* Spinner */}
-          <div className="mb-7 h-9 w-9 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-
-          {/* Multi-step progress */}
-          <div className="flex flex-col items-center gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-              <p className="text-[17px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">Extracting clauses...</p>
-            </div>
-            <div className="flex items-center gap-2.5 opacity-40">
-              <div className="h-2 w-2 rounded-full bg-[var(--border-secondary)]" />
-              <p className="text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">Analyzing risk...</p>
-            </div>
-          </div>
-
-          {/* Skeleton cards */}
-          <div className="mt-12 w-full max-w-2xl space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded border border-[var(--border-primary)] border-l-4 border-l-[var(--border-secondary)] bg-[var(--bg-card)] p-5 theme-transition"
-              >
-                <div className="mb-3.5 flex gap-2.5">
-                  <div className="h-6 w-18 rounded bg-[var(--bg-tertiary)]" />
-                  <div className="h-6 w-28 rounded bg-[var(--bg-tertiary)]" />
-                </div>
-                <div className="mb-2.5 h-5 w-56 rounded bg-[var(--bg-tertiary)]" />
-                <div className="h-3.5 w-full rounded bg-[var(--bg-tertiary)]" />
-              </div>
-            ))}
-          </div>
-        </div>
+        <StreamingReportView
+          state={streaming}
+          upload={state.upload}
+          onReset={handleReset}
+        />
       )}
 
       {state.view === "report" && (
-        <ReportView data={state.analysis} onReset={handleReset} />
+        <>
+          <ReportView
+            data={state.analysis}
+            onReset={handleReset}
+            onOpenChat={handleOpenChat}
+            onAskAboutClause={handleAskAboutClause}
+          />
+          <ChatPanel
+            isOpen={chatOpen}
+            onToggle={() => setChatOpen((o) => !o)}
+            contractText={state.contractText}
+            analysis={state.analysis}
+            initialQuestion={chatQuestion}
+            onInitialQuestionConsumed={() => setChatQuestion(null)}
+          />
+        </>
       )}
     </main>
   );

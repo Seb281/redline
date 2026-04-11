@@ -2,6 +2,7 @@
 
 import type { AnalyzeResponse } from "@/types";
 import { exportPdf } from "@/lib/api";
+import { parseExplanation } from "@/lib/citations";
 
 /** Generate a Markdown report string from analysis data. */
 export function generateMarkdown(data: AnalyzeResponse): string {
@@ -73,6 +74,26 @@ export function generateMarkdown(data: AnalyzeResponse): string {
       lines.push(`**ATYPICAL** — ${clause.unusual_explanation ?? "This clause is unusual for its category."}`, "");
     }
     lines.push(clause.plain_english, "");
+
+    // Emit verified citations as Markdown footnotes. Unverified and orphan
+    // entries are dropped silently — there is no UI to warn about them in
+    // the exported document.
+    const segments = parseExplanation(
+      clause.plain_english,
+      clause.citations,
+      clause.clause_text,
+    );
+    const verifiedCites = segments.filter(
+      (s): s is Extract<typeof s, { kind: "cite" }> =>
+        s.kind === "cite" && s.verified && s.quotedText !== null,
+    );
+    if (verifiedCites.length > 0) {
+      for (const c of verifiedCites) {
+        lines.push(`[^${c.id}]: "${c.quotedText}"`);
+      }
+      lines.push("");
+    }
+
     lines.push(`**Risk:** ${clause.risk_explanation}`, "");
     if (clause.negotiation_suggestion) {
       lines.push(`**Suggestion:** ${clause.negotiation_suggestion}`, "");

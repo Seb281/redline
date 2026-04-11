@@ -8,6 +8,10 @@ export async function POST(request: Request) {
   const text: string = body.text ?? "";
   const thinkHard: boolean = body.think_hard ?? false;
   const withCitations: boolean = body.with_citations ?? true;
+  const userRole: string | null =
+    typeof body.user_role === "string" && body.user_role.trim().length > 0
+      ? body.user_role.trim()
+      : null;
 
   if (!text.trim()) {
     return NextResponse.json(
@@ -17,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await analyzeContract(text, thinkHard, withCitations);
+    const result = await analyzeContract(text, thinkHard, withCitations, userRole);
     return NextResponse.json(result);
   } catch (error) {
     const message =

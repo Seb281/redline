@@ -13,6 +13,7 @@ import type { UploadResponse } from "@/types";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ContractOverview } from "@/components/ContractOverview";
 import { RiskChart } from "@/components/RiskChart";
+import { RolePicker } from "@/components/RolePicker";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
 
@@ -20,14 +21,27 @@ interface StreamingReportViewProps {
   state: StreamingAnalysisState;
   upload: UploadResponse;
   onReset: () => void;
+  /**
+   * Callback fired when the user picks (or skips) a party in the role
+   * picker shown between the overview and extraction passes. `null`
+   * means "skip — use default weaker-party framing".
+   */
+  onRolePicked: (role: string | null) => void;
 }
 
 /** Renders analysis results progressively as clauses stream in. */
-export function StreamingReportView({ state, upload, onReset }: StreamingReportViewProps) {
+export function StreamingReportView({
+  state,
+  upload,
+  onReset,
+  onRolePicked,
+}: StreamingReportViewProps) {
   const { overview, clauses, clauseCount, summary, status, error } = state;
 
-  // Nothing yet — show initial loading state
-  if (!overview && status === "analyzing") {
+  // Nothing yet — show initial loading state. Covers both "fetching
+  // overview" and "overview in flight" before we've transitioned to
+  // awaiting_role.
+  if (!overview && (status === "analyzing_overview" || status === "analyzing")) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         {/* File info bar */}
@@ -47,6 +61,12 @@ export function StreamingReportView({ state, upload, onReset }: StreamingReportV
       <div className="pb-24">
       {/* Contract overview — appears as soon as Pass 0 finishes */}
       {overview && <ContractOverview overview={overview} />}
+
+      {/* Role picker — shown between Pass 0 and Pass 1 so the user can
+          declare which party they are before risk analysis runs. */}
+      {status === "awaiting_role" && overview && (
+        <RolePicker parties={overview.parties} onPick={onRolePicked} />
+      )}
 
       {/* Risk summary — placeholder until complete */}
       <div className="mb-7 flex gap-5">

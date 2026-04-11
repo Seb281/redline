@@ -1,6 +1,14 @@
 /**
- * Hook that consumes the streaming analysis NDJSON endpoint and
- * exposes progressive state (overview, clauses, summary) as they arrive.
+ * Hook that drives the two-stage analysis flow:
+ *
+ *   1. {@link runOverview} — calls `/api/analyze/overview` and parks in
+ *      the `awaiting_role` status so the UI can ask the user which party
+ *      they are.
+ *   2. {@link runAnalysis} — calls the streaming `/api/analyze/stream`
+ *      endpoint with the chosen role and feeds extraction + analysis
+ *      events into state as they arrive.
+ *
+ * `reset()` clears state and aborts whichever fetch is in flight.
  */
 
 "use client";
@@ -10,7 +18,13 @@ import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
 
 export interface StreamingAnalysisState {
-  status: "idle" | "analyzing" | "complete" | "error";
+  status:
+    | "idle"
+    | "analyzing_overview"
+    | "awaiting_role"
+    | "analyzing"
+    | "complete"
+    | "error";
   overview: ContractOverview | null;
   clauses: AnalyzedClause[];
   /** Total clause count from the extraction pass (before analysis). */
@@ -30,13 +44,18 @@ const INITIAL_STATE: StreamingAnalysisState = {
 
 /**
  * Streams analysis results from /api/analyze/stream and updates state
- * incrementally as each NDJSON event arrives.
+ * incrementally as each NDJSON event arrives. Overview is fetched
+ * separately via /api/analyze/overview so the UI can pause between the
+ * two for role selection.
  */
 export function useStreamingAnalysis() {
   const [state, setState] = useState<StreamingAnalysisState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
+  // Mirrored here so runAnalysis can read the overview without depending
+  // on stale closure state from the last render.
+  const overviewRef = useRef<ContractOverview | null>(null);
 
-  /** Cancel any in-flight analysis stream. */
+  /** Cancel any in-flight fetch (overview or stream). */
   const abort = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -45,36 +64,106 @@ export function useStreamingAnalysis() {
   /** Reset hook state back to idle. */
   const reset = useCallback(() => {
     abort();
+    overviewRef.current = null;
     setState(INITIAL_STATE);
   }, [abort]);
 
   /**
-   * Kick off a streaming analysis. Resolves with the final AnalyzeResponse
-   * on success, or null on error/abort.
+   * Fetch the contract overview. Transitions the hook through
+   * `analyzing_overview` → `awaiting_role` on success. On error the
+   * status becomes `error` and the overview stays null.
    */
-  const analyze = useCallback(
-    async (
-      text: string,
-      thinkHard: boolean,
-      withCitations: boolean
-    ): Promise<AnalyzeResponse | null> => {
+  const runOverview = useCallback(
+    async (text: string): Promise<ContractOverview | null> => {
       abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Track final results locally so we can return them (avoids stale closure on React state)
-      let finalOverview: ContractOverview | null = null;
-      let finalSummary: AnalysisSummary | null = null;
-      const finalClauses: AnalyzedClause[] = [];
-
       setState({
-        status: "analyzing",
+        status: "analyzing_overview",
         overview: null,
         clauses: [],
         clauseCount: null,
         summary: null,
         error: null,
       });
+
+      try {
+        const response = await fetch("/api/analyze/overview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: "Overview failed" }));
+          setState((prev) => ({
+            ...prev,
+            status: "error",
+            error: err.detail ?? "Overview failed",
+          }));
+          return null;
+        }
+
+        const body = (await response.json()) as { overview: ContractOverview };
+        overviewRef.current = body.overview;
+        setState((prev) => ({
+          ...prev,
+          status: "awaiting_role",
+          overview: body.overview,
+        }));
+        return body.overview;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return null;
+        setState((prev) => ({
+          ...prev,
+          status: "error",
+          error: err instanceof Error ? err.message : "Overview failed",
+        }));
+        return null;
+      }
+    },
+    [abort],
+  );
+
+  /**
+   * Kick off the extraction + analysis stream. Expects {@link runOverview}
+   * to have already populated `state.overview` (or caller to be OK with
+   * no overview, e.g. retrying from an error state).
+   *
+   * Resolves with the final AnalyzeResponse on success or null on
+   * error/abort. Overview is folded back into the response from the
+   * hook's stored state so callers get a complete object.
+   */
+  const runAnalysis = useCallback(
+    async (
+      text: string,
+      thinkHard: boolean,
+      withCitations: boolean,
+      userRole: string | null,
+    ): Promise<AnalyzeResponse | null> => {
+      abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      // Track final results locally so we can return them (avoids stale
+      // closure on React state).
+      let finalSummary: AnalysisSummary | null = null;
+      const finalClauses: AnalyzedClause[] = [];
+
+      // Pulled from the ref so we don't have to depend on stale closure
+      // state to fold it back into the final AnalyzeResponse below.
+      const capturedOverview = overviewRef.current;
+
+      setState((prev) => ({
+        ...prev,
+        status: "analyzing",
+        clauses: [],
+        clauseCount: null,
+        summary: null,
+        error: null,
+      }));
 
       try {
         const response = await fetch("/api/analyze/stream", {
@@ -84,6 +173,7 @@ export function useStreamingAnalysis() {
             text,
             think_hard: thinkHard,
             with_citations: withCitations,
+            user_role: userRole,
           }),
           signal: controller.signal,
         });
@@ -115,10 +205,6 @@ export function useStreamingAnalysis() {
             const event: AnalysisEvent = JSON.parse(line);
 
             switch (event.type) {
-              case "overview":
-                finalOverview = event.data;
-                setState((prev) => ({ ...prev, overview: event.data }));
-                break;
               case "extraction-complete":
                 setState((prev) => ({ ...prev, clauseCount: event.data.clauseCount }));
                 break;
@@ -137,8 +223,8 @@ export function useStreamingAnalysis() {
           }
         }
 
-        if (finalOverview && finalSummary) {
-          return { overview: finalOverview, summary: finalSummary, clauses: finalClauses };
+        if (capturedOverview && finalSummary) {
+          return { overview: capturedOverview, summary: finalSummary, clauses: finalClauses };
         }
         return null;
       } catch (err) {
@@ -151,8 +237,8 @@ export function useStreamingAnalysis() {
         return null;
       }
     },
-    [abort]
+    [abort],
   );
 
-  return { ...state, analyze, abort, reset };
+  return { ...state, runOverview, runAnalysis, abort, reset };
 }

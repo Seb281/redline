@@ -1,6 +1,11 @@
-/** POST /api/analyze/stream — streaming version of the analysis pipeline. */
+/**
+ * POST /api/analyze/stream — runs Pass 1 (extraction) + Pass 2 (analysis),
+ * streaming results back as NDJSON. Callers are expected to have already
+ * fetched the overview via `/api/analyze/overview` so this endpoint can
+ * skip straight to clause extraction.
+ */
 
-import { streamAnalyzeContract } from "@/lib/streaming-analyzer";
+import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -9,6 +14,12 @@ export async function POST(request: Request) {
   // Default to citations ON when the caller omits the flag, so older
   // clients (and direct curl probes) keep the prior behavior.
   const withCitations: boolean = body.with_citations ?? true;
+  // Optional declared party; when null/missing, analysis falls back to
+  // the default weaker-party framing.
+  const userRole: string | null =
+    typeof body.user_role === "string" && body.user_role.trim().length > 0
+      ? body.user_role.trim()
+      : null;
 
   if (!text.trim()) {
     return Response.json(
@@ -17,7 +28,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = streamAnalyzeContract(text, thinkHard, withCitations);
+  const stream = streamExtractAndAnalyze(text, thinkHard, withCitations, userRole);
 
   return new Response(stream, {
     headers: {

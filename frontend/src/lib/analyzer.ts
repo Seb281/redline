@@ -166,8 +166,16 @@ const CATEGORIES = [
  * false, it must always emit `citations: []` and no markers — the schema
  * field remains required (OpenAI strict mode demands it) but stays empty,
  * which skips the downstream rendering of the footnote UI.
+ *
+ * When `userRole` is a non-empty string, the analyst is instructed to frame
+ * risk from that party's perspective (e.g. "Tenant", "Landlord", "ACME
+ * Corp"). When empty/undefined, we fall back to the default weaker-party
+ * framing — the historical behavior and Redline's primary use case.
  */
-export function buildAnalysisSystemPrompt(withCitations: boolean): string {
+export function buildAnalysisSystemPrompt(
+  withCitations: boolean,
+  userRole?: string | null,
+): string {
   const citationsSection = withCitations
     ? `\
 Citations (for every clause):
@@ -186,9 +194,17 @@ Citations (disabled for this run):
 - Do NOT insert any [^N] markers in \`plain_english\`.
 - The \`citations\` field is still required by the schema — just leave it empty.`;
 
+  const trimmedRole = userRole?.trim();
+  const perspectiveLine = trimmedRole
+    ? `You assess contract clauses from the perspective of ${trimmedRole}. \
+This is the party the user represents in this contract — frame every risk, \
+explanation, and negotiation suggestion from their side, and name them \
+explicitly when it helps clarity.`
+    : `You assess contract clauses from the perspective of the weaker/\
+non-drafting party — the freelancer, employee, or smaller company.`;
+
   return `\
-You are a legal risk analyst. You assess contract clauses from the perspective \
-of the weaker/non-drafting party — the freelancer, employee, or smaller company.
+You are a legal risk analyst. ${perspectiveLine}
 
 For each clause, provide:
 1. A category from: ${CATEGORIES}
@@ -258,13 +274,17 @@ Rules:
  * @param withCitations When true (default), the model emits verbatim
  *   citation quotes alongside each clause; when false, the citations
  *   array is forced to stay empty (see buildAnalysisSystemPrompt).
+ * @param userRole When set, risk analysis is framed from that party's
+ *   perspective (e.g. "Tenant"); when null/undefined it falls back to
+ *   the default weaker-party framing.
  */
 export async function analyzeContract(
   text: string,
   thinkHard: boolean,
-  withCitations: boolean = true
+  withCitations: boolean = true,
+  userRole?: string | null,
 ): Promise<AnalyzeResponse> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations);
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
 
   // Pass 0 — extract contract overview
   const { object: overview } = await generateObject({

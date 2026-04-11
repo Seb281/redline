@@ -10,6 +10,7 @@ import { ContractOverview } from "@/components/ContractOverview";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RiskChart } from "@/components/RiskChart";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
+import { CitationNavProvider } from "@/contexts/CitationNavContext";
 import { downloadMarkdown, downloadPdf } from "@/lib/export";
 
 interface ReportViewProps {
@@ -68,7 +69,8 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: Repo
   };
 
   return (
-    <div className="pb-24">
+    <CitationNavProvider>
+      <div className="pb-24">
       {/* Contract overview */}
       <ContractOverview overview={data.overview} />
 
@@ -182,6 +184,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: Repo
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </CitationNavProvider>
   );
 }

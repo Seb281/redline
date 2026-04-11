@@ -14,6 +14,7 @@ import { ClauseCard } from "@/components/ClauseCard";
 import { ContractOverview } from "@/components/ContractOverview";
 import { RiskChart } from "@/components/RiskChart";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
+import { CitationNavProvider } from "@/contexts/CitationNavContext";
 
 interface StreamingReportViewProps {
   state: StreamingAnalysisState;
@@ -42,7 +43,8 @@ export function StreamingReportView({ state, upload, onReset }: StreamingReportV
   }
 
   return (
-    <div className="pb-24">
+    <CitationNavProvider>
+      <div className="pb-24">
       {/* Contract overview — appears as soon as Pass 0 finishes */}
       {overview && <ContractOverview overview={overview} />}
 
@@ -163,6 +165,7 @@ export function StreamingReportView({ state, upload, onReset }: StreamingReportV
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </CitationNavProvider>
   );
 }

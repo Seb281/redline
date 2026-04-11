@@ -1,8 +1,14 @@
 /**
  * Streaming version of the LLM analysis pipeline.
  *
- * Returns a ReadableStream of NDJSON events so the client can render
- * clauses progressively as they are analyzed.
+ * Split into two entry points so the UI can pause between the overview
+ * pass and the rest of the pipeline — that lets the user declare which
+ * party they are before risk analysis runs.
+ *
+ *   1. {@link generateOverview} — runs Pass 0 as a single non-streaming
+ *      call, returns the overview. Fast, used by `/api/analyze/overview`.
+ *   2. {@link streamExtractAndAnalyze} — runs Pass 1 + Pass 2, streaming
+ *      results as NDJSON events. Used by `/api/analyze/stream`.
  */
 
 import { generateObject, Output, streamText } from "ai";
@@ -17,9 +23,8 @@ import {
   buildAnalysisSystemPrompt,
 } from "@/lib/analyzer";
 
-/** Events emitted over the NDJSON stream. */
+/** Events emitted over the NDJSON stream (extraction + analysis only). */
 export type AnalysisEvent =
-  | { type: "overview"; data: ContractOverview }
   | { type: "extraction-complete"; data: { clauseCount: number } }
   | { type: "clause"; data: AnalyzedClause }
   | { type: "complete"; data: AnalysisSummary }
@@ -32,32 +37,44 @@ function encode(event: AnalysisEvent): Uint8Array {
 }
 
 /**
- * Run the three-pass analysis pipeline, streaming results back as NDJSON.
+ * Run Pass 0 only — extract the high-level contract overview.
  *
- * Pass 0 (overview) and Pass 1 (extraction) run as normal generateObject calls.
- * Pass 2 (analysis) streams clause-by-clause:
- *   - Batch mode: uses streamText + Output.array to emit elements as they complete
- *   - Fan-out mode: fires one generateObject per clause in parallel, pushing each
- *     result to the stream as it resolves
+ * This is kept as a standalone function (rather than part of the stream)
+ * so the client can fetch it, show the user the extracted parties, and
+ * only then kick off the slower analysis stream with a declared role.
  */
-export function streamAnalyzeContract(
+export async function generateOverview(text: string): Promise<ContractOverview> {
+  const { object } = await generateObject({
+    model,
+    schema: contractOverviewSchema,
+    system: OVERVIEW_SYSTEM_PROMPT,
+    prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+  });
+  return object as ContractOverview;
+}
+
+/**
+ * Run Pass 1 (clause extraction) and Pass 2 (risk analysis), streaming
+ * results back as NDJSON.
+ *
+ * Pass 2 has two modes:
+ *   - Batch: uses streamText + Output.array to emit elements as they complete
+ *   - Fan-out (thinkHard): fires one generateObject per clause in parallel,
+ *     pushing each result to the stream as it resolves
+ *
+ * @param userRole When set, analysis is framed from that party's perspective.
+ *   Threaded into the analysis system prompt via buildAnalysisSystemPrompt.
+ */
+export function streamExtractAndAnalyze(
   text: string,
   thinkHard: boolean,
-  withCitations: boolean = true
+  withCitations: boolean = true,
+  userRole?: string | null,
 ): ReadableStream<Uint8Array> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations);
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
   return new ReadableStream({
     async start(controller) {
       try {
-        // Pass 0 — extract contract overview
-        const { object: overview } = await generateObject({
-          model,
-          schema: contractOverviewSchema,
-          system: OVERVIEW_SYSTEM_PROMPT,
-          prompt: `Extract the high-level overview from this contract:\n\n${text}`,
-        });
-        controller.enqueue(encode({ type: "overview", data: overview as ContractOverview }));
-
         // Pass 1 — extract clauses
         const { object: extraction } = await generateObject({
           model,

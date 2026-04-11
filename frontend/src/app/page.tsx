@@ -18,10 +18,22 @@ type AppState =
   | { view: "analyzing"; upload: UploadResponse; contractText: string }
   | { view: "report"; upload: UploadResponse; contractText: string; analysis: AnalyzeResponse };
 
+/**
+ * Params from the upload screen that we need to remember across the
+ * overview → role-picker → extraction gap. Kept in state rather than a
+ * ref so we can clear it on reset and conditionally wire callbacks.
+ */
+interface PendingAnalysis {
+  contractText: string;
+  thinkHard: boolean;
+  withCitations: boolean;
+}
+
 export default function Home() {
   const [state, setState] = useState<AppState>({ view: "upload" });
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const streaming = useStreamingAnalysis();
 
   // Chat state
@@ -34,25 +46,82 @@ export default function Home() {
     warmBackend();
   }, []);
 
-  /** Start streaming analysis and transition to report when done. */
+  /**
+   * Run the analysis stream with the chosen role and transition to the
+   * full report view when the stream completes.
+   */
+  const runAnalysisAndFinish = useCallback(
+    async (
+      upload: UploadResponse,
+      contractText: string,
+      thinkHard: boolean,
+      withCitations: boolean,
+      userRole: string | null,
+    ) => {
+      const result = await streaming.runAnalysis(
+        contractText,
+        thinkHard,
+        withCitations,
+        userRole,
+      );
+      if (result) {
+        setState((prev) =>
+          prev.view === "analyzing"
+            ? { view: "report", upload: prev.upload, contractText: prev.contractText, analysis: result }
+            : prev,
+        );
+      }
+    },
+    [streaming],
+  );
+
+  /**
+   * Kick off Pass 0. The hook parks in `awaiting_role` once the
+   * overview arrives; the user's selection in the RolePicker triggers
+   * {@link handleRolePicked} which calls runAnalysisAndFinish with the
+   * pending params stored here.
+   */
   const startAnalysis = useCallback(
     async (
       upload: UploadResponse,
       contractText: string,
       thinkHard: boolean,
-      withCitations: boolean
+      withCitations: boolean,
     ) => {
       setState({ view: "analyzing", upload, contractText });
-      const result = await streaming.analyze(contractText, thinkHard, withCitations);
-      if (result) {
-        setState((prev) =>
-          prev.view === "analyzing"
-            ? { view: "report", upload: prev.upload, contractText: prev.contractText, analysis: result }
-            : prev
-        );
-      }
+      setPendingAnalysis({ contractText, thinkHard, withCitations });
+      await streaming.runOverview(contractText);
+      // Now in awaiting_role — StreamingReportView renders the picker.
     },
-    [streaming]
+    [streaming],
+  );
+
+  /**
+   * Same as {@link startAnalysis} but skips the role picker entirely and
+   * uses a preset role. Used by demo mode so the sample contract
+   * presents a smooth end-to-end walkthrough instead of asking the user
+   * to pick a party on a contract they haven't read.
+   */
+  const startAnalysisWithPresetRole = useCallback(
+    async (
+      upload: UploadResponse,
+      contractText: string,
+      thinkHard: boolean,
+      withCitations: boolean,
+      presetRole: string,
+    ) => {
+      setState({ view: "analyzing", upload, contractText });
+      const overview = await streaming.runOverview(contractText);
+      if (!overview) return;
+      await runAnalysisAndFinish(
+        upload,
+        contractText,
+        thinkHard,
+        withCitations,
+        presetRole,
+      );
+    },
+    [streaming, runAnalysisAndFinish],
   );
 
   /** Upload file, then kick off streaming analysis. */
@@ -67,7 +136,7 @@ export default function Home() {
           uploadResult,
           uploadResult.extracted_text,
           thinkHard,
-          withCitations
+          withCitations,
         );
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -75,17 +144,48 @@ export default function Home() {
         setIsUploading(false);
       }
     },
-    [startAnalysis]
+    [startAnalysis],
   );
 
   /** Run the live LLM pipeline on a sample contract (demo mode). */
   const handleDemo = useCallback(() => {
     setError(null);
-    startAnalysis(SAMPLE_UPLOAD_RESPONSE, SAMPLE_CONTRACT_TEXT, false, true);
-  }, [startAnalysis]);
+    // Demo skips the role picker — "Contractor" is the correct side for
+    // the sample freelance agreement.
+    startAnalysisWithPresetRole(
+      SAMPLE_UPLOAD_RESPONSE,
+      SAMPLE_CONTRACT_TEXT,
+      false,
+      true,
+      "Contractor",
+    );
+  }, [startAnalysisWithPresetRole]);
+
+  /**
+   * Called when the user picks (or skips) a party in the RolePicker.
+   * Resumes the pipeline with the chosen role.
+   */
+  const handleRolePicked = useCallback(
+    (role: string | null) => {
+      if (!pendingAnalysis) return;
+      if (state.view !== "analyzing") return;
+      const upload = state.upload;
+      const { contractText, thinkHard, withCitations } = pendingAnalysis;
+      setPendingAnalysis(null);
+      runAnalysisAndFinish(
+        upload,
+        contractText,
+        thinkHard,
+        withCitations,
+        role,
+      );
+    },
+    [pendingAnalysis, state, runAnalysisAndFinish],
+  );
 
   const handleReset = useCallback(() => {
     streaming.reset();
+    setPendingAnalysis(null);
     setChatOpen(false);
     setChatQuestion(null);
     setState({ view: "upload" });
@@ -175,6 +275,7 @@ export default function Home() {
           state={streaming}
           upload={state.upload}
           onReset={handleReset}
+          onRolePicked={handleRolePicked}
         />
       )}
 

@@ -101,7 +101,8 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
 export async function analyzeContract(
   text: string,
   thinkHard: boolean,
-  withCitations: boolean = true
+  withCitations: boolean = true,
+  userRole?: string | null,
 ): Promise<AnalyzeResponse> {
   const res = await fetch("/api/analyze", {
     method: "POST",
@@ -110,6 +111,7 @@ export async function analyzeContract(
       text,
       think_hard: thinkHard,
       with_citations: withCitations,
+      user_role: userRole ?? null,
     }),
   });
 

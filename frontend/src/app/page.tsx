@@ -27,6 +27,7 @@ interface PendingAnalysis {
   contractText: string;
   mode: AnalysisMode;
   withCitations: boolean;
+  pickedRole: string | null;
 }
 
 export default function Home() {
@@ -35,6 +36,7 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const streaming = useStreamingAnalysis();
 
   // Chat state
@@ -90,7 +92,7 @@ export default function Home() {
       withCitations: boolean,
     ) => {
       setState({ view: "analyzing", upload, contractText });
-      setPendingAnalysis({ contractText, mode: analysisMode, withCitations });
+      setPendingAnalysis({ contractText, mode: analysisMode, withCitations, pickedRole: null });
       await streaming.runOverview(contractText);
       // Now in awaiting_role — StreamingReportView renders the picker.
     },
@@ -167,15 +169,31 @@ export default function Home() {
       if (state.view !== "analyzing") return;
       const upload = state.upload;
       const { contractText, mode: analysisMode, withCitations } = pendingAnalysis;
-      setPendingAnalysis(null);
+      setPendingAnalysis({ ...pendingAnalysis, pickedRole: role });
       runAnalysisAndFinish(upload, contractText, analysisMode, withCitations, role);
     },
     [pendingAnalysis, state, runAnalysisAndFinish],
   );
 
+  /** Retry the last failed step (overview or analysis). */
+  const handleRetry = useCallback(() => {
+    if (state.view !== "analyzing") return;
+    setRetryCount((c) => c + 1);
+
+    if (!streaming.overview) {
+      // Overview failed — retry overview
+      streaming.runOverview(state.contractText);
+    } else if (pendingAnalysis) {
+      // Analysis failed — retry analysis with same params
+      const { contractText, mode: analysisMode, withCitations, pickedRole } = pendingAnalysis;
+      runAnalysisAndFinish(state.upload, contractText, analysisMode, withCitations, pickedRole);
+    }
+  }, [state, streaming, pendingAnalysis, runAnalysisAndFinish]);
+
   const handleReset = useCallback(() => {
     streaming.reset();
     setPendingAnalysis(null);
+    setRetryCount(0);
     setChatOpen(false);
     setChatQuestion(null);
     setState({ view: "upload" });
@@ -297,6 +315,8 @@ export default function Home() {
           upload={state.upload}
           onReset={handleReset}
           onRolePicked={handleRolePicked}
+          onRetry={handleRetry}
+          retryCount={retryCount}
         />
       )}
 

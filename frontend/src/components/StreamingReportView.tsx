@@ -27,6 +27,10 @@ interface StreamingReportViewProps {
    * means "skip — use default weaker-party framing".
    */
   onRolePicked: (role: string | null) => void;
+  /** Retry the last failed step (overview or analysis). */
+  onRetry?: () => void;
+  /** How many retries have been attempted so far. */
+  retryCount?: number;
 }
 
 /** Renders analysis results progressively as clauses stream in. */
@@ -35,6 +39,8 @@ export function StreamingReportView({
   upload,
   onReset,
   onRolePicked,
+  onRetry,
+  retryCount,
 }: StreamingReportViewProps) {
   const { overview, clauses, clauseCount, summary, status, error } = state;
 
@@ -134,10 +140,23 @@ export function StreamingReportView({
         </div>
       )}
 
-      {/* Error banner */}
+      {/* Error banner with retry */}
       {error && (
-        <div className="mb-5 rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] px-5 py-3.5 text-[15px] text-[var(--risk-high)] font-[var(--font-body)]">
-          Analysis error: {error}
+        <div className="mb-5 flex items-center justify-between rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] px-5 py-3.5 theme-transition">
+          <p className="text-[15px] text-[var(--risk-high)] font-[var(--font-body)]">
+            {(retryCount ?? 0) >= 2
+              ? "Analysis failed. Check your connection and try again."
+              : `Analysis error: ${error}`}
+          </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="ml-4 rounded border border-[var(--risk-high-border)] px-4 py-2 text-[15px] font-medium text-[var(--risk-high)] font-[var(--font-body)] transition-colors hover:bg-[var(--risk-high-bg)]"
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 

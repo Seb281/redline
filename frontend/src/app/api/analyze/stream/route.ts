@@ -6,11 +6,12 @@
  */
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
+import type { AnalysisMode } from "@/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const text: string = body.text ?? "";
-  const thinkHard: boolean = body.think_hard ?? false;
+  const mode: AnalysisMode = body.mode === "deep" ? "deep" : "fast";
   // Default to citations ON when the caller omits the flag, so older
   // clients (and direct curl probes) keep the prior behavior.
   const withCitations: boolean = body.with_citations ?? true;
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = streamExtractAndAnalyze(text, thinkHard, withCitations, clauseInventory, userRole);
+  const stream = streamExtractAndAnalyze(text, mode, withCitations, clauseInventory, userRole);
 
   return new Response(stream, {
     headers: {

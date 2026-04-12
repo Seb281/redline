@@ -359,7 +359,7 @@ export function buildRiskBreakdown(clauses: { risk_level: string }[]) {
  */
 export async function analyzeContract(
   text: string,
-  thinkHard: boolean,
+  mode: AnalysisMode,
   withCitations: boolean = true,
   userRole?: string | null,
 ): Promise<AnalyzeResponse> {
@@ -384,12 +384,12 @@ export async function analyzeContract(
   // Pass 2 — analyze clauses
   let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
 
-  if (thinkHard) {
+  if (mode === "deep") {
     // Fan-out: one LLM call per clause, in parallel
     analyzedClauses = await Promise.all(
       extraction.clauses.map(async (clause) => {
         const { object } = await generateObject({
-          model,
+          model: getModel(mode),
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -400,7 +400,7 @@ export async function analyzeContract(
   } else {
     // Batch: all clauses in a single LLM call
     const { object: analysis } = await generateObject({
-      model,
+      model: getModel(mode),
       schema: batchAnalysisSchema,
       system: analysisSystemPrompt,
       prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

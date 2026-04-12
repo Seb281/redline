@@ -14,7 +14,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview } from "@/types";
+import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview, AnalysisMode } from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
 
 export interface StreamingAnalysisState {
@@ -139,7 +139,7 @@ export function useStreamingAnalysis() {
   const runAnalysis = useCallback(
     async (
       text: string,
-      thinkHard: boolean,
+      mode: AnalysisMode,
       withCitations: boolean,
       userRole: string | null,
     ): Promise<AnalyzeResponse | null> => {
@@ -175,7 +175,7 @@ export function useStreamingAnalysis() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text,
-            think_hard: thinkHard,
+            mode,
             with_citations: withCitations,
             user_role: userRole,
             clause_inventory: clauseInventory,

@@ -1,6 +1,6 @@
 /** Backend API client for Redline. */
 
-import type { AnalyzeResponse, UploadResponse } from "@/types";
+import type { AnalyzeResponse, UploadResponse, AnalysisMode } from "@/types";
 
 /**
  * Normalize the configured backend URL so trailing slashes and missing
@@ -100,7 +100,7 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
  */
 export async function analyzeContract(
   text: string,
-  thinkHard: boolean,
+  mode: AnalysisMode,
   withCitations: boolean = true,
   userRole?: string | null,
 ): Promise<AnalyzeResponse> {
@@ -109,7 +109,7 @@ export async function analyzeContract(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text,
-      think_hard: thinkHard,
+      mode,
       with_citations: withCitations,
       user_role: userRole ?? null,
     }),

@@ -2,11 +2,12 @@
 
 import { NextResponse } from "next/server";
 import { analyzeContract } from "@/lib/analyzer";
+import type { AnalysisMode } from "@/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const text: string = body.text ?? "";
-  const thinkHard: boolean = body.think_hard ?? false;
+  const mode: AnalysisMode = body.mode === "deep" ? "deep" : "fast";
   const withCitations: boolean = body.with_citations ?? true;
   const userRole: string | null =
     typeof body.user_role === "string" && body.user_role.trim().length > 0
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await analyzeContract(text, thinkHard, withCitations, userRole);
+    const result = await analyzeContract(text, mode, withCitations, userRole);
     return NextResponse.json(result);
   } catch (error) {
     const message =

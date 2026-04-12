@@ -12,9 +12,10 @@
  */
 
 import { generateObject, Output, streamText } from "ai";
-import type { ContractOverview, AnalyzedClause, AnalysisSummary } from "@/types";
+import type { ContractOverview, AnalyzedClause, AnalysisSummary, AnalysisMode } from "@/types";
 import {
   model,
+  getModel,
   contractOverviewSchema,
   extractionResultSchema,
   analyzedClauseSchema,
@@ -60,8 +61,8 @@ export async function generateOverview(text: string): Promise<ContractOverview> 
  * results back as NDJSON.
  *
  * Pass 2 has two modes:
- *   - Batch: uses streamText + Output.array to emit elements as they complete
- *   - Fan-out (thinkHard): fires one generateObject per clause in parallel,
+ *   - Batch (fast): uses streamText + Output.array to emit elements as they complete
+ *   - Fan-out (deep): fires one generateObject per clause in parallel,
  *     pushing each result to the stream as it resolves
  *
  * @param clauseInventory Clause titles + section refs from the overview pass.
@@ -71,7 +72,7 @@ export async function generateOverview(text: string): Promise<ContractOverview> 
  */
 export function streamExtractAndAnalyze(
   text: string,
-  thinkHard: boolean,
+  mode: AnalysisMode,
   withCitations: boolean = true,
   clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
@@ -94,12 +95,12 @@ export function streamExtractAndAnalyze(
         // Pass 2 — analyze clauses
         let allClauses: AnalyzedClause[];
 
-        if (thinkHard) {
+        if (mode === "deep") {
           // Fan-out: one LLM call per clause, stream each as it resolves
           const results: AnalyzedClause[] = [];
           const promises = extraction.clauses.map(async (clause) => {
             const { object } = await generateObject({
-              model,
+              model: getModel(mode),
               schema: analyzedClauseSchema,
               system: analysisSystemPrompt,
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -114,7 +115,7 @@ export function streamExtractAndAnalyze(
           // Batch: stream elements from a single LLM call via Output.array
           allClauses = [];
           const result = streamText({
-            model,
+            model: getModel(mode),
             output: Output.array({ element: analyzedClauseSchema }),
             system: analysisSystemPrompt,
             prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

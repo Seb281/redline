@@ -34,7 +34,7 @@ No backend changes. No new dependencies.
 
 Each section maps to a required GDPR disclosure:
 
-1. **Identity & contact** — Operator name (Sebastian Giupana, individual developer). Contact email for privacy inquiries (user to provide during implementation).
+1. **Identity & contact** — Operator name (Sebastian Giupana, individual developer). Contact email read from `NEXT_PUBLIC_PRIVACY_EMAIL` env var (user adds value to `.env.local` later).
 
 2. **What data we process**
    - Contract text: uploaded by the user, sent to third-party AI for analysis.

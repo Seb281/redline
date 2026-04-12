@@ -123,6 +123,13 @@ export const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("What is atypical and why it matters. Null if not unusual."),
+  jurisdiction_note: z
+    .string()
+    .nullable()
+    .describe(
+      "One-line note about jurisdiction-specific concerns. " +
+      "Null if governing law is unknown or clause has no jurisdiction-specific issue.",
+    ),
   // Required (not optional) because OpenAI's strict structured-output mode
   // forces every property into `required`. Emit an empty array when no
   // factual claim has verbatim support.
@@ -199,6 +206,7 @@ const CATEGORIES = [
 export function buildAnalysisSystemPrompt(
   withCitations: boolean,
   userRole?: string | null,
+  jurisdiction?: string | null,
 ): string {
   const citationsSection = withCitations
     ? `\
@@ -217,6 +225,36 @@ Citations (disabled for this run):
 - Always emit \`citations: []\` (an empty array).
 - Do NOT insert any [^N] markers in \`plain_english\`.
 - The \`citations\` field is still required by the schema — just leave it empty.`;
+
+  const jurisdictionSection = jurisdiction
+    ? `\
+Jurisdiction-Aware Analysis (${jurisdiction}):
+This contract is governed by ${jurisdiction}. Apply jurisdiction-specific rules:
+
+EU Member State rules (apply when jurisdiction is in the EU/EEA):
+- Non-competes: Many EU states restrict or void non-competes without compensation. \
+Netherlands: requires written form + compensation. Germany: max 2 years, requires \
+Karenzentschädigung (compensation during restriction). France: requires contrepartie \
+financière. Overly broad scope/duration often void.
+- Data protection: GDPR supersedes conflicting contractual terms. Clauses limiting \
+data subject rights are void regardless of contract.
+- Unfair terms: EU Directive 93/13/EEC can void one-sided clauses in B2C and \
+sometimes B2B (varies by national implementation).
+- Limitation of liability: Exclusion of gross negligence/intentional misconduct \
+void in most EU jurisdictions (German BGB §276 makes this explicit).
+- IP assignment: Overly broad IP clauses (pre-existing IP, work outside scope) may \
+conflict with employee invention laws (German ArbNErfG, Dutch patent law).
+- Confidentiality: Perpetual obligations often unenforceable; 5+ years unusual in \
+EU commercial practice.
+
+For each clause, set \`jurisdiction_note\` to a one-line observation about how \
+${jurisdiction} law specifically affects this clause (e.g., "Likely unenforceable \
+under Dutch law — no compensation offered for post-contractual restriction"). \
+Set to null if the clause has no jurisdiction-specific concern.`
+    : `\
+Jurisdiction note:
+- The governing jurisdiction is not stated or not recognized. Set \
+\`jurisdiction_note\` to null for all clauses.`;
 
   const trimmedRole = userRole?.trim();
   const perspectiveLine = trimmedRole
@@ -268,6 +306,8 @@ Risk calibration:
    significantly from what is typical for its category.
 8. If unusual, a brief explanation of what specifically is atypical and why it \
    matters. Set to null if the clause is not unusual.
+
+${jurisdictionSection}
 
 ${citationsSection}`;
 }

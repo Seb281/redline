@@ -31,6 +31,7 @@ const base: AnalyzeResponse = {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
+      jurisdiction_note: null,
       citations: [
         { id: 1, quoted_text: "thirty (30) days written notice" },
       ],

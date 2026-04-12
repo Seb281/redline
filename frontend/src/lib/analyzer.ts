@@ -9,11 +9,21 @@ import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { AnalyzeResponse } from "@/types";
+import type { AnalysisMode } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Model configuration — single place to swap provider and model
 // ---------------------------------------------------------------------------
 
+/** Return the model instance for the given analysis mode. */
+export function getModel(mode: AnalysisMode) {
+  return mode === "deep" ? openai("gpt-4.1") : openai("gpt-4.1-nano");
+}
+
+/**
+ * Default model for backward compatibility with callsites that don't
+ * yet pass a mode (overview pass always uses fast).
+ */
 export const model = openai("gpt-4.1-nano");
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,9 @@
 /** Supported document file types. */
 export type FileType = "pdf" | "docx";
 
+/** Analysis depth mode — controls model choice and strategy. */
+export type AnalysisMode = "fast" | "deep";
+
 /** Response from POST /api/upload. */
 export interface UploadResponse {
   filename: string;

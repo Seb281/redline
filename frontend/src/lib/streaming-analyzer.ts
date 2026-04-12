@@ -21,6 +21,8 @@ import {
   OVERVIEW_SYSTEM_PROMPT,
   EXTRACTION_SYSTEM_PROMPT,
   buildAnalysisSystemPrompt,
+  buildExtractionPrompt,
+  buildRiskBreakdown,
 } from "@/lib/analyzer";
 
 /** Events emitted over the NDJSON stream (extraction + analysis only). */
@@ -62,6 +64,8 @@ export async function generateOverview(text: string): Promise<ContractOverview> 
  *   - Fan-out (thinkHard): fires one generateObject per clause in parallel,
  *     pushing each result to the stream as it resolves
  *
+ * @param clauseInventory Clause titles + section refs from the overview pass.
+ *   Anchors extraction to a specific set of clauses for consistency.
  * @param userRole When set, analysis is framed from that party's perspective.
  *   Threaded into the analysis system prompt via buildAnalysisSystemPrompt.
  */
@@ -69,18 +73,19 @@ export function streamExtractAndAnalyze(
   text: string,
   thinkHard: boolean,
   withCitations: boolean = true,
+  clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
 ): ReadableStream<Uint8Array> {
   const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
   return new ReadableStream({
     async start(controller) {
       try {
-        // Pass 1 — extract clauses
+        // Pass 1 — extract clauses guided by inventory from overview
         const { object: extraction } = await generateObject({
           model,
           schema: extractionResultSchema,
           system: EXTRACTION_SYSTEM_PROMPT,
-          prompt: `Extract all significant clauses from this contract:\n\n${text}`,
+          prompt: buildExtractionPrompt(text, clauseInventory),
         });
         controller.enqueue(
           encode({ type: "extraction-complete", data: { clauseCount: extraction.clauses.length } })
@@ -124,11 +129,7 @@ export function streamExtractAndAnalyze(
         // Build and emit summary
         const summary: AnalysisSummary = {
           total_clauses: allClauses.length,
-          risk_breakdown: {
-            high: allClauses.filter((c) => c.risk_level === "high").length,
-            medium: allClauses.filter((c) => c.risk_level === "medium").length,
-            low: allClauses.filter((c) => c.risk_level === "low").length,
-          },
+          risk_breakdown: buildRiskBreakdown(allClauses),
           top_risks: allClauses
             .filter((c) => c.risk_level === "high")
             .map((c) => `${c.title}: ${c.risk_explanation}`),

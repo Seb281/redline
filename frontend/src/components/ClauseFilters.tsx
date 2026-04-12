@@ -22,6 +22,7 @@ const RISK_OPTIONS: { value: RiskLevel | "all"; label: string }[] = [
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
+  { value: "informational", label: "Info" },
 ];
 
 const CATEGORY_OPTIONS: { value: ClauseCategory | "all"; label: string }[] = [

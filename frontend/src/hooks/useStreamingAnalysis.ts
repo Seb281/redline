@@ -166,6 +166,10 @@ export function useStreamingAnalysis() {
       }));
 
       try {
+        // Pull clause inventory from the overview pass so extraction is
+        // anchored to the specific clauses identified in Pass 0.
+        const clauseInventory = overviewRef.current?.clause_inventory ?? [];
+
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -174,6 +178,7 @@ export function useStreamingAnalysis() {
             think_hard: thinkHard,
             with_citations: withCitations,
             user_role: userRole,
+            clause_inventory: clauseInventory,
           }),
           signal: controller.signal,
         });

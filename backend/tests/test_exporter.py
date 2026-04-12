@@ -10,13 +10,22 @@ from app.schemas import (
     RiskLevel,
 )
 from app.services.exporter import generate_pdf, render_report_html
-from app.services.analyzer import build_summary
-from tests.conftest import MOCK_OVERVIEW_RESPONSE
 
 
 def _make_sample_response() -> AnalyzeResponse:
     """Build a sample AnalyzeResponse for testing."""
-    overview = ContractOverview(**MOCK_OVERVIEW_RESPONSE)
+    overview = ContractOverview(
+        contract_type="Consulting Agreement",
+        parties=["Acme Corp", "The Consultant"],
+        effective_date=None,
+        duration=None,
+        total_value=None,
+        governing_jurisdiction="State of Delaware",
+        key_terms=[
+            "Non-compete restriction covering Europe for 2 years",
+            "Governed by Delaware law",
+        ],
+    )
     return AnalyzeResponse(
         overview=overview,
         summary=AnalysisSummary(
@@ -77,8 +86,6 @@ def test_generate_pdf_returns_bytes():
 
 def test_render_report_html_includes_overview(sample_analyzed_clauses):
     """PDF HTML template includes contract overview section."""
-    from app.schemas import ContractOverview
-
     overview = ContractOverview(
         contract_type="Consulting Agreement",
         parties=["Acme Corp", "The Consultant"],
@@ -90,7 +97,11 @@ def test_render_report_html_includes_overview(sample_analyzed_clauses):
     )
     data = AnalyzeResponse(
         overview=overview,
-        summary=build_summary(sample_analyzed_clauses),
+        summary=AnalysisSummary(
+            total_clauses=2,
+            risk_breakdown=RiskBreakdown(high=1, medium=0, low=1),
+            top_risks=["Non-Compete Restriction: 2-year scope is broad."],
+        ),
         clauses=sample_analyzed_clauses,
     )
     html = render_report_html(data)
@@ -103,8 +114,6 @@ def test_render_report_html_includes_overview(sample_analyzed_clauses):
 
 def test_render_report_html_includes_unusual_badge(sample_analyzed_clauses):
     """PDF HTML template shows ATYPICAL badge for unusual clauses."""
-    from app.schemas import ContractOverview
-
     overview = ContractOverview(
         contract_type="Agreement",
         parties=["A", "B"],
@@ -116,7 +125,11 @@ def test_render_report_html_includes_unusual_badge(sample_analyzed_clauses):
     )
     data = AnalyzeResponse(
         overview=overview,
-        summary=build_summary(sample_analyzed_clauses),
+        summary=AnalysisSummary(
+            total_clauses=2,
+            risk_breakdown=RiskBreakdown(high=1, medium=0, low=1),
+            top_risks=["Non-Compete Restriction: 2-year scope is broad."],
+        ),
         clauses=sample_analyzed_clauses,
     )
     html = render_report_html(data)

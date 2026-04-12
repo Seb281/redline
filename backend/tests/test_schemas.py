@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from app.schemas import (
     AnalyzedClause,
-    AnalyzeRequest,
     AnalyzeResponse,
     AnalysisSummary,
     ClauseCategory,
@@ -40,12 +39,6 @@ def test_upload_response_rejects_invalid_file_type():
             extracted_text="text",
             char_count=4,
         )
-
-
-def test_analyze_request_defaults():
-    """AnalyzeRequest defaults think_hard to False."""
-    req = AnalyzeRequest(text="Some contract text")
-    assert req.think_hard is False
 
 
 def test_extracted_clause_optional_section():

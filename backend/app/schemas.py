@@ -23,12 +23,6 @@ class UploadResponse(BaseModel):
     char_count: int
 
 
-class AnalyzeRequest(BaseModel):
-    """Request body for the analyze endpoint."""
-
-    text: str
-    think_hard: bool = False
-
 
 class RiskLevel(str, Enum):
     """Risk assessment level for a clause."""

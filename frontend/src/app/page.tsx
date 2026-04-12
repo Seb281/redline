@@ -311,7 +311,6 @@ export default function Home() {
           <ChatPanel
             isOpen={chatOpen}
             onToggle={() => setChatOpen((o) => !o)}
-            contractText={state.contractText}
             analysis={state.analysis}
             initialQuestion={chatQuestion}
             onInitialQuestionConsumed={() => setChatQuestion(null)}

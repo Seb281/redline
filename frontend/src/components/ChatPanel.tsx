@@ -2,7 +2,8 @@
  * Slide-out chat panel for asking follow-up questions about a contract.
  *
  * Uses the Vercel AI SDK useChat hook to stream responses from /api/chat,
- * grounded with the full contract text and analysis results.
+ * grounded with RAG-selected clauses from the analysis. Enforces a
+ * 10-message limit per session.
  */
 
 "use client";
@@ -16,7 +17,6 @@ import { ChatMessage } from "@/components/ChatMessage";
 interface ChatPanelProps {
   isOpen: boolean;
   onToggle: () => void;
-  contractText: string;
   analysis: AnalyzeResponse;
   /** Pre-populated question triggered by "Ask about this" on a clause. */
   initialQuestion: string | null;
@@ -27,17 +27,14 @@ interface ChatPanelProps {
 export function ChatPanel({
   isOpen,
   onToggle,
-  contractText,
   analysis,
   initialQuestion,
   onInitialQuestionConsumed,
 }: ChatPanelProps) {
-  const analysisJson = JSON.stringify(analysis);
-
   const { messages, sendMessage, status, stop, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { contractText, analysisJson },
+      body: { analysis },
     }),
   });
 
@@ -148,18 +145,24 @@ export function ChatPanel({
             <textarea
               ref={inputRef}
               rows={1}
-              placeholder="Ask a question..."
+              placeholder={messages.length >= 10 ? "Chat limit reached" : "Ask a question..."}
+              disabled={messages.length >= 10}
               onKeyDown={handleKeyDown}
               className="flex-1 resize-none rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none theme-transition"
             />
             <button
               type="submit"
-              disabled={status !== "ready"}
+              disabled={status !== "ready" || messages.length >= 10}
               className="rounded bg-[var(--accent)] px-4 py-2.5 text-[15px] font-medium text-white font-[var(--font-body)] transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send
             </button>
           </form>
+          {messages.length >= 10 && (
+            <p className="mt-2 text-[13px] text-[var(--accent)] font-[var(--font-body)]">
+              Chat limit reached. Start a new analysis to continue.
+            </p>
+          )}
           {status === "streaming" && (
             <button
               type="button"

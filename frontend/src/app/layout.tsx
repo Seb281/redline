@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Lora, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { CookieBanner } from "@/components/CookieBanner";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 const lora = Lora({
@@ -30,6 +32,8 @@ export default function RootLayout({
       <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased theme-transition font-[var(--font-body)]">
         <Header />
         {children}
+        <Footer />
+        <CookieBanner />
       </body>
     </html>
   );

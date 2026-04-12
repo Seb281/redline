@@ -82,6 +82,12 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
               {clause.unusual_explanation}
             </p>
           )}
+          {clause.jurisdiction_note && (
+            <p className="mt-2.5">
+              <strong className="text-amber-600 dark:text-amber-400">Jurisdiction:</strong>{" "}
+              {clause.jurisdiction_note}
+            </p>
+          )}
           <details className="mt-2.5">
             <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
               Original clause text

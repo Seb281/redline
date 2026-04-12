@@ -76,8 +76,9 @@ export function streamExtractAndAnalyze(
   withCitations: boolean = true,
   clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
+  jurisdiction?: string | null,
 ): ReadableStream<Uint8Array> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole, jurisdiction);
   return new ReadableStream({
     async start(controller) {
       try {

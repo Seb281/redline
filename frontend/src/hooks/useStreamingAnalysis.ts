@@ -169,6 +169,9 @@ export function useStreamingAnalysis() {
         // Pull clause inventory from the overview pass so extraction is
         // anchored to the specific clauses identified in Pass 0.
         const clauseInventory = overviewRef.current?.clause_inventory ?? [];
+        // Governing jurisdiction from Pass 0 — forwarded to the stream
+        // endpoint so jurisdiction-aware analysis rules can be applied.
+        const jurisdiction = overviewRef.current?.governing_jurisdiction ?? null;
 
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
@@ -179,6 +182,7 @@ export function useStreamingAnalysis() {
             with_citations: withCitations,
             user_role: userRole,
             clause_inventory: clauseInventory,
+            jurisdiction,
           }),
           signal: controller.signal,
         });

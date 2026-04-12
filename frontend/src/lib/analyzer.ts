@@ -403,8 +403,6 @@ export async function analyzeContract(
   withCitations: boolean = true,
   userRole?: string | null,
 ): Promise<AnalyzeResponse> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
-
   // Pass 0 — extract contract overview (includes clause inventory)
   const { object: overview } = await generateObject({
     model,
@@ -412,6 +410,13 @@ export async function analyzeContract(
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
   });
+
+  // Build analysis prompt now that we have jurisdiction from Pass 0.
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(
+    withCitations,
+    userRole,
+    overview.governing_jurisdiction,
+  );
 
   // Pass 1 — extract clauses guided by inventory from Pass 0
   const { object: extraction } = await generateObject({

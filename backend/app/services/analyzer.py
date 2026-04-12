@@ -155,6 +155,7 @@ def build_summary(clauses: list[AnalyzedClause]) -> AnalysisSummary:
         high=sum(1 for c in clauses if c.risk_level == RiskLevel.HIGH),
         medium=sum(1 for c in clauses if c.risk_level == RiskLevel.MEDIUM),
         low=sum(1 for c in clauses if c.risk_level == RiskLevel.LOW),
+        informational=sum(1 for c in clauses if c.risk_level == RiskLevel.INFORMATIONAL),
     )
     top_risks = [
         f"{c.title}: {c.risk_explanation}"

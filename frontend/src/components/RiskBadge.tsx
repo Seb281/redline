@@ -6,6 +6,7 @@ const STYLES: Record<RiskLevel, string> = {
   high: "bg-[var(--risk-high-bg)] text-[var(--risk-high)] border border-[var(--risk-high-border)]",
   medium: "bg-[var(--risk-medium-bg)] text-[var(--risk-medium)] border border-[var(--risk-medium-border)]",
   low: "bg-[var(--risk-low-bg)] text-[var(--risk-low)] border border-[var(--risk-low-border)]",
+  informational: "bg-[var(--risk-info-bg)] text-[var(--risk-info)] border border-[var(--risk-info-border)]",
 };
 
 interface RiskBadgeProps {
@@ -18,7 +19,7 @@ export function RiskBadge({ level }: RiskBadgeProps) {
     <span
       className={`inline-block rounded px-2.5 py-1 text-sm font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
     >
-      {level} risk
+      {level === "informational" ? "info" : `${level} risk`}
     </span>
   );
 }

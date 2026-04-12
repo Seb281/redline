@@ -9,7 +9,8 @@ interface RiskChartProps {
 /** SVG donut chart for risk distribution — renders inline at 80x80.
  *  Uses CSS variables for stroke colors so dark mode adapts automatically. */
 export function RiskChart({ breakdown }: RiskChartProps) {
-  const total = breakdown.high + breakdown.medium + breakdown.low;
+  const info = breakdown.informational ?? 0;
+  const total = breakdown.high + breakdown.medium + breakdown.low + info;
   if (total === 0) return null;
 
   const radius = 30;
@@ -18,20 +19,34 @@ export function RiskChart({ breakdown }: RiskChartProps) {
   const highPct = breakdown.high / total;
   const medPct = breakdown.medium / total;
   const lowPct = breakdown.low / total;
+  const infoPct = info / total;
 
   const highLen = highPct * circumference;
   const medLen = medPct * circumference;
   const lowLen = lowPct * circumference;
+  const infoLen = infoPct * circumference;
 
   const highOffset = 0;
   const medOffset = -(highLen);
   const lowOffset = -(highLen + medLen);
+  const infoOffset = -(highLen + medLen + lowLen);
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="90" height="90" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low`}>
+      <svg width="90" height="90" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low, ${info} informational`}>
         <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
-        {/* Low (green) — drawn first (bottom layer) */}
+        {/* Informational (gray) — drawn first (bottom layer) */}
+        {infoPct > 0 && (
+          <circle
+            cx="40" cy="40" r={radius}
+            fill="none" stroke="var(--risk-info)" strokeWidth="8"
+            strokeDasharray={`${infoLen} ${circumference - infoLen}`}
+            strokeDashoffset={infoOffset}
+            strokeLinecap="round"
+            transform="rotate(-90 40 40)"
+          />
+        )}
+        {/* Low (green) */}
         {lowPct > 0 && (
           <circle
             cx="40" cy="40" r={radius}

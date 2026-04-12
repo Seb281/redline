@@ -10,12 +10,14 @@ _RISK_COLORS = {
     RiskLevel.HIGH: {"bg": "#fef2f2", "border": "#fecaca", "text": "#dc2626"},
     RiskLevel.MEDIUM: {"bg": "#fefce8", "border": "#fef08a", "text": "#ca8a04"},
     RiskLevel.LOW: {"bg": "#f0fdf4", "border": "#bbf7d0", "text": "#16a34a"},
+    RiskLevel.INFORMATIONAL: {"bg": "#f9fafb", "border": "#e5e7eb", "text": "#6b7280"},
 }
 
 _RISK_BORDER = {
     RiskLevel.HIGH: "#ef4444",
     RiskLevel.MEDIUM: "#eab308",
     RiskLevel.LOW: "#22c55e",
+    RiskLevel.INFORMATIONAL: "#9ca3af",
 }
 
 
@@ -221,6 +223,10 @@ def render_report_html(data: AnalyzeResponse) -> str:
         <div class="summary-card" style="background:#f0fdf4;border:1px solid #bbf7d0;">
             <div class="count" style="color:#16a34a;">{data.summary.risk_breakdown.low}</div>
             <div class="label" style="color:#22c55e;">Low Risk</div>
+        </div>
+        <div class="summary-card" style="background:#f9fafb;border:1px solid #e5e7eb;">
+            <div class="count" style="color:#6b7280;">{data.summary.risk_breakdown.informational}</div>
+            <div class="label" style="color:#9ca3af;">Info</div>
         </div>
     </div>
 

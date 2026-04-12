@@ -26,6 +26,9 @@
   --risk-low: #15803d;
   --risk-low-bg: #f0fdf4;
   --risk-low-border: #bbf7d0;
+  --risk-info: #6b7280;
+  --risk-info-bg: #f9fafb;
+  --risk-info-border: #e5e7eb;
   --risk-unusual: #7c3aed;
   --risk-unusual-bg: #faf5ff;
   --risk-unusual-border: #e9d5ff;
@@ -57,6 +60,9 @@
   --risk-low: #86efac;
   --risk-low-bg: #152a1a;
   --risk-low-border: #1a4a2a;
+  --risk-info: #9ca3af;
+  --risk-info-bg: #1c1c1e;
+  --risk-info-border: #374151;
   --risk-unusual: #c4b5fd;
   --risk-unusual-bg: #1f1529;
   --risk-unusual-border: #3b2960;

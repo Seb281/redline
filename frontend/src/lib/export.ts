@@ -43,6 +43,7 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     `- **High Risk:** ${data.summary.risk_breakdown.high}`,
     `- **Medium Risk:** ${data.summary.risk_breakdown.medium}`,
     `- **Low Risk:** ${data.summary.risk_breakdown.low}`,
+    `- **Informational:** ${data.summary.risk_breakdown.informational}`,
     "",
   );
 

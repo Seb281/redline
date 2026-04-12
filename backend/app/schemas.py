@@ -33,6 +33,7 @@ class AnalyzeRequest(BaseModel):
 class RiskLevel(str, Enum):
     """Risk assessment level for a clause."""
 
+    INFORMATIONAL = "informational"
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -63,6 +64,13 @@ class ExtractedClause(BaseModel):
     section_reference: str | None = None
 
 
+class ClauseInventoryItem(BaseModel):
+    """A clause identified during the overview pass (title + section ref)."""
+
+    title: str
+    section_ref: str | None = None
+
+
 class ContractOverview(BaseModel):
     """High-level contract metadata extracted in Pass 0."""
 
@@ -73,6 +81,7 @@ class ContractOverview(BaseModel):
     total_value: str | None = None
     governing_jurisdiction: str | None = None
     key_terms: list[str]
+    clause_inventory: list[ClauseInventoryItem] = []
 
 
 class AnalyzedClause(BaseModel):
@@ -95,6 +104,7 @@ class RiskBreakdown(BaseModel):
     high: int = Field(ge=0)
     medium: int = Field(ge=0)
     low: int = Field(ge=0)
+    informational: int = Field(ge=0, default=0)
 
 
 class AnalysisSummary(BaseModel):

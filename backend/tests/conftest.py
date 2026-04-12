@@ -67,6 +67,10 @@ MOCK_OVERVIEW_RESPONSE = {
         "Non-compete restriction covering Europe for 2 years",
         "Governed by Delaware law",
     ],
+    "clause_inventory": [
+        {"title": "Non-Compete Restriction", "section_ref": "Section 1"},
+        {"title": "Governing Law", "section_ref": "Section 2"},
+    ],
 }
 
 MOCK_EXTRACTION_RESPONSE = {

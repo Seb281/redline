@@ -70,15 +70,16 @@ export function StreamingReportView({
 
       {/* Risk summary — placeholder until complete */}
       <div className="mb-7 flex gap-5">
-        <div className="grid flex-1 grid-cols-3 gap-4">
-          {(["high", "medium", "low"] as const).map((level) => {
+        <div className="grid flex-1 grid-cols-4 gap-4">
+          {(["high", "medium", "low", "informational"] as const).map((level) => {
             const value = summary?.risk_breakdown[level];
             const colorMap = {
               high: { text: "var(--risk-high)", border: "var(--risk-high-border)", bg: "var(--risk-high-bg)" },
               medium: { text: "var(--risk-medium)", border: "var(--risk-medium-border)", bg: "var(--risk-medium-bg)" },
               low: { text: "var(--risk-low)", border: "var(--risk-low-border)", bg: "var(--risk-low-bg)" },
+              informational: { text: "var(--risk-info)", border: "var(--risk-info-border)", bg: "var(--risk-info-bg)" },
             }[level];
-            const label = { high: "High Risk", medium: "Medium Risk", low: "Low Risk" }[level];
+            const label = { high: "High Risk", medium: "Medium Risk", low: "Low Risk", informational: "Info" }[level];
 
             return (
               <div

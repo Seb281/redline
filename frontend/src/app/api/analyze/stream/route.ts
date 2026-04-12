@@ -20,6 +20,10 @@ export async function POST(request: Request) {
     typeof body.user_role === "string" && body.user_role.trim().length > 0
       ? body.user_role.trim()
       : null;
+  // Clause inventory from the overview pass — anchors extraction to a
+  // specific set of clauses for consistency across runs.
+  const clauseInventory: { title: string; section_ref: string | null }[] =
+    Array.isArray(body.clause_inventory) ? body.clause_inventory : [];
 
   if (!text.trim()) {
     return Response.json(
@@ -28,7 +32,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = streamExtractAndAnalyze(text, thinkHard, withCitations, userRole);
+  if (clauseInventory.length === 0) {
+    return Response.json(
+      { detail: "Clause inventory is required. Run the overview endpoint first." },
+      { status: 422 }
+    );
+  }
+
+  const stream = streamExtractAndAnalyze(text, thinkHard, withCitations, clauseInventory, userRole);
 
   return new Response(stream, {
     headers: {

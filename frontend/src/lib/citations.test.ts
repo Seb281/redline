@@ -150,3 +150,51 @@ describe("parseExplanation — robustness", () => {
     expect(segments.filter((s) => s.kind === "cite")).toHaveLength(2);
   });
 });
+
+describe("parseExplanation — edge cases", () => {
+  it("handles duplicate citation IDs (uses first occurrence)", () => {
+    const segments = parseExplanation(
+      "First [^1] and second [^1].",
+      [{ id: 1, quoted_text: "thirty (30) days written notice" }],
+      clauseText,
+    );
+    const cites = segments.filter((s) => s.kind === "cite");
+    expect(cites).toHaveLength(2);
+    expect(cites[0]).toMatchObject({ id: 1, verified: true });
+    expect(cites[1]).toMatchObject({ id: 1, verified: true });
+  });
+
+  it("handles marker with very large ID number", () => {
+    const segments = parseExplanation(
+      "Claim [^999].",
+      [{ id: 999, quoted_text: "thirty (30) days written notice" }],
+      clauseText,
+    );
+    expect(segments[1]).toMatchObject({ kind: "cite", id: 999, verified: true });
+  });
+
+  it("handles narrative that is only a marker", () => {
+    const segments = parseExplanation(
+      "[^1]",
+      [{ id: 1, quoted_text: "thirty (30) days written notice" }],
+      clauseText,
+    );
+    expect(segments).toEqual([
+      { kind: "cite", id: 1, quotedText: "thirty (30) days written notice", verified: true },
+    ]);
+  });
+
+  it("handles empty narrative string", () => {
+    const segments = parseExplanation("", [], clauseText);
+    expect(segments).toEqual([]);
+  });
+
+  it("handles citation with empty quoted_text", () => {
+    const segments = parseExplanation(
+      "Claim [^1].",
+      [{ id: 1, quoted_text: "" }],
+      clauseText,
+    );
+    expect(segments[1]).toMatchObject({ kind: "cite", id: 1, quotedText: "" });
+  });
+});

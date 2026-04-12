@@ -20,7 +20,7 @@ interface ReportViewProps {
   onAskAboutClause?: (clause: AnalyzedClause) => void;
 }
 
-const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2 };
+const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2, informational: 3 };
 
 /** Applies filters and sorting to clause list. */
 function useFilteredClauses(
@@ -76,7 +76,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: Repo
 
       {/* Risk summary — cards + chart */}
       <div className="mb-7 flex gap-5">
-        <div className="grid flex-1 grid-cols-3 gap-4">
+        <div className="grid flex-1 grid-cols-4 gap-4">
           <div className="rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] p-5 text-center theme-transition">
             <p className="text-[36px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
               {summary.risk_breakdown.high}
@@ -94,6 +94,12 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: Repo
               {summary.risk_breakdown.low}
             </p>
             <p className="text-sm text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">Low Risk</p>
+          </div>
+          <div className="rounded border border-[var(--risk-info-border)] bg-[var(--risk-info-bg)] p-5 text-center theme-transition">
+            <p className="text-[36px] font-bold text-[var(--risk-info)] font-[var(--font-body)]">
+              {summary.risk_breakdown.informational}
+            </p>
+            <p className="text-sm text-[var(--risk-info)] opacity-70 font-[var(--font-body)]">Info</p>
           </div>
         </div>
         <RiskChart breakdown={summary.risk_breakdown} />

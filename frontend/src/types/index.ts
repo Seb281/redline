@@ -16,6 +16,12 @@ export interface AnalyzeRequest {
   think_hard: boolean;
 }
 
+/** A clause identified during the overview pass (title + section ref). */
+export interface ClauseInventoryItem {
+  title: string;
+  section_ref: string | null;
+}
+
 /** High-level contract metadata extracted in Pass 0. */
 export interface ContractOverview {
   contract_type: string;
@@ -25,10 +31,11 @@ export interface ContractOverview {
   total_value: string | null;
   governing_jurisdiction: string | null;
   key_terms: string[];
+  clause_inventory: ClauseInventoryItem[];
 }
 
 /** Risk assessment level for a clause. */
-export type RiskLevel = "low" | "medium" | "high";
+export type RiskLevel = "informational" | "low" | "medium" | "high";
 
 /** Classification category for a contract clause. */
 export type ClauseCategory =
@@ -74,6 +81,7 @@ export interface RiskBreakdown {
   high: number;
   medium: number;
   low: number;
+  informational: number;
 }
 
 /** Summary statistics for the full contract analysis. */

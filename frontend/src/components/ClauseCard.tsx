@@ -11,6 +11,7 @@ const BORDER_COLORS = {
   high: "border-l-[var(--risk-high)]",
   medium: "border-l-[var(--risk-medium)]",
   low: "border-l-[var(--risk-low)]",
+  informational: "border-l-[var(--risk-info)]",
 } as const;
 
 interface ClauseCardProps {
@@ -24,7 +25,7 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   const cardId = useId().replace(/:/g, "-");
   const categoryLabel = clause.category.replace(/_/g, " ").toUpperCase();
   const hasDetails =
-    clause.risk_level !== "low" || clause.risk_explanation.length > 0;
+    clause.risk_level !== "informational";
 
   return (
     <div

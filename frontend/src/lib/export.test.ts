@@ -11,10 +11,11 @@ const base: AnalyzeResponse = {
     total_value: null,
     governing_jurisdiction: null,
     key_terms: ["A term"],
+    clause_inventory: [{ title: "Mutual termination", section_ref: null }],
   },
   summary: {
     total_clauses: 1,
-    risk_breakdown: { high: 0, medium: 1, low: 0 },
+    risk_breakdown: { high: 0, medium: 1, low: 0, informational: 0 },
     top_risks: [],
   },
   clauses: [

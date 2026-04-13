@@ -116,3 +116,74 @@ class AnalyzeResponse(BaseModel):
     overview: ContractOverview
     summary: AnalysisSummary
     clauses: list[AnalyzedClause]
+
+
+# --- Auth schemas ---
+
+
+class LoginRequest(BaseModel):
+    """Request body for magic link login."""
+
+    email: str = Field(min_length=3, max_length=254)
+
+
+class UserResponse(BaseModel):
+    """Public user info returned after authentication."""
+
+    id: str
+    email: str
+
+
+class VerifyRequest(BaseModel):
+    """Request body for magic link verification."""
+
+    token: str
+
+
+# --- Persistence schemas ---
+
+
+class SaveAnalysisRequest(BaseModel):
+    """Request body for saving an analysis."""
+
+    filename: str
+    file_type: str
+    page_count: int | None = None
+    char_count: int | None = None
+    contract_text: str
+    overview: dict
+    summary: dict
+    clauses: list[dict]
+    analysis_mode: str
+
+
+class AnalysisListItem(BaseModel):
+    """Summary of a saved analysis for list views."""
+
+    id: str
+    filename: str
+    file_type: str
+    contract_type: str | None = None
+    analysis_mode: str
+    clause_count: int
+    risk_high: int = 0
+    risk_medium: int = 0
+    risk_low: int = 0
+    created_at: str
+
+
+class SavedAnalysisResponse(BaseModel):
+    """Full saved analysis with metadata."""
+
+    id: str
+    filename: str
+    file_type: str
+    page_count: int | None = None
+    char_count: int | None = None
+    contract_text: str
+    overview: dict
+    summary: dict
+    clauses: list[dict]
+    analysis_mode: str
+    created_at: str
+    updated_at: str | None = None

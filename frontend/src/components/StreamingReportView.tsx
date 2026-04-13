@@ -10,6 +10,7 @@
 
 import type { StreamingAnalysisState } from "@/hooks/useStreamingAnalysis";
 import type { UploadResponse } from "@/types";
+import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ContractOverview } from "@/components/ContractOverview";
 import { RiskChart } from "@/components/RiskChart";
@@ -44,9 +45,7 @@ export function StreamingReportView({
 }: StreamingReportViewProps) {
   const { overview, clauses, clauseCount, summary, status, error } = state;
 
-  // Nothing yet — show initial loading state. Covers both "fetching
-  // overview" and "overview in flight" before we've transitioned to
-  // awaiting_role.
+  // Nothing yet — show initial loading state with stepper.
   if (!overview && (status === "analyzing_overview" || status === "analyzing")) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
@@ -54,10 +53,13 @@ export function StreamingReportView({
         <div className="mb-9 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-3 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
           {upload.filename} · {upload.page_count} {upload.page_count === 1 ? "page" : "pages"} · {upload.char_count.toLocaleString()} chars
         </div>
-        <div className="mb-7 h-9 w-9 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-        <p className="text-[17px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-          Extracting contract overview...
-        </p>
+        <div className="w-full max-w-md">
+          <AnalysisProgress
+            status={status}
+            analyzedCount={clauses.length}
+            totalCount={clauseCount}
+          />
+        </div>
       </div>
     );
   }
@@ -65,6 +67,13 @@ export function StreamingReportView({
   return (
     <CitationNavProvider>
       <div className="pb-24">
+      {/* Step indicator */}
+      <AnalysisProgress
+        status={status}
+        analyzedCount={clauses.length}
+        totalCount={clauseCount}
+      />
+
       {/* Contract overview — appears as soon as Pass 0 finishes */}
       {overview && <ContractOverview overview={overview} />}
 
@@ -129,16 +138,6 @@ export function StreamingReportView({
 
       {/* Unusual clauses — only after complete */}
       {summary && <UnusualClausesCallout clauses={clauses} />}
-
-      {/* Progress indicator */}
-      {status === "analyzing" && clauseCount !== null && (
-        <div className="mb-5 flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-          <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Analyzing clause {clauses.length} of {clauseCount}...
-          </p>
-        </div>
-      )}
 
       {/* Error banner with retry */}
       {error && (

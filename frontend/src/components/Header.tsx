@@ -2,6 +2,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useTheme } from "@/hooks/useTheme";
 
 /** Top bar shown on every screen. */
@@ -11,13 +12,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5">
-        {/* Red dash + wordmark */}
-        <div className="flex items-center gap-2.5">
+        {/* Red dash + wordmark — links back to landing page */}
+        <Link href="/" className="flex items-center gap-2.5 no-underline">
           <div className="h-[3px] w-5 bg-[var(--accent)]" />
           <span className="font-[var(--font-body)] text-sm font-semibold uppercase tracking-[1.5px] text-[var(--text-primary)]">
             Redline
           </span>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={toggle}

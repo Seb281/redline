@@ -11,6 +11,15 @@ export function Footer() {
         <Link href="/privacy" className="hover:text-[var(--text-secondary)] hover:underline">
           Privacy Policy
         </Link>
+        <span className="mx-1">&middot;</span>{" "}
+        <a
+          href="https://seb.giupana.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--text-secondary)] hover:underline"
+        >
+          Portfolio
+        </a>
       </p>
     </footer>
   );

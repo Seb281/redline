@@ -12,7 +12,7 @@ const ACCEPTED_EXTENSIONS = [".pdf", ".docx"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
 interface FileUploadProps {
-  onFileSelected: (file: File, thinkHard: boolean, withCitations: boolean) => void;
+  onFileSelected: (file: File, withCitations: boolean) => void;
   isUploading: boolean;
   error: string | null;
 }
@@ -24,7 +24,6 @@ export function FileUpload({
   error,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [thinkHard, setThinkHard] = useState(false);
   // Default ON: citations are the headline feature of the report, so the
   // toggle lets power users opt out for cheaper/faster runs instead of
   // forcing everyone to opt in.
@@ -36,9 +35,9 @@ export function FileUpload({
       const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
       if (!ACCEPTED_EXTENSIONS.includes(ext)) return;
       if (file.size > MAX_SIZE) return;
-      onFileSelected(file, thinkHard, withCitations);
+      onFileSelected(file, withCitations);
     },
-    [onFileSelected, thinkHard, withCitations]
+    [onFileSelected, withCitations]
   );
 
   const handleDrop = useCallback(
@@ -109,35 +108,8 @@ export function FileUpload({
               Browse files
             </button>
 
-            {/* Analysis toggles */}
-            <div className="mt-6 flex items-center justify-center gap-7">
-              {/* Think Hard toggle */}
-              <div className="group relative">
-                <label className="flex cursor-pointer items-center justify-center gap-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={thinkHard}
-                    onClick={() => setThinkHard(!thinkHard)}
-                    className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors ${
-                      thinkHard ? "bg-[var(--accent)]" : "bg-[var(--border-secondary)]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                        thinkHard ? "translate-x-[18px]" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
-                  Think Hard
-                </label>
-                {/* Tooltip */}
-                <div className="pointer-events-none absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3.5 py-2 text-[15px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
-                  Analyzes each clause individually for deeper insight
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--text-primary)]" />
-                </div>
-              </div>
-
+            {/* Analysis toggle */}
+            <div className="mt-6 flex items-center justify-center">
               {/* Citations toggle */}
               <div className="group relative">
                 <label className="flex cursor-pointer items-center justify-center gap-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">

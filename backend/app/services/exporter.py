@@ -104,6 +104,15 @@ def render_report_html(data: AnalyzeResponse) -> str:
                 f"{html_module.escape(clause.unusual_explanation)}</p>"
             )
 
+        # Jurisdiction-specific note for the clause
+        jurisdiction_html = ""
+        if clause.jurisdiction_note:
+            jurisdiction_html = (
+                f'<p style="margin-top:8px;color:#d97706;">'
+                f"<strong>Jurisdiction:</strong> "
+                f"{html_module.escape(clause.jurisdiction_note)}</p>"
+            )
+
         clauses_html += f"""
         <div style="border:1px solid #e5e5e5;border-left:4px solid {border_color};
                     border-radius:8px;padding:16px;margin-bottom:12px;">
@@ -131,6 +140,7 @@ def render_report_html(data: AnalyzeResponse) -> str:
             </p>
             {suggestion_html}
             {unusual_detail_html}
+            {jurisdiction_html}
         </div>
         """
 

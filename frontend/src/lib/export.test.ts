@@ -31,6 +31,7 @@ const base: AnalyzeResponse = {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
+      jurisdiction_note: null,
       citations: [
         { id: 1, quoted_text: "thirty (30) days written notice" },
       ],
@@ -62,5 +63,68 @@ describe("generateMarkdown — citations", () => {
     data.clauses[0].plain_english = "Narrative without markers.";
     const md = generateMarkdown(data);
     expect(md).not.toContain("[^");
+  });
+});
+
+describe("generateMarkdown — optional fields", () => {
+  it("renders all overview fields when present", () => {
+    const data = structuredClone(base);
+    data.overview.effective_date = "2025-01-15";
+    data.overview.duration = "12 months";
+    data.overview.total_value = "€50,000";
+    data.overview.governing_jurisdiction = "the Netherlands";
+    const md = generateMarkdown(data);
+    expect(md).toContain("**Effective Date:** 2025-01-15");
+    expect(md).toContain("**Duration:** 12 months");
+    expect(md).toContain("**Value:** €50,000");
+    expect(md).toContain("**Jurisdiction:** the Netherlands");
+  });
+
+  it("omits optional fields when null", () => {
+    const md = generateMarkdown(base);
+    expect(md).not.toContain("**Effective Date:**");
+    expect(md).not.toContain("**Duration:**");
+    expect(md).not.toContain("**Value:**");
+    expect(md).not.toContain("**Jurisdiction:** the Netherlands");
+  });
+
+  it("renders unusual clause section when present", () => {
+    const data = structuredClone(base);
+    data.clauses[0].is_unusual = true;
+    data.clauses[0].unusual_explanation = "Unusually broad scope.";
+    const md = generateMarkdown(data);
+    expect(md).toContain("### Unusual Clauses");
+    expect(md).toContain("**Mutual termination**: Unusually broad scope.");
+    expect(md).toContain("**ATYPICAL**");
+  });
+
+  it("renders jurisdiction_note when present", () => {
+    const data = structuredClone(base);
+    data.clauses[0].jurisdiction_note = "May conflict with Dutch employment law.";
+    const md = generateMarkdown(data);
+    expect(md).toContain("**Jurisdiction:** May conflict with Dutch employment law.");
+  });
+
+  it("omits jurisdiction_note line when null", () => {
+    const md = generateMarkdown(base);
+    const clauseSection = md.split("## Clauses")[1];
+    expect(clauseSection).not.toContain("**Jurisdiction:**");
+  });
+});
+
+describe("generateMarkdown — all risk levels", () => {
+  it("correctly labels each risk level", () => {
+    const data = structuredClone(base);
+    data.clauses = [
+      { ...base.clauses[0], risk_level: "high", title: "High clause" },
+      { ...base.clauses[0], risk_level: "medium", title: "Medium clause" },
+      { ...base.clauses[0], risk_level: "low", title: "Low clause" },
+      { ...base.clauses[0], risk_level: "informational", title: "Info clause" },
+    ];
+    const md = generateMarkdown(data);
+    expect(md).toContain("**HIGH RISK**");
+    expect(md).toContain("**MEDIUM RISK**");
+    expect(md).toContain("**LOW RISK**");
+    expect(md).toContain("**INFORMATIONAL RISK**");
   });
 });

@@ -90,6 +90,7 @@ class AnalyzedClause(BaseModel):
     negotiation_suggestion: str | None = None
     is_unusual: bool = False
     unusual_explanation: str | None = None
+    jurisdiction_note: str | None = None
 
 
 class RiskBreakdown(BaseModel):

@@ -9,11 +9,21 @@ import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { AnalyzeResponse } from "@/types";
+import type { AnalysisMode } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Model configuration — single place to swap provider and model
 // ---------------------------------------------------------------------------
 
+/** Return the model instance for the given analysis mode. */
+export function getModel(mode: AnalysisMode) {
+  return mode === "deep" ? openai("gpt-4.1") : openai("gpt-4.1-nano");
+}
+
+/**
+ * Default model for backward compatibility with callsites that don't
+ * yet pass a mode (overview pass always uses fast).
+ */
 export const model = openai("gpt-4.1-nano");
 
 // ---------------------------------------------------------------------------
@@ -113,6 +123,13 @@ export const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("What is atypical and why it matters. Null if not unusual."),
+  jurisdiction_note: z
+    .string()
+    .nullable()
+    .describe(
+      "One-line note about jurisdiction-specific concerns. " +
+      "Null if governing law is unknown or clause has no jurisdiction-specific issue.",
+    ),
   // Required (not optional) because OpenAI's strict structured-output mode
   // forces every property into `required`. Emit an empty array when no
   // factual claim has verbatim support.
@@ -189,6 +206,7 @@ const CATEGORIES = [
 export function buildAnalysisSystemPrompt(
   withCitations: boolean,
   userRole?: string | null,
+  jurisdiction?: string | null,
 ): string {
   const citationsSection = withCitations
     ? `\
@@ -207,6 +225,36 @@ Citations (disabled for this run):
 - Always emit \`citations: []\` (an empty array).
 - Do NOT insert any [^N] markers in \`plain_english\`.
 - The \`citations\` field is still required by the schema — just leave it empty.`;
+
+  const jurisdictionSection = jurisdiction
+    ? `\
+Jurisdiction-Aware Analysis (${jurisdiction}):
+This contract is governed by ${jurisdiction}. Apply jurisdiction-specific rules:
+
+EU Member State rules (apply when jurisdiction is in the EU/EEA):
+- Non-competes: Many EU states restrict or void non-competes without compensation. \
+Netherlands: requires written form + compensation. Germany: max 2 years, requires \
+Karenzentschädigung (compensation during restriction). France: requires contrepartie \
+financière. Overly broad scope/duration often void.
+- Data protection: GDPR supersedes conflicting contractual terms. Clauses limiting \
+data subject rights are void regardless of contract.
+- Unfair terms: EU Directive 93/13/EEC can void one-sided clauses in B2C and \
+sometimes B2B (varies by national implementation).
+- Limitation of liability: Exclusion of gross negligence/intentional misconduct \
+void in most EU jurisdictions (German BGB §276 makes this explicit).
+- IP assignment: Overly broad IP clauses (pre-existing IP, work outside scope) may \
+conflict with employee invention laws (German ArbNErfG, Dutch patent law).
+- Confidentiality: Perpetual obligations often unenforceable; 5+ years unusual in \
+EU commercial practice.
+
+For each clause, set \`jurisdiction_note\` to a one-line observation about how \
+${jurisdiction} law specifically affects this clause (e.g., "Likely unenforceable \
+under Dutch law — no compensation offered for post-contractual restriction"). \
+Set to null if the clause has no jurisdiction-specific concern.`
+    : `\
+Jurisdiction note:
+- The governing jurisdiction is not stated or not recognized. Set \
+\`jurisdiction_note\` to null for all clauses.`;
 
   const trimmedRole = userRole?.trim();
   const perspectiveLine = trimmedRole
@@ -258,6 +306,8 @@ Risk calibration:
    significantly from what is typical for its category.
 8. If unusual, a brief explanation of what specifically is atypical and why it \
    matters. Set to null if the clause is not unusual.
+
+${jurisdictionSection}
 
 ${citationsSection}`;
 }
@@ -349,12 +399,10 @@ export function buildRiskBreakdown(clauses: { risk_level: string }[]) {
  */
 export async function analyzeContract(
   text: string,
-  thinkHard: boolean,
+  mode: AnalysisMode,
   withCitations: boolean = true,
   userRole?: string | null,
 ): Promise<AnalyzeResponse> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole);
-
   // Pass 0 — extract contract overview (includes clause inventory)
   const { object: overview } = await generateObject({
     model,
@@ -362,6 +410,13 @@ export async function analyzeContract(
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
   });
+
+  // Build analysis prompt now that we have jurisdiction from Pass 0.
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(
+    withCitations,
+    userRole,
+    overview.governing_jurisdiction,
+  );
 
   // Pass 1 — extract clauses guided by inventory from Pass 0
   const { object: extraction } = await generateObject({
@@ -374,12 +429,12 @@ export async function analyzeContract(
   // Pass 2 — analyze clauses
   let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
 
-  if (thinkHard) {
+  if (mode === "deep") {
     // Fan-out: one LLM call per clause, in parallel
     analyzedClauses = await Promise.all(
       extraction.clauses.map(async (clause) => {
         const { object } = await generateObject({
-          model,
+          model: getModel(mode),
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -390,7 +445,7 @@ export async function analyzeContract(
   } else {
     // Batch: all clauses in a single LLM call
     const { object: analysis } = await generateObject({
-      model,
+      model: getModel(mode),
       schema: batchAnalysisSchema,
       system: analysisSystemPrompt,
       prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

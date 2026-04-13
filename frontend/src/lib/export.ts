@@ -99,6 +99,9 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     if (clause.negotiation_suggestion) {
       lines.push(`**Suggestion:** ${clause.negotiation_suggestion}`, "");
     }
+    if (clause.jurisdiction_note) {
+      lines.push(`**Jurisdiction:** ${clause.jurisdiction_note}`, "");
+    }
     lines.push("<details><summary>Original clause text</summary>", "");
     lines.push(clause.clause_text, "");
     lines.push("</details>", "", "---", "");

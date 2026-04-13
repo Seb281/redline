@@ -6,11 +6,12 @@
  */
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
+import type { AnalysisMode } from "@/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const text: string = body.text ?? "";
-  const thinkHard: boolean = body.think_hard ?? false;
+  const mode: AnalysisMode = body.mode === "deep" ? "deep" : "fast";
   // Default to citations ON when the caller omits the flag, so older
   // clients (and direct curl probes) keep the prior behavior.
   const withCitations: boolean = body.with_citations ?? true;
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
   // specific set of clauses for consistency across runs.
   const clauseInventory: { title: string; section_ref: string | null }[] =
     Array.isArray(body.clause_inventory) ? body.clause_inventory : [];
+  // Governing jurisdiction from the overview pass — injected into the
+  // analysis system prompt for jurisdiction-aware risk assessment.
+  const jurisdiction: string | null =
+    typeof body.jurisdiction === "string" && body.jurisdiction.trim().length > 0
+      ? body.jurisdiction.trim()
+      : null;
 
   if (!text.trim()) {
     return Response.json(
@@ -39,7 +46,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = streamExtractAndAnalyze(text, thinkHard, withCitations, clauseInventory, userRole);
+  const stream = streamExtractAndAnalyze(text, mode, withCitations, clauseInventory, userRole, jurisdiction);
 
   return new Response(stream, {
     headers: {

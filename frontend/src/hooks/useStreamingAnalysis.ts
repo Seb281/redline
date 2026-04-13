@@ -14,7 +14,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview } from "@/types";
+import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview, AnalysisMode } from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
 
 export interface StreamingAnalysisState {
@@ -139,7 +139,7 @@ export function useStreamingAnalysis() {
   const runAnalysis = useCallback(
     async (
       text: string,
-      thinkHard: boolean,
+      mode: AnalysisMode,
       withCitations: boolean,
       userRole: string | null,
     ): Promise<AnalyzeResponse | null> => {
@@ -169,16 +169,20 @@ export function useStreamingAnalysis() {
         // Pull clause inventory from the overview pass so extraction is
         // anchored to the specific clauses identified in Pass 0.
         const clauseInventory = overviewRef.current?.clause_inventory ?? [];
+        // Governing jurisdiction from Pass 0 — forwarded to the stream
+        // endpoint so jurisdiction-aware analysis rules can be applied.
+        const jurisdiction = overviewRef.current?.governing_jurisdiction ?? null;
 
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text,
-            think_hard: thinkHard,
+            mode,
             with_citations: withCitations,
             user_role: userRole,
             clause_inventory: clauseInventory,
+            jurisdiction,
           }),
           signal: controller.signal,
         });

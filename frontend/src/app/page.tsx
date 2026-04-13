@@ -11,7 +11,7 @@ import { StreamingReportView } from "@/components/StreamingReportView";
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contract";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
 import { uploadContract, warmBackend } from "@/lib/api";
-import type { AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
+import type { AnalysisMode, AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
 
 type AppState =
   | { view: "upload" }
@@ -25,15 +25,18 @@ type AppState =
  */
 interface PendingAnalysis {
   contractText: string;
-  thinkHard: boolean;
+  mode: AnalysisMode;
   withCitations: boolean;
+  pickedRole: string | null;
 }
 
 export default function Home() {
   const [state, setState] = useState<AppState>({ view: "upload" });
+  const [mode, setMode] = useState<AnalysisMode>("fast");
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const streaming = useStreamingAnalysis();
 
   // Chat state
@@ -54,13 +57,13 @@ export default function Home() {
     async (
       upload: UploadResponse,
       contractText: string,
-      thinkHard: boolean,
+      analysisMode: AnalysisMode,
       withCitations: boolean,
       userRole: string | null,
     ) => {
       const result = await streaming.runAnalysis(
         contractText,
-        thinkHard,
+        analysisMode,
         withCitations,
         userRole,
       );
@@ -85,11 +88,11 @@ export default function Home() {
     async (
       upload: UploadResponse,
       contractText: string,
-      thinkHard: boolean,
+      analysisMode: AnalysisMode,
       withCitations: boolean,
     ) => {
       setState({ view: "analyzing", upload, contractText });
-      setPendingAnalysis({ contractText, thinkHard, withCitations });
+      setPendingAnalysis({ contractText, mode: analysisMode, withCitations, pickedRole: null });
       await streaming.runOverview(contractText);
       // Now in awaiting_role — StreamingReportView renders the picker.
     },
@@ -106,7 +109,7 @@ export default function Home() {
     async (
       upload: UploadResponse,
       contractText: string,
-      thinkHard: boolean,
+      analysisMode: AnalysisMode,
       withCitations: boolean,
       presetRole: string,
     ) => {
@@ -116,7 +119,7 @@ export default function Home() {
       await runAnalysisAndFinish(
         upload,
         contractText,
-        thinkHard,
+        analysisMode,
         withCitations,
         presetRole,
       );
@@ -126,25 +129,20 @@ export default function Home() {
 
   /** Upload file, then kick off streaming analysis. */
   const handleFileSelected = useCallback(
-    async (file: File, thinkHard: boolean, withCitations: boolean) => {
+    async (file: File, withCitations: boolean) => {
       setIsUploading(true);
       setError(null);
       try {
         const uploadResult = await uploadContract(file);
         setIsUploading(false);
-        startAnalysis(
-          uploadResult,
-          uploadResult.extracted_text,
-          thinkHard,
-          withCitations,
-        );
+        startAnalysis(uploadResult, uploadResult.extracted_text, mode, withCitations);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
         setState({ view: "upload" });
         setIsUploading(false);
       }
     },
-    [startAnalysis],
+    [startAnalysis, mode],
   );
 
   /** Run the live LLM pipeline on a sample contract (demo mode). */
@@ -155,7 +153,7 @@ export default function Home() {
     startAnalysisWithPresetRole(
       SAMPLE_UPLOAD_RESPONSE,
       SAMPLE_CONTRACT_TEXT,
-      false,
+      "fast",
       true,
       "Contractor",
     );
@@ -170,22 +168,32 @@ export default function Home() {
       if (!pendingAnalysis) return;
       if (state.view !== "analyzing") return;
       const upload = state.upload;
-      const { contractText, thinkHard, withCitations } = pendingAnalysis;
-      setPendingAnalysis(null);
-      runAnalysisAndFinish(
-        upload,
-        contractText,
-        thinkHard,
-        withCitations,
-        role,
-      );
+      const { contractText, mode: analysisMode, withCitations } = pendingAnalysis;
+      setPendingAnalysis({ ...pendingAnalysis, pickedRole: role });
+      runAnalysisAndFinish(upload, contractText, analysisMode, withCitations, role);
     },
     [pendingAnalysis, state, runAnalysisAndFinish],
   );
 
+  /** Retry the last failed step (overview or analysis). */
+  const handleRetry = useCallback(() => {
+    if (state.view !== "analyzing") return;
+    setRetryCount((c) => c + 1);
+
+    if (!streaming.overview) {
+      // Overview failed — retry overview
+      streaming.runOverview(state.contractText);
+    } else if (pendingAnalysis) {
+      // Analysis failed — retry analysis with same params
+      const { contractText, mode: analysisMode, withCitations, pickedRole } = pendingAnalysis;
+      runAnalysisAndFinish(state.upload, contractText, analysisMode, withCitations, pickedRole);
+    }
+  }, [state, streaming, pendingAnalysis, runAnalysisAndFinish]);
+
   const handleReset = useCallback(() => {
     streaming.reset();
     setPendingAnalysis(null);
+    setRetryCount(0);
     setChatOpen(false);
     setChatQuestion(null);
     setState({ view: "upload" });
@@ -227,6 +235,37 @@ export default function Home() {
             isUploading={isUploading}
             error={error}
           />
+
+          {/* Analysis mode toggle */}
+          <div className="mx-auto mt-5 flex max-w-[540px] items-center justify-center">
+            <div className="inline-flex rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-1">
+              <button
+                type="button"
+                onClick={() => setMode("fast")}
+                className={`rounded px-5 py-2 text-[15px] font-medium font-[var(--font-body)] transition-colors ${
+                  mode === "fast"
+                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Fast
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("deep")}
+                className={`rounded px-5 py-2 text-[15px] font-medium font-[var(--font-body)] transition-colors ${
+                  mode === "deep"
+                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Deep
+              </button>
+            </div>
+          </div>
+          <p className="mt-2 text-center text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+            {mode === "fast" ? "Quick scan with GPT-4.1 Nano" : "Thorough per-clause analysis with GPT-4.1"}
+          </p>
 
           {/* Demo CTA */}
           <div className="mt-6 text-center">
@@ -276,6 +315,8 @@ export default function Home() {
           upload={state.upload}
           onReset={handleReset}
           onRolePicked={handleRolePicked}
+          onRetry={handleRetry}
+          retryCount={retryCount}
         />
       )}
 
@@ -290,7 +331,6 @@ export default function Home() {
           <ChatPanel
             isOpen={chatOpen}
             onToggle={() => setChatOpen((o) => !o)}
-            contractText={state.contractText}
             analysis={state.analysis}
             initialQuestion={chatQuestion}
             onInitialQuestionConsumed={() => setChatQuestion(null)}

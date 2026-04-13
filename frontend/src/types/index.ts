@@ -1,6 +1,9 @@
 /** Supported document file types. */
 export type FileType = "pdf" | "docx";
 
+/** Analysis depth mode — controls model choice and strategy. */
+export type AnalysisMode = "fast" | "deep";
+
 /** Response from POST /api/upload. */
 export interface UploadResponse {
   filename: string;
@@ -64,6 +67,8 @@ export interface AnalyzedClause {
   negotiation_suggestion: string | null;
   is_unusual: boolean;
   unusual_explanation: string | null;
+  /** Jurisdiction-specific note when governing law triggers EU-specific rules. */
+  jurisdiction_note: string | null;
   /**
    * Optional verbatim citations for claims in `plain_english`.
    * Each entry maps to an inline `[^id]` marker in the narrative.

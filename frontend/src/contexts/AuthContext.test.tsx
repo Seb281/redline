@@ -13,7 +13,6 @@ vi.mock("@/lib/api", () => ({
   logout: vi.fn(),
 }));
 
-/* eslint-disable-next-line -- import after mock registration */
 import { getCurrentUser, logout } from "@/lib/api";
 import { AuthProvider, useAuth } from "./AuthContext";
 

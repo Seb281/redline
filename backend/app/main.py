@@ -1,17 +1,47 @@
 """FastAPI application for Redline contract analysis API."""
 
 import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
-from app.routers import export, upload
+from app.db import connect_db, disconnect_db
+from app.routers import analyses, auth, export, upload
+
+limiter = Limiter(key_func=get_remote_address)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    """Start and stop the database connection pool."""
+    await connect_db()
+    yield
+    await disconnect_db()
+
 
 app = FastAPI(
     title="Redline",
     description="AI contract clause analyzer",
     version="0.1.0",
+    lifespan=lifespan,
 )
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """Return 429 with human-readable message on rate limit exceeded."""
+    return JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded. Try again in {exc.detail}."},
+    )
+
 
 allowed_origins = os.environ.get(
     "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001"
@@ -19,6 +49,7 @@ allowed_origins = os.environ.get(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -26,6 +57,8 @@ app.add_middleware(
 
 app.include_router(upload.router)
 app.include_router(export.router)
+app.include_router(auth.router)
+app.include_router(analyses.router)
 
 
 @app.get("/api/health")

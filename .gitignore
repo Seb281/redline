@@ -4,6 +4,7 @@ backend/*.egg-info/
 .env.local
 
 docs/
+.parked/
 .claude/
 .superpowers/
 

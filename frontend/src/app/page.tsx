@@ -10,7 +10,7 @@ import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contract";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
-import { uploadContract, warmBackend } from "@/lib/api";
+import { saveAnalysis, uploadContract, warmBackend } from "@/lib/api";
 import type { AnalysisMode, AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
 
 type AppState =
@@ -212,6 +212,23 @@ export default function Home() {
     setChatOpen(true);
   }, []);
 
+  /** Persist the current analysis to the backend. */
+  const handleSave = useCallback(async (): Promise<string> => {
+    if (state.view !== "report") throw new Error("No report to save");
+    const result = await saveAnalysis({
+      filename: state.upload.filename,
+      file_type: state.upload.file_type,
+      page_count: state.upload.page_count,
+      char_count: state.upload.char_count,
+      contract_text: state.contractText,
+      overview: state.analysis.overview,
+      summary: state.analysis.summary,
+      clauses: state.analysis.clauses,
+      analysis_mode: mode,
+    });
+    return result.id;
+  }, [state, mode]);
+
   return (
     <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
       {state.view === "upload" && (
@@ -327,6 +344,7 @@ export default function Home() {
             onReset={handleReset}
             onOpenChat={handleOpenChat}
             onAskAboutClause={handleAskAboutClause}
+            onSave={handleSave}
           />
           <ChatPanel
             isOpen={chatOpen}

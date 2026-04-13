@@ -2,14 +2,17 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { AnalyzedClause, AnalyzeResponse, ClauseCategory, RiskLevel } from "@/types";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ClauseFilters, type SortOption } from "@/components/ClauseFilters";
 import { ContractOverview } from "@/components/ContractOverview";
 import { Disclaimer } from "@/components/Disclaimer";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { RiskChart } from "@/components/RiskChart";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
+import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
 import { downloadMarkdown, downloadPdf } from "@/lib/export";
 
@@ -18,6 +21,8 @@ interface ReportViewProps {
   onReset: () => void;
   onOpenChat?: () => void;
   onAskAboutClause?: (clause: AnalyzedClause) => void;
+  /** Persist the analysis. Returns the saved analysis ID. */
+  onSave?: () => Promise<string>;
 }
 
 const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2, informational: 3 };
@@ -48,11 +53,45 @@ function useFilteredClauses(
 }
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
-export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: ReportViewProps) {
+export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave }: ReportViewProps) {
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ClauseCategory | "all">("all");
   const [sort, setSort] = useState<SortOption>("risk-desc");
+
+  // Save state
+  type SaveState = "idle" | "login" | "saving" | "saved" | "error";
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
+
+  // When user becomes authenticated while LoginPrompt is showing,
+  // dismiss the prompt so the Save button is ready to click.
+  useEffect(() => {
+    if (isAuthenticated && saveState === "login") {
+      setSaveState("idle");
+    }
+  }, [isAuthenticated, saveState]);
+
+  /** Handle save click — shows LoginPrompt if not authenticated. */
+  const handleSave = useCallback(async () => {
+    if (!onSave) return;
+
+    if (!isAuthenticated) {
+      setSaveState("login");
+      return;
+    }
+
+    setSaveState("saving");
+    setSaveError(null);
+    try {
+      await onSave();
+      setSaveState("saved");
+    } catch (err) {
+      setSaveState("error");
+      setSaveError(err instanceof Error ? err.message : "Save failed");
+    }
+  }, [isAuthenticated, onSave]);
 
   const { summary, clauses } = data;
   const filteredClauses = useFilteredClauses(clauses, riskFilter, categoryFilter, sort);
@@ -151,8 +190,42 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause }: Repo
 
       {/* Sticky export bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
+        {/* Login prompt — slides in above buttons when save requires auth */}
+        {saveState === "login" && (
+          <div className="mx-auto max-w-4xl px-5 pt-3 sm:px-7">
+            <LoginPrompt message="Log in to save your analysis" />
+          </div>
+        )}
+
         <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5 sm:px-7">
           <div className="flex gap-2.5">
+            {/* Save button */}
+            {onSave && (
+              <>
+                {saveState === "saved" ? (
+                  <Link
+                    href="/history"
+                    className="rounded border border-green-500/30 bg-green-500/10 px-5 py-2.5 text-[15px] font-medium text-green-600 no-underline transition-colors hover:bg-green-500/20 font-[var(--font-body)] dark:text-green-400"
+                  >
+                    Saved
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saveState === "saving"}
+                    className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
+                  >
+                    {saveState === "saving" ? "Saving..." : "Save"}
+                  </button>
+                )}
+                {saveState === "error" && saveError && (
+                  <span className="self-center text-sm text-[var(--accent)] font-[var(--font-body)]">
+                    {saveError}
+                  </span>
+                )}
+              </>
+            )}
             <button
               type="button"
               onClick={() => downloadMarkdown(data)}

@@ -1,17 +1,21 @@
 """Upload endpoint — accepts PDF/DOCX, extracts text, returns metadata."""
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.schemas import FileType, UploadResponse
 from app.services.parser import parse_docx, parse_pdf
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @router.post("/api/upload", response_model=UploadResponse)
-async def upload_contract(file: UploadFile) -> UploadResponse:
+@limiter.limit("10/hour")
+async def upload_contract(request: Request, file: UploadFile) -> UploadResponse:
     """Upload a contract file and extract its text content.
 
     Accepts PDF or DOCX files up to 10 MB. Extracts text via pdfplumber

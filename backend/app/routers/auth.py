@@ -4,6 +4,8 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.db import get_db
 from app.middleware import get_current_user
@@ -17,11 +19,13 @@ from app.services.auth import (
 from app.services.email import send_magic_link_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 
 @router.post("/login")
+@limiter.limit("5/hour")
 async def login(body: LoginRequest, request: Request) -> dict:
     """Send a magic link to the user's email.
 

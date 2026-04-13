@@ -5,15 +5,19 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.db import get_db
 from app.middleware import get_current_user
 from app.schemas import AnalysisListItem, SaveAnalysisRequest, SavedAnalysisResponse
 
 router = APIRouter(prefix="/api/analyses", tags=["analyses"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("", status_code=201)
+@limiter.limit("20/hour")
 async def save_analysis(body: SaveAnalysisRequest, request: Request) -> dict:
     """Save a completed analysis for the authenticated user.
 

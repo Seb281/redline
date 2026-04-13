@@ -1,7 +1,9 @@
 backend/.venv/
 backend/**/__pycache__/
 backend/*.egg-info/
-.env.local
+.env
+.env.*
+!.env.example
 
 docs/
 .parked/

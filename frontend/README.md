@@ -1,6 +1,6 @@
 # Redline — Frontend
 
-Next.js app handling UI, LLM analysis pipeline, and interactive report rendering.
+Next.js app handling UI, streaming LLM analysis pipeline, clause chat, and interactive report rendering.
 
 See the [root README](../README.md) for architecture and pipeline details.
 
@@ -27,3 +27,4 @@ pnpm dev                     # http://localhost:3000
 |----------|----------|-------------|
 | `OPENAI_API_KEY` | Yes | OpenAI API key for contract analysis |
 | `NEXT_PUBLIC_API_URL` | No | Backend URL (default: `http://localhost:8001`) |
+| `NEXT_PUBLIC_PRIVACY_EMAIL` | No | Contact email shown on privacy page (default: `privacy@example.com`) |

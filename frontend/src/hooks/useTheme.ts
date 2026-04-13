@@ -22,6 +22,18 @@ export function useTheme() {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
+  /** Follow system preference changes when the user hasn't explicitly chosen a theme. */
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem("redline-theme")) {
+        setThemeState(e.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const toggle = useCallback(() => {
     const next = theme === "light" ? "dark" : "light";
     setThemeState(next);

@@ -102,3 +102,52 @@ export interface AnalyzeResponse {
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
 }
+
+/** User info returned by auth endpoints. */
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+/** Summary of a saved analysis for list views. */
+export interface AnalysisListItem {
+  id: string;
+  filename: string;
+  file_type: string;
+  contract_type: string | null;
+  analysis_mode: string;
+  clause_count: number;
+  risk_high: number;
+  risk_medium: number;
+  risk_low: number;
+  created_at: string;
+}
+
+/** Payload for saving an analysis to the backend. */
+export interface SaveAnalysisPayload {
+  filename: string;
+  file_type: string;
+  page_count: number | null;
+  char_count: number | null;
+  contract_text: string;
+  overview: ContractOverview;
+  summary: AnalysisSummary;
+  clauses: AnalyzedClause[];
+  analysis_mode: string;
+}
+
+/** Full saved analysis returned by GET /api/analyses/{id}. */
+export interface SavedAnalysis {
+  id: string;
+  filename: string;
+  file_type: string;
+  page_count: number | null;
+  char_count: number | null;
+  contract_text: string;
+  overview: ContractOverview;
+  summary: AnalysisSummary;
+  clauses: AnalyzedClause[];
+  analysis_mode: string;
+  created_at: string;
+  updated_at: string | null;
+}

@@ -1,6 +1,6 @@
 /** Backend API client for Redline. */
 
-import type { AnalyzeResponse, UploadResponse, AnalysisMode } from "@/types";
+import type { AnalyzeResponse, UploadResponse, AnalysisMode, AuthUser, AnalysisListItem, SaveAnalysisPayload, SavedAnalysis } from "@/types";
 
 /**
  * Normalize the configured backend URL so trailing slashes and missing
@@ -21,6 +21,19 @@ function normalizeBase(raw: string): string {
 const API_BASE = normalizeBase(
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001"
 );
+
+/**
+ * Fetch wrapper for backend API calls.
+ *
+ * Includes `credentials: "include"` so cross-origin HttpOnly session
+ * cookies are sent and received on every backend request.
+ */
+async function backendFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  return fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+  });
+}
 
 /**
  * Extract a human-readable error message from a failed `fetch` response.
@@ -75,7 +88,7 @@ export async function uploadContract(file: File): Promise<UploadResponse> {
 
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/api/upload`, {
+    res = await backendFetch("/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -124,7 +137,7 @@ export async function analyzeContract(
 
 /** Generate and download a PDF report from analysis data. */
 export async function exportPdf(data: AnalyzeResponse): Promise<Blob> {
-  const res = await fetch(`${API_BASE}/api/export/pdf`, {
+  const res = await backendFetch("/api/export/pdf", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -135,4 +148,112 @@ export async function exportPdf(data: AnalyzeResponse): Promise<Blob> {
   }
 
   return res.blob();
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+/** Send a magic link login email. */
+export async function login(email: string): Promise<{ message: string }> {
+  const res = await backendFetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Login failed"));
+  }
+
+  return res.json();
+}
+
+/** Verify a magic link token and establish a session. */
+export async function verifyToken(token: string): Promise<AuthUser> {
+  const res = await backendFetch("/api/auth/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Verification failed"));
+  }
+
+  return res.json();
+}
+
+/** Log out and clear the session cookie. */
+export async function logout(): Promise<void> {
+  await backendFetch("/api/auth/logout", { method: "POST" });
+}
+
+/**
+ * Get the current authenticated user.
+ *
+ * Returns `null` for anonymous visitors instead of throwing — the 401
+ * from the backend is an expected "not logged in" signal, not an error.
+ */
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const res = await backendFetch("/api/auth/me");
+    if (res.status === 401) return null;
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Analyses (persistence)
+// ---------------------------------------------------------------------------
+
+/** Save an analysis for the authenticated user. Returns the saved ID. */
+export async function saveAnalysis(payload: SaveAnalysisPayload): Promise<{ id: string }> {
+  const res = await backendFetch("/api/analyses", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Save failed"));
+  }
+
+  return res.json();
+}
+
+/** List all saved analyses for the authenticated user. */
+export async function listAnalyses(): Promise<AnalysisListItem[]> {
+  const res = await backendFetch("/api/analyses");
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Failed to load analyses"));
+  }
+
+  return res.json();
+}
+
+/** Fetch a single saved analysis by ID. */
+export async function getAnalysis(id: string): Promise<SavedAnalysis> {
+  const res = await backendFetch(`/api/analyses/${encodeURIComponent(id)}`);
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Analysis not found"));
+  }
+
+  return res.json();
+}
+
+/** Delete a saved analysis by ID. */
+export async function deleteAnalysis(id: string): Promise<void> {
+  const res = await backendFetch(`/api/analyses/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Delete failed"));
+  }
 }

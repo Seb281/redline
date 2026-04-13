@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import connect_db, disconnect_db
-from app.routers import export, upload
+from app.routers import auth, export, upload
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ app.add_middleware(
 
 app.include_router(upload.router)
 app.include_router(export.router)
+app.include_router(auth.router)
 
 
 @app.get("/api/health")

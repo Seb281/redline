@@ -31,9 +31,14 @@ describe("AnalysisFooter", () => {
 
   it("renders collapsed row with snapshot, region, timestamp", () => {
     render(<AnalysisFooter provenance={freshProvenance} />);
-    expect(screen.getByText(/mistral-small-2503/)).toBeTruthy();
-    expect(screen.getByText(/eu-west/)).toBeTruthy();
-    expect(screen.getByText(/2026-04-15T12:00:00.000Z/)).toBeTruthy();
+    // Snapshot/region/timestamp appear in both the collapsed summary
+    // line and the always-mounted expanded panel (kept in DOM so the
+    // max-h accordion can animate). At least one match is enough here.
+    expect(screen.getAllByText(/mistral-small-2503/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/eu-west/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/2026-04-15T12:00:00\.000Z/).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(/Recorded by/i)).toBeTruthy();
   });
 

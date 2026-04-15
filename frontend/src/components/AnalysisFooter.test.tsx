@@ -31,15 +31,38 @@ describe("AnalysisFooter", () => {
 
   it("renders collapsed row with snapshot, region, timestamp", () => {
     render(<AnalysisFooter provenance={freshProvenance} />);
-    // Snapshot/region/timestamp appear in both the collapsed summary
-    // line and the always-mounted expanded panel (kept in DOM so the
-    // max-h accordion can animate). At least one match is enough here.
-    expect(screen.getAllByText(/mistral-small-2503/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/eu-west/).length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(/2026-04-15T12:00:00\.000Z/).length,
-    ).toBeGreaterThan(0);
+    // Target the collapsed summary directly (the expanded panel stays
+    // DOM-mounted for the accordion transition, which would make a
+    // plain getByText ambiguous).
+    const summary = screen.getByTestId("collapsed-summary");
+    expect(summary.textContent).toContain("mistral-small-2503");
+    expect(summary.textContent).toContain("eu-west");
+    expect(summary.textContent).toContain("2026-04-15T12:00:00.000Z");
     expect(screen.getByText(/Recorded by/i)).toBeTruthy();
+  });
+
+  it("each identifier is its own select-all span (copy-friendly)", () => {
+    render(<AnalysisFooter provenance={freshProvenance} />);
+    const summary = screen.getByTestId("collapsed-summary");
+    const ids = Array.from(summary.querySelectorAll("span.select-all"));
+    expect(ids.map((n) => n.textContent)).toEqual([
+      "mistral-small-2503",
+      "eu-west",
+      "2026-04-15T12:00:00.000Z",
+    ]);
+    const separators = Array.from(summary.querySelectorAll("span.select-none"));
+    expect(separators.length).toBe(2);
+  });
+
+  it("renders em-dash when an expanded-panel field is empty", () => {
+    const provenance = { ...freshProvenance, snapshot: "" };
+    render(<AnalysisFooter provenance={provenance} />);
+    fireEvent.click(screen.getByRole("button", { name: /details/i }));
+    // Expanded Snapshot field falls back to em-dash when the value is
+    // blank — the label stays visible so the grid reads correctly.
+    const snapshotLabel = screen.getByText("Snapshot");
+    const snapshotRow = snapshotLabel.parentElement;
+    expect(snapshotRow?.textContent).toContain("\u2014");
   });
 
   it("reveals all four reasoning-effort labels when expanded", () => {

@@ -40,12 +40,15 @@ function effortColor(level: ReasoningEffortLabel): string {
   return "var(--text-muted)";
 }
 
-/** Stacked label + monospace value block used in the expanded panel. */
+/** Stacked label + monospace value block used in the expanded panel.
+ * Renders an em-dash for empty values so the grid stays readable when
+ * a provenance field happens to be blank. */
 function MetaField({ label, value }: { label: string; value: string }) {
+  const displayValue = value && value.trim() ? value : "\u2014";
   return (
     <div className="flex flex-col gap-1">
       <span className={LABEL_CLASS}>{label}</span>
-      <span className={VALUE_CLASS}>{value}</span>
+      <span className={VALUE_CLASS}>{displayValue}</span>
     </div>
   );
 }
@@ -94,7 +97,10 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
 
   // Prefer snapshot; fall back to model when snapshot is empty.
   const identifier = provenance.snapshot?.trim() || provenance.model;
-  const summary = `${identifier} · ${provenance.region} · ${provenance.timestamp}`;
+  const idClass =
+    "text-[13px] text-[var(--text-secondary)] font-[var(--font-mono)] select-all break-all";
+  const sepClass =
+    "text-[13px] text-[var(--text-muted)] font-[var(--font-mono)] select-none px-1";
 
   return (
     <footer className="mt-10 border-t border-[var(--border-primary)] pt-5 pb-3 theme-transition">
@@ -105,8 +111,18 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           >
             Recorded by
           </span>
-          <span className="text-[13px] text-[var(--text-secondary)] font-[var(--font-mono)] select-all break-all">
-            {summary}
+          {/* Each identifier is its own `select-all` span so a single
+              click copies JUST that value (the separator dots are
+              `select-none` and stay out of the selection). */}
+          <span
+            data-testid="collapsed-summary"
+            className="flex flex-wrap items-baseline"
+          >
+            <span className={idClass}>{identifier}</span>
+            <span className={sepClass} aria-hidden="true">·</span>
+            <span className={idClass}>{provenance.region}</span>
+            <span className={sepClass} aria-hidden="true">·</span>
+            <span className={idClass}>{provenance.timestamp}</span>
           </span>
         </div>
         <button

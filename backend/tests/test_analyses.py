@@ -32,6 +32,22 @@ SAVE_PAYLOAD = {
         {"title": "Governing Law", "risk_level": "low", "category": "governing_law"},
     ],
     "analysis_mode": "fast",
+    # Provenance is required end-to-end since SP-1 Phase 5. Older
+    # payloads without it are now rejected at the Pydantic boundary.
+    "provenance": {
+        "provider": "mistral",
+        "model": "mistral-small-4",
+        "snapshot": "mistral-small-4-2026-03-16",
+        "region": "eu-west-paris",
+        "reasoning_effort_per_pass": {
+            "overview": "low",
+            "extraction": "medium",
+            "risk": "high",
+            "think_hard": "high",
+        },
+        "prompt_template_version": "1.0",
+        "timestamp": "2026-04-15T12:00:00Z",
+    },
 }
 
 

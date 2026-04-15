@@ -370,6 +370,34 @@ export function buildExtractionPrompt(
 const PROMPT_TEMPLATE_VERSION = "1.0";
 
 /**
+ * Placeholder provenance for analyses persisted before SP-1 Phase 5 —
+ * those rows have no stored provenance because the pipeline didn't yet
+ * emit it. Marked `"unknown"` across the board so the UI can distinguish
+ * it from a real provenance block if it ever wants to surface that.
+ *
+ * The `SavedAnalysis` type keeps `provenance` optional for this exact
+ * reason (backend rows pre-migration may be missing it). Callers that
+ * need a non-null value when reconstructing an `AnalyzeResponse` use
+ * this helper as the fallback.
+ */
+export function legacyProvenance(): AnalysisProvenance {
+  return {
+    provider: "unknown",
+    model: "unknown",
+    snapshot: "unknown",
+    region: "unknown",
+    reasoning_effort_per_pass: {
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    },
+    prompt_template_version: "0.0",
+    timestamp: new Date(0).toISOString(),
+  };
+}
+
+/**
  * Assemble the provenance block attached to every analysis result.
  *
  * Reasoning-effort labels record the *policy intent* per pass (low for

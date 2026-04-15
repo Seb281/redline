@@ -225,6 +225,7 @@ export default function Home() {
       summary: state.analysis.summary,
       clauses: state.analysis.clauses,
       analysis_mode: mode,
+      provenance: state.analysis.provenance,
     });
     return result.id;
   }, [state, mode]);

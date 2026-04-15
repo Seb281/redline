@@ -127,8 +127,13 @@ export interface AnalyzeResponse {
   overview: ContractOverview;
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
-  /** Present once the pipeline assembles provenance (SP-1 Phase 5). */
-  provenance?: AnalysisProvenance;
+  /**
+   * Required — assembled by the analysis pipeline after every pass
+   * finishes. Carries the AI Act transparency block (provider, model,
+   * reasoning-effort policy per pass, prompt-template version, ISO
+   * timestamp).
+   */
+  provenance: AnalysisProvenance;
 }
 
 /** User info returned by auth endpoints. */
@@ -162,8 +167,8 @@ export interface SaveAnalysisPayload {
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
   analysis_mode: string;
-  /** Attached in SP-1 Phase 5 once provenance is assembled by the pipeline. */
-  provenance?: AnalysisProvenance;
+  /** Required — pipeline attaches this to every freshly-run analysis. */
+  provenance: AnalysisProvenance;
 }
 
 /** Full saved analysis returned by GET /api/analyses/{id}. */

@@ -14,7 +14,14 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { AnalyzedClause, AnalysisSummary, AnalyzeResponse, ContractOverview, AnalysisMode } from "@/types";
+import type {
+  AnalyzedClause,
+  AnalysisSummary,
+  AnalysisProvenance,
+  AnalyzeResponse,
+  ContractOverview,
+  AnalysisMode,
+} from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
 
 export interface StreamingAnalysisState {
@@ -150,6 +157,7 @@ export function useStreamingAnalysis() {
       // Track final results locally so we can return them (avoids stale
       // closure on React state).
       let finalSummary: AnalysisSummary | null = null;
+      let finalProvenance: AnalysisProvenance | null = null;
       const finalClauses: AnalyzedClause[] = [];
 
       // Pulled from the ref so we don't have to depend on stale closure
@@ -221,10 +229,16 @@ export function useStreamingAnalysis() {
                 finalClauses.push(event.data);
                 setState((prev) => ({ ...prev, clauses: [...prev.clauses, event.data] }));
                 break;
-              case "complete":
-                finalSummary = event.data;
-                setState((prev) => ({ ...prev, status: "complete", summary: event.data }));
+              case "complete": {
+                // Split provenance off the event payload before storing
+                // the summary — `AnalysisSummary` has no provenance field
+                // and React state stays cleaner without a superset shape.
+                const { provenance, ...summaryOnly } = event.data;
+                finalSummary = summaryOnly;
+                finalProvenance = provenance;
+                setState((prev) => ({ ...prev, status: "complete", summary: summaryOnly }));
                 break;
+              }
               case "error":
                 setState((prev) => ({ ...prev, status: "error", error: event.data.message }));
                 return null;
@@ -232,8 +246,13 @@ export function useStreamingAnalysis() {
           }
         }
 
-        if (capturedOverview && finalSummary) {
-          return { overview: capturedOverview, summary: finalSummary, clauses: finalClauses };
+        if (capturedOverview && finalSummary && finalProvenance) {
+          return {
+            overview: capturedOverview,
+            summary: finalSummary,
+            clauses: finalClauses,
+            provenance: finalProvenance,
+          };
         }
         return null;
       } catch (err) {

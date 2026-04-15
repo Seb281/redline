@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ReportView } from "@/components/ReportView";
 import { getAnalysis } from "@/lib/api";
+import { legacyProvenance } from "@/lib/analyzer";
 import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
 
 export default function HistoryDetailPage() {
@@ -80,11 +81,14 @@ export default function HistoryDetailPage() {
     );
   }
 
-  // Reconstruct AnalyzeResponse from saved data
+  // Reconstruct AnalyzeResponse from saved data. Rows saved before
+  // SP-1 Phase 5 have no provenance — fall back to the legacy
+  // placeholder so downstream consumers get a non-null value.
   const analyzeResponse: AnalyzeResponse = {
     overview: analysis.overview,
     summary: analysis.summary,
     clauses: analysis.clauses,
+    provenance: analysis.provenance ?? legacyProvenance(),
   };
 
   return (

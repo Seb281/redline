@@ -98,6 +98,20 @@ describe("useStreamingAnalysis", () => {
   });
 
   it("accumulates clauses from stream events", async () => {
+    const fakeProvenance = {
+      provider: "mistral",
+      model: "mistral-small-4",
+      snapshot: "mistral-small-4-2026-03-16",
+      region: "eu-west-paris",
+      reasoning_effort_per_pass: {
+        overview: "low",
+        extraction: "medium",
+        risk: "high",
+        think_hard: "high",
+      },
+      prompt_template_version: "1.0",
+      timestamp: "2026-04-15T00:00:00.000Z",
+    };
     const streamEvents = [
       { type: "extraction-complete", data: { clauseCount: 1 } },
       { type: "clause", data: fakeClause },
@@ -107,6 +121,7 @@ describe("useStreamingAnalysis", () => {
           total_clauses: 1,
           risk_breakdown: { high: 0, medium: 0, low: 1, informational: 0 },
           top_risks: [],
+          provenance: fakeProvenance,
         },
       },
     ];
@@ -123,14 +138,20 @@ describe("useStreamingAnalysis", () => {
       await result.current.runOverview("text");
     });
 
+    let finalResponse: Awaited<ReturnType<typeof result.current.runAnalysis>> | null = null;
     await act(async () => {
-      await result.current.runAnalysis("text", "fast", true, null);
+      finalResponse = await result.current.runAnalysis("text", "fast", true, null);
     });
 
     expect(result.current.status).toBe("complete");
     expect(result.current.clauses).toHaveLength(1);
     expect(result.current.clauses[0].title).toBe("Termination");
     expect(result.current.summary).not.toBeNull();
+    // Provenance from the `complete` event is folded into the response
+    // returned by runAnalysis and must be available to callers that save
+    // the analysis to the backend.
+    expect(finalResponse).not.toBeNull();
+    expect(finalResponse!.provenance).toEqual(fakeProvenance);
   });
 
   it("transitions to error on stream error event", async () => {

@@ -12,7 +12,13 @@
  */
 
 import { generateObject, Output, streamText } from "ai";
-import type { ContractOverview, AnalyzedClause, AnalysisSummary, AnalysisMode } from "@/types";
+import type {
+  ContractOverview,
+  AnalyzedClause,
+  AnalysisSummary,
+  AnalysisMode,
+  AnalysisProvenance,
+} from "@/types";
 import { getProvider, type LLMProvider } from "@/lib/llm/provider";
 import {
   contractOverviewSchema,
@@ -22,14 +28,23 @@ import {
   EXTRACTION_SYSTEM_PROMPT,
   buildAnalysisSystemPrompt,
   buildExtractionPrompt,
+  buildProvenance,
   buildRiskBreakdown,
 } from "@/lib/analyzer";
 
-/** Events emitted over the NDJSON stream (extraction + analysis only). */
+/**
+ * Events emitted over the NDJSON stream (extraction + analysis only).
+ *
+ * `complete` carries the assembled `AnalysisProvenance` block so the
+ * client can persist it alongside the saved analysis without needing
+ * a second round-trip. Provenance timestamp is stamped at the moment
+ * the final summary is built — not at request start — so the saved
+ * record reflects when analysis actually finished.
+ */
 export type AnalysisEvent =
   | { type: "extraction-complete"; data: { clauseCount: number } }
   | { type: "clause"; data: AnalyzedClause }
-  | { type: "complete"; data: AnalysisSummary }
+  | { type: "complete"; data: AnalysisSummary & { provenance: AnalysisProvenance } }
   | { type: "error"; data: { message: string } };
 
 /** Encode an event as an NDJSON line (UTF-8). */
@@ -139,7 +154,12 @@ export function streamExtractAndAnalyze(
             .filter((c) => c.risk_level === "high")
             .map((c) => `${c.title}: ${c.risk_explanation}`),
         };
-        controller.enqueue(encode({ type: "complete", data: summary }));
+        controller.enqueue(
+          encode({
+            type: "complete",
+            data: { ...summary, provenance: buildProvenance(provider) },
+          }),
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Analysis failed";
         controller.enqueue(encode({ type: "error", data: { message } }));

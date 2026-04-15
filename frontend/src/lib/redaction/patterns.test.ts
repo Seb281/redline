@@ -52,6 +52,13 @@ describe("PATTERNS.vat", () => {
       "DE123456789",
     ]);
   });
+  it("does not match arbitrary 2-letter+digit codes (non-EU prefixes)", () => {
+    // Regression: an earlier loose pattern over-matched product SKUs /
+    // case references like "XX1234567890ABC". Restrict to EU country
+    // codes only.
+    expect(findAll("vat", "Order XX1234567890ABC ships Monday")).toEqual([]);
+    expect(findAll("vat", "Case ZZ987654321 is closed")).toEqual([]);
+  });
 });
 
 describe("PATTERNS.frenchSsn", () => {

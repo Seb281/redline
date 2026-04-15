@@ -5,7 +5,7 @@
  */
 
 export interface Pattern {
-  /** Token kind name; used as the prefix in `[KIND_N]` substitutions. */
+  /** Token kind name; used as the prefix in `⟦KIND_N⟧` substitutions. */
   kind: string;
   regex: RegExp;
   /** Optional post-match validator (e.g. IBAN checksum). */
@@ -15,6 +15,10 @@ export interface Pattern {
 /**
  * IBAN mod-97 checksum per ISO 13616. Strips whitespace before checking.
  * Rejects sequences whose check digits don't compute to 1.
+ *
+ * Chunk size 7: leading remainder (≤96, 2 digits) concatenated with 7
+ * digits yields at most 9 decimal digits (< 10^9), well under 2^53 — safe
+ * for native Number arithmetic, no BigInt required.
  */
 export function validIban(ibanRaw: string): boolean {
   const iban = ibanRaw.replace(/\s+/g, "").toUpperCase();
@@ -32,6 +36,15 @@ export function validIban(ibanRaw: string): boolean {
   return remainder === 1;
 }
 
+/**
+ * EU member state country codes for VAT identification. Restricting the
+ * prefix alternation avoids false positives on arbitrary 2-letter+digit
+ * product SKUs / case references that would otherwise match a loose
+ * `[A-Z]{2}\d{8,10}` pattern.
+ */
+const EU_VAT_PREFIXES =
+  "AT|BE|BG|HR|CY|CZ|DK|EE|FI|FR|DE|EL|HU|IE|IT|LV|LT|LU|MT|NL|PL|PT|RO|SK|SI|ES|SE|XI";
+
 export const PATTERNS: Record<string, Pattern> = {
   email: {
     kind: "EMAIL",
@@ -48,7 +61,10 @@ export const PATTERNS: Record<string, Pattern> = {
   },
   vat: {
     kind: "VAT",
-    regex: /(?<![A-Z])[A-Z]{2}\d{8,10}[A-Z0-9]{0,3}\b/g,
+    regex: new RegExp(
+      `(?<![A-Z])(?:${EU_VAT_PREFIXES})\\d{8,12}[A-Z0-9]{0,3}\\b`,
+      "g",
+    ),
   },
   frenchSsn: {
     kind: "FR_SSN",

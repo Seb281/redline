@@ -26,25 +26,61 @@ describe("redact + rehydrate round-trip", () => {
     const { scrubbed, tokenMap } = redact(text, ["ACME Corp"]);
     expect(scrubbed).not.toContain("ACME Corp");
     expect(scrubbed).not.toContain("dpo@acme.de");
-    expect(scrubbed).toContain("[PARTY_A]");
+    expect(scrubbed).toContain("\u27E6PARTY_A\u27E7");
     expect(rehydrate(scrubbed, tokenMap)).toBe(text);
   });
 
   it("round-trips IBAN", () => {
     const text = "Pay to NL91 ABNA 0417 1643 00 within 30 days.";
     const { scrubbed, tokenMap } = redact(text, []);
-    expect(scrubbed).toContain("[IBAN_1]");
+    expect(scrubbed).toContain("\u27E6IBAN_1\u27E7");
     expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+
+  it("round-trips curly-apostrophe possessives (PDF/DOCX text)", () => {
+    const text = "Acme\u2019s obligations are several.";
+    const { scrubbed, tokenMap } = redact(text, ["Acme"]);
+    expect(scrubbed).toBe("\u27E6PARTY_A\u27E7\u2019s obligations are several.");
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+
+  it("round-trips when contract already contains a bracket-shaped placeholder", () => {
+    // ASCII `[EMAIL_1]` literal in a template exhibit must NOT be mistaken
+    // for a token during rehydrate. The `⟦⟧` delimiter choice defends
+    // against this class of collision.
+    const text = "Boilerplate: [EMAIL_1] is a placeholder. Contact x@y.com.";
+    const { scrubbed, tokenMap } = redact(text, []);
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+
+  it("deduplicates overlapping party entries without corrupting spans", () => {
+    // Pass 0 can emit duplicate or overlapping party names; the redactor
+    // must not splice-corrupt the same span twice.
+    const text = "ACME and ACME again.";
+    const { scrubbed, tokenMap } = redact(text, ["ACME", "ACME"]);
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+    expect(scrubbed).not.toMatch(/PART[^\u27E6]*\u27E7[A-Z]/);
   });
 });
 
 describe("redact tokenMap shape", () => {
-  it("numbers tokens by occurrence", () => {
+  it("numbers tokens by occurrence (forward order)", () => {
     const text = "first@a.com plus second@b.com and back to first@a.com again.";
     const { scrubbed, tokenMap } = redact(text, []);
-    expect(scrubbed).toContain("[EMAIL_1]");
-    expect(scrubbed).toContain("[EMAIL_2]");
-    expect(tokenMap.get("[EMAIL_1]")).toBe("first@a.com");
-    expect(tokenMap.get("[EMAIL_2]")).toBe("second@b.com");
+    expect(scrubbed).toContain("\u27E6EMAIL_1\u27E7");
+    expect(scrubbed).toContain("\u27E6EMAIL_2\u27E7");
+    expect(tokenMap.get("\u27E6EMAIL_1\u27E7")).toBe("first@a.com");
+    expect(tokenMap.get("\u27E6EMAIL_2\u27E7")).toBe("second@b.com");
+  });
+
+  it("assigns ascending numbers to distinct values in source order", () => {
+    // Regression: prior reverse-iteration assigned ⟦EMAIL_1⟧ to the LAST
+    // distinct email, reversing user expectations.
+    const text = "e0@x.com e1@x.com e2@x.com e3@x.com";
+    const { tokenMap } = redact(text, []);
+    expect(tokenMap.get("\u27E6EMAIL_1\u27E7")).toBe("e0@x.com");
+    expect(tokenMap.get("\u27E6EMAIL_2\u27E7")).toBe("e1@x.com");
+    expect(tokenMap.get("\u27E6EMAIL_3\u27E7")).toBe("e2@x.com");
+    expect(tokenMap.get("\u27E6EMAIL_4\u27E7")).toBe("e3@x.com");
   });
 });

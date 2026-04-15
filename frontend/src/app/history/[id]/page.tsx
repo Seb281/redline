@@ -82,13 +82,16 @@ export default function HistoryDetailPage() {
   }
 
   // Reconstruct AnalyzeResponse from saved data. Rows saved before
-  // SP-1 Phase 5 have no provenance — fall back to the legacy
-  // placeholder so downstream consumers get a non-null value.
+  // SP-1 Phase 5 have no provenance — the backend migration seeds the
+  // column with `'{}'::jsonb`, so an empty object (not just
+  // null/undefined) must also trigger the legacy placeholder.
+  const hasProvenance =
+    analysis.provenance && Object.keys(analysis.provenance).length > 0;
   const analyzeResponse: AnalyzeResponse = {
     overview: analysis.overview,
     summary: analysis.summary,
     clauses: analysis.clauses,
-    provenance: analysis.provenance ?? legacyProvenance(),
+    provenance: hasProvenance ? analysis.provenance! : legacyProvenance(),
   };
 
   return (

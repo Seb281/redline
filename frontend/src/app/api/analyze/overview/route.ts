@@ -8,6 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { generateOverview } from "@/lib/streaming-analyzer";
+import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -20,8 +21,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // Dev-only `?provider=` override; ignored in production.
+  const url = new URL(request.url);
+  const overrideRaw = url.searchParams.get("provider");
+  const override =
+    isOverrideAllowed() && (overrideRaw === "openai" || overrideRaw === "mistral")
+      ? (overrideRaw as ProviderName)
+      : undefined;
+  const provider = getProvider(override);
+
   try {
-    const overview = await generateOverview(text);
+    const overview = await generateOverview(text, provider);
     return NextResponse.json({ overview });
   } catch (error) {
     const message =

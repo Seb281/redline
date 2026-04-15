@@ -7,7 +7,7 @@
  */
 
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { model } from "@/lib/analyzer";
+import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
 import { buildChatContext } from "@/lib/chat-context";
 import type { AnalyzeResponse } from "@/types";
 
@@ -17,6 +17,16 @@ export async function POST(request: Request) {
   const body = await request.json();
   const messages: UIMessage[] = body.messages ?? [];
   const analysis: AnalyzeResponse | null = body.analysis ?? null;
+
+  // Dev-only `?provider=` override: lets local testing swap providers
+  // without restarting the server. Gate keeps this off in production.
+  const url = new URL(request.url);
+  const overrideRaw = url.searchParams.get("provider");
+  const override =
+    isOverrideAllowed() && (overrideRaw === "openai" || overrideRaw === "mistral")
+      ? (overrideRaw as ProviderName)
+      : undefined;
+  const provider = getProvider(override);
 
   // Enforce message limit
   if (messages.length > MAX_MESSAGES) {
@@ -85,7 +95,7 @@ consulting a local attorney.
   const modelMessages = await convertToModelMessages(messages);
 
   const result = streamText({
-    model,
+    model: provider.model("medium"),
     system: systemPrompt,
     messages: modelMessages,
   });

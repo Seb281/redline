@@ -1,30 +1,21 @@
 /**
  * LLM pipeline orchestration using Vercel AI SDK.
  *
- * Change provider/model by swapping the import and `model` constant below.
- * Everything else (prompts, schemas, pipeline logic) stays the same.
+ * Provider selection is delegated to `lib/llm/provider.ts`. Each pipeline
+ * pass calls `provider.model(effort)` rather than importing a model
+ * directly — that keeps prompt/schema code provider-agnostic.
+ *
+ * Reasoning effort per pass (validated in spec):
+ *   - Pass 0 (overview):   "low"
+ *   - Pass 1 (extraction): "medium"
+ *   - Pass 2 (risk):       "high"
+ *   - Think Hard fan-out:  "high"
  */
 
 import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import type { AnalyzeResponse } from "@/types";
-import type { AnalysisMode } from "@/types";
-
-// ---------------------------------------------------------------------------
-// Model configuration — single place to swap provider and model
-// ---------------------------------------------------------------------------
-
-/** Return the model instance for the given analysis mode. */
-export function getModel(mode: AnalysisMode) {
-  return mode === "deep" ? openai("gpt-4.1") : openai("gpt-4.1-nano");
-}
-
-/**
- * Default model for backward compatibility with callsites that don't
- * yet pass a mode (overview pass always uses fast).
- */
-export const model = openai("gpt-4.1-nano");
+import type { AnalyzeResponse, AnalysisMode } from "@/types";
+import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -402,39 +393,39 @@ export async function analyzeContract(
   mode: AnalysisMode,
   withCitations: boolean = true,
   userRole?: string | null,
+  provider: LLMProvider = getProvider(),
 ): Promise<AnalyzeResponse> {
-  // Pass 0 — extract contract overview (includes clause inventory)
+  // Pass 0 — overview (low reasoning effort)
   const { object: overview } = await generateObject({
-    model,
+    model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
   });
 
-  // Build analysis prompt now that we have jurisdiction from Pass 0.
   const analysisSystemPrompt = buildAnalysisSystemPrompt(
     withCitations,
     userRole,
     overview.governing_jurisdiction,
   );
 
-  // Pass 1 — extract clauses guided by inventory from Pass 0
+  // Pass 1 — extraction (medium effort)
   const { object: extraction } = await generateObject({
-    model,
+    model: provider.model("medium"),
     schema: extractionResultSchema,
     system: EXTRACTION_SYSTEM_PROMPT,
     prompt: buildExtractionPrompt(text, overview.clause_inventory),
   });
 
-  // Pass 2 — analyze clauses
+  // Pass 2 — risk analysis (high effort)
+  const passEffort: ReasoningEffort = "high";
   let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
 
   if (mode === "deep") {
-    // Fan-out: one LLM call per clause, in parallel
     analyzedClauses = await Promise.all(
       extraction.clauses.map(async (clause) => {
         const { object } = await generateObject({
-          model: getModel(mode),
+          model: provider.model(passEffort),
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -443,9 +434,8 @@ export async function analyzeContract(
       })
     );
   } else {
-    // Batch: all clauses in a single LLM call
     const { object: analysis } = await generateObject({
-      model: getModel(mode),
+      model: provider.model(passEffort),
       schema: batchAnalysisSchema,
       system: analysisSystemPrompt,
       prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
@@ -453,7 +443,6 @@ export async function analyzeContract(
     analyzedClauses = analysis.clauses;
   }
 
-  // Build summary
   const summary = {
     total_clauses: analyzedClauses.length,
     risk_breakdown: buildRiskBreakdown(analyzedClauses),

@@ -13,9 +13,8 @@
 
 import { generateObject, Output, streamText } from "ai";
 import type { ContractOverview, AnalyzedClause, AnalysisSummary, AnalysisMode } from "@/types";
+import { getProvider, type LLMProvider } from "@/lib/llm/provider";
 import {
-  model,
-  getModel,
   contractOverviewSchema,
   extractionResultSchema,
   analyzedClauseSchema,
@@ -46,9 +45,12 @@ function encode(event: AnalysisEvent): Uint8Array {
  * so the client can fetch it, show the user the extracted parties, and
  * only then kick off the slower analysis stream with a declared role.
  */
-export async function generateOverview(text: string): Promise<ContractOverview> {
+export async function generateOverview(
+  text: string,
+  provider: LLMProvider = getProvider(),
+): Promise<ContractOverview> {
   const { object } = await generateObject({
-    model,
+    model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
@@ -77,6 +79,7 @@ export function streamExtractAndAnalyze(
   clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
   jurisdiction?: string | null,
+  provider: LLMProvider = getProvider(),
 ): ReadableStream<Uint8Array> {
   const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole, jurisdiction);
   return new ReadableStream({
@@ -84,7 +87,7 @@ export function streamExtractAndAnalyze(
       try {
         // Pass 1 — extract clauses guided by inventory from overview
         const { object: extraction } = await generateObject({
-          model,
+          model: provider.model("medium"),
           schema: extractionResultSchema,
           system: EXTRACTION_SYSTEM_PROMPT,
           prompt: buildExtractionPrompt(text, clauseInventory),
@@ -101,7 +104,7 @@ export function streamExtractAndAnalyze(
           const results: AnalyzedClause[] = [];
           const promises = extraction.clauses.map(async (clause) => {
             const { object } = await generateObject({
-              model: getModel(mode),
+              model: provider.model("high"),
               schema: analyzedClauseSchema,
               system: analysisSystemPrompt,
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -116,7 +119,7 @@ export function streamExtractAndAnalyze(
           // Batch: stream elements from a single LLM call via Output.array
           allClauses = [];
           const result = streamText({
-            model: getModel(mode),
+            model: provider.model("high"),
             output: Output.array({ element: analyzedClauseSchema }),
             system: analysisSystemPrompt,
             prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

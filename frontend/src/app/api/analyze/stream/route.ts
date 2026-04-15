@@ -6,6 +6,7 @@
  */
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
+import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
 import type { AnalysisMode } from "@/types";
 
 export async function POST(request: Request) {
@@ -46,7 +47,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = streamExtractAndAnalyze(text, mode, withCitations, clauseInventory, userRole, jurisdiction);
+  // Dev-only `?provider=` override; ignored in production.
+  const url = new URL(request.url);
+  const overrideRaw = url.searchParams.get("provider");
+  const override =
+    isOverrideAllowed() && (overrideRaw === "openai" || overrideRaw === "mistral")
+      ? (overrideRaw as ProviderName)
+      : undefined;
+  const provider = getProvider(override);
+
+  const stream = streamExtractAndAnalyze(text, mode, withCitations, clauseInventory, userRole, jurisdiction, provider);
 
   return new Response(stream, {
     headers: {

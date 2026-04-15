@@ -10,6 +10,7 @@
 
 import type { StreamingAnalysisState } from "@/hooks/useStreamingAnalysis";
 import type { UploadResponse } from "@/types";
+import { AnalysisFooter } from "@/components/AnalysisFooter";
 import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ContractOverview } from "@/components/ContractOverview";
@@ -43,7 +44,7 @@ export function StreamingReportView({
   onRetry,
   retryCount,
 }: StreamingReportViewProps) {
-  const { overview, clauses, clauseCount, summary, status, error } = state;
+  const { overview, clauses, clauseCount, summary, provenance, status, error } = state;
 
   // Nothing yet — show initial loading state with stepper.
   if (!overview && (status === "analyzing_overview" || status === "analyzing")) {
@@ -186,6 +187,11 @@ export function StreamingReportView({
           ))}
         </div>
       )}
+
+      {/* Transparency colophon — EU AI Act disclosure of the machine
+          that produced the analysis. Only render once provenance is
+          attached (i.e. after the `complete` event). */}
+      {provenance && <AnalysisFooter provenance={provenance} />}
 
       {/* Bottom bar — reset only during streaming, full actions after complete */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">

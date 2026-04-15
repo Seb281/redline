@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { AnalyzedClause, AnalyzeResponse, ClauseCategory, RiskLevel } from "@/types";
+import { AnalysisFooter } from "@/components/AnalysisFooter";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ClauseFilters, type SortOption } from "@/components/ClauseFilters";
 import { ContractOverview } from "@/components/ContractOverview";
@@ -187,6 +188,11 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
 
       {/* Disclaimer */}
       <Disclaimer />
+
+      {/* Transparency colophon — EU AI Act disclosure of the machine
+          that produced the analysis. Guarded with optional chaining so
+          any stray legacy caller without provenance won't crash. */}
+      {data.provenance && <AnalysisFooter provenance={data.provenance} />}
 
       {/* Sticky export bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">

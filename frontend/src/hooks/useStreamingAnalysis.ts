@@ -37,6 +37,12 @@ export interface StreamingAnalysisState {
   /** Total clause count from the extraction pass (before analysis). */
   clauseCount: number | null;
   summary: AnalysisSummary | null;
+  /**
+   * Provenance block attached when the pipeline emits its `complete`
+   * event. Null until the run finishes so the colophon footer only
+   * renders once the machine identifiers are known.
+   */
+  provenance: AnalysisProvenance | null;
   error: string | null;
 }
 
@@ -46,6 +52,7 @@ const INITIAL_STATE: StreamingAnalysisState = {
   clauses: [],
   clauseCount: null,
   summary: null,
+  provenance: null,
   error: null,
 };
 
@@ -92,6 +99,7 @@ export function useStreamingAnalysis() {
         clauses: [],
         clauseCount: null,
         summary: null,
+        provenance: null,
         error: null,
       });
 
@@ -242,7 +250,12 @@ export function useStreamingAnalysis() {
                 const { provenance, ...summaryOnly } = event.data;
                 finalSummary = summaryOnly;
                 finalProvenance = provenance;
-                setState((prev) => ({ ...prev, status: "complete", summary: summaryOnly }));
+                setState((prev) => ({
+                  ...prev,
+                  status: "complete",
+                  summary: summaryOnly,
+                  provenance,
+                }));
                 break;
               }
               case "error":

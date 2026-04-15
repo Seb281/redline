@@ -8,7 +8,7 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
 import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
-import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contract";
+import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contracts/nl-freelance";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
 import { saveAnalysis, uploadContract, warmBackend } from "@/lib/api";
 import type { AnalysisMode, AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";

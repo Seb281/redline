@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class FileType(str, Enum):
@@ -143,10 +143,55 @@ class VerifyRequest(BaseModel):
 # --- Persistence schemas ---
 
 
+ReasoningEffortLabel = Literal["low", "medium", "high"]
+
+
+class ReasoningEffortPerPass(BaseModel):
+    """Reasoning-effort label per pipeline pass (EU AI Act transparency)."""
+
+    overview: ReasoningEffortLabel
+    extraction: ReasoningEffortLabel
+    risk: ReasoningEffortLabel
+    think_hard: ReasoningEffortLabel
+
+
+# Sentinel `provider` value emitted by the frontend when reconstructing
+# an `AnalyzeResponse` from a pre-Phase-5 saved analysis that has no
+# stored provenance. Rejected on save so placeholder transparency data
+# cannot be persisted as authentic.
+LEGACY_PROVENANCE_PROVIDER = "legacy-pre-phase5"
+
+
+class ProvenanceModel(BaseModel):
+    """Per-analysis LLM provenance required for EU AI Act transparency.
+
+    Every field is required. The frontend assembles this after all
+    passes complete and forwards it on save.
+    """
+
+    provider: str = Field(min_length=1)
+    model: str = Field(min_length=1)
+    snapshot: str = Field(min_length=1)
+    region: str = Field(min_length=1)
+    reasoning_effort_per_pass: ReasoningEffortPerPass
+    prompt_template_version: str = Field(min_length=1)
+    timestamp: str = Field(min_length=1)
+
+    @field_validator("provider")
+    @classmethod
+    def reject_legacy_placeholder(cls, v: str) -> str:
+        """Block the legacy placeholder from round-tripping into the DB."""
+        if v == LEGACY_PROVENANCE_PROVIDER:
+            raise ValueError(
+                "legacy-pre-phase5 provenance placeholder cannot be persisted",
+            )
+        return v
+
+
 class SaveAnalysisRequest(BaseModel):
     """Request body for saving an analysis.
 
-    The ``provenance`` dict carries per-analysis LLM metadata (provider,
+    The ``provenance`` block carries per-analysis LLM metadata (provider,
     model, snapshot, region, reasoning effort, prompt template version,
     timestamp). Required end-to-end as of SP-1 Phase 5 — the frontend
     assembles it in every pipeline run and must forward it here.
@@ -161,7 +206,7 @@ class SaveAnalysisRequest(BaseModel):
     summary: dict
     clauses: list[dict]
     analysis_mode: str
-    provenance: dict
+    provenance: ProvenanceModel
 
 
 class AnalysisListItem(BaseModel):

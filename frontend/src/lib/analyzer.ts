@@ -370,10 +370,19 @@ export function buildExtractionPrompt(
 const PROMPT_TEMPLATE_VERSION = "1.0";
 
 /**
+ * Sentinel `provider` value for the legacy-provenance placeholder. The
+ * backend rejects this value on save so a placeholder cannot be
+ * persisted as authentic transparency data.
+ */
+export const LEGACY_PROVENANCE_PROVIDER = "legacy-pre-phase5";
+
+/**
  * Placeholder provenance for analyses persisted before SP-1 Phase 5 —
  * those rows have no stored provenance because the pipeline didn't yet
- * emit it. Marked `"unknown"` across the board so the UI can distinguish
- * it from a real provenance block if it ever wants to surface that.
+ * emit it. The `LEGACY_PROVENANCE_PROVIDER` sentinel is specifically
+ * rejected by the backend `SaveAnalysisRequest` validator, so this
+ * placeholder can satisfy the required type locally while being unable
+ * to round-trip into a new DB row as genuine provenance.
  *
  * The `SavedAnalysis` type keeps `provenance` optional for this exact
  * reason (backend rows pre-migration may be missing it). Callers that
@@ -382,10 +391,10 @@ const PROMPT_TEMPLATE_VERSION = "1.0";
  */
 export function legacyProvenance(): AnalysisProvenance {
   return {
-    provider: "unknown",
-    model: "unknown",
-    snapshot: "unknown",
-    region: "unknown",
+    provider: LEGACY_PROVENANCE_PROVIDER,
+    model: "legacy",
+    snapshot: "legacy",
+    region: "legacy",
     reasoning_effort_per_pass: {
       overview: "low",
       extraction: "medium",

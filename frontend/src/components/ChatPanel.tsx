@@ -134,6 +134,7 @@ export function ChatPanel({
               key={msg.id}
               message={msg}
               isStreaming={status === "streaming" && msg === messages[messages.length - 1] && msg.role === "assistant"}
+              parties={analysis.overview.parties}
             />
           ))}
           <div ref={messagesEndRef} />

@@ -58,7 +58,7 @@ async def save_analysis(body: SaveAnalysisRequest, request: Request) -> dict:
             "summary": json.dumps(body.summary),
             "clauses": json.dumps(body.clauses),
             "analysis_mode": body.analysis_mode,
-            "provenance": json.dumps(body.provenance),
+            "provenance": json.dumps(body.provenance.model_dump()),
             "created_at": now,
         },
     )

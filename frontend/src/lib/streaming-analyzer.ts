@@ -130,8 +130,7 @@ export function streamExtractAndAnalyze(
         let allClauses: AnalyzedClause[];
 
         if (mode === "deep") {
-          // Fan-out: one LLM call per clause, stream each as it resolves
-          const results: AnalyzedClause[] = [];
+          // Fan-out: one LLM call per clause, stream each as it resolves.
           const promises = extraction.clauses.map(async (clause) => {
             const { object } = await generateObject({
               model: provider.model("high"),
@@ -140,7 +139,6 @@ export function streamExtractAndAnalyze(
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
             });
             const analyzed = rehydrateClause(object as AnalyzedClause, tokenMap);
-            results.push(analyzed);
             controller.enqueue(encode({ type: "clause", data: analyzed }));
             return analyzed;
           });

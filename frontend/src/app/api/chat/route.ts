@@ -93,19 +93,25 @@ INSTRUCTIONS:
 consulting a local attorney.
 - Keep responses concise (2-4 paragraphs max) unless the user asks for detail.`;
 
-  // Redact PII (emails, phone numbers, IBANs, VAT IDs, …) out of the
-  // system prompt and every user message before the LLM sees them.
-  // Party names are intentionally NOT redacted for chat — the user
-  // already knows who they're contracting with and the chat UX relies
-  // on the assistant referring to them by name. The streamed reply is
-  // returned unmodified: since `useChat` consumes a UI-message stream,
-  // transparent mid-stream rehydration would mean rewriting that
-  // protocol wrapper, which is deferred to a follow-up SP-1 task.
-  const scrubbedSystemPrompt = redact(systemPrompt, []).scrubbed;
+  // Scrub BOTH party names and PII (emails, phone numbers, IBANs, VAT
+  // IDs, …) out of the system prompt and every user message before the
+  // LLM sees them — the privacy boundary is the model provider, not the
+  // end user. Party names come from Pass 0 (`analysis.overview.parties`)
+  // and are tokenized identically here so repeated chat turns produce
+  // consistent tokens.
+  //
+  // The streamed reply is NOT rehydrated here: `useChat` consumes a
+  // UI-message stream and transparent mid-stream rehydration would
+  // require wrapping that protocol. The assistant reply therefore
+  // reaches the UI with `⟦PARTY_A⟧`-style tokens intact. Rehydrating
+  // on the client (ChatPanel) using the publicly-known parties list is
+  // tracked as SP-1 follow-up — not a blocker for the privacy gate.
+  const parties = analysis.overview.parties ?? [];
+  const scrubbedSystemPrompt = redact(systemPrompt, parties).scrubbed;
   const scrubbedMessages: UIMessage[] = messages.map((m) => ({
     ...m,
     parts: m.parts?.map((p) =>
-      p.type === "text" ? { ...p, text: redact(p.text, []).scrubbed } : p,
+      p.type === "text" ? { ...p, text: redact(p.text, parties).scrubbed } : p,
     ),
   }));
   const modelMessages = await convertToModelMessages(scrubbedMessages);

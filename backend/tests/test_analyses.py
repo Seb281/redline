@@ -84,6 +84,37 @@ def test_save_analysis_with_auth_returns_201():
     db.execute.assert_awaited_once()
 
 
+def test_save_analysis_without_provenance_returns_422():
+    """POST without a provenance block is rejected at the Pydantic boundary."""
+    from unittest.mock import patch
+
+    payload = {k: v for k, v in SAVE_PAYLOAD.items() if k != "provenance"}
+
+    with patch(
+        "app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 422
+
+
+def test_save_analysis_with_legacy_provenance_sentinel_returns_422():
+    """Legacy-pre-phase5 placeholder provenance must never persist."""
+    from unittest.mock import patch
+
+    payload = {
+        **SAVE_PAYLOAD,
+        "provenance": {**SAVE_PAYLOAD["provenance"], "provider": "legacy-pre-phase5"},
+    }
+
+    with patch(
+        "app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 422
+
+
 # --- GET /api/analyses ---
 
 

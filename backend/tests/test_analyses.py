@@ -209,6 +209,118 @@ def test_get_analysis_wrong_owner_returns_404():
 # --- DELETE /api/analyses/{id} ---
 
 
+def test_save_analysis_persists_provenance():
+    """POST with a provenance block passes it verbatim into the INSERT."""
+    import json
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    provenance = {
+        "provider": "mistral",
+        "model": "mistral-small-4",
+        "snapshot": "mistral-small-4-2026-03-16",
+        "region": "eu-west-paris",
+        "reasoning_effort_per_pass": {
+            "overview": "low",
+            "extraction": "medium",
+            "risk": "high",
+            "think_hard": "high",
+        },
+        "prompt_template_version": "1.0",
+        "timestamp": "2026-04-15T12:00:00Z",
+    }
+    payload = {**SAVE_PAYLOAD, "provenance": provenance}
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 201
+    db.execute.assert_awaited_once()
+    call_params = db.execute.await_args.args[1]
+    assert json.loads(call_params["provenance"]) == provenance
+
+
+def test_get_analysis_returns_provenance_round_trip():
+    """GET /api/analyses/{id} returns the stored provenance JSON unchanged."""
+    from unittest.mock import patch
+
+    provenance = {
+        "provider": "mistral",
+        "model": "mistral-small-4",
+        "snapshot": "mistral-small-4-2026-03-16",
+        "region": "eu-west-paris",
+        "reasoning_effort_per_pass": {
+            "overview": "low",
+            "extraction": "medium",
+            "risk": "high",
+            "think_hard": "high",
+        },
+        "prompt_template_version": "1.0",
+        "timestamp": "2026-04-15T12:00:00Z",
+    }
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "file_type": "pdf",
+        "page_count": 5,
+        "char_count": 12000,
+        "contract_text": "Full contract text...",
+        "overview": {"contract_type": "SaaS"},
+        "summary": {"total_clauses": 2},
+        "clauses": [{"title": "Non-Compete", "risk_level": "high"}],
+        "analysis_mode": "fast",
+        "provenance": provenance,
+        "created_at": datetime(2026, 4, 13, tzinfo=timezone.utc),
+        "updated_at": None,
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1")
+
+    assert resp.status_code == 200
+    assert resp.json()["provenance"] == provenance
+
+
+def test_get_analysis_missing_provenance_defaults_to_empty():
+    """Pre-migration rows without a provenance column degrade to an empty dict."""
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "file_type": "pdf",
+        "page_count": 5,
+        "char_count": 12000,
+        "contract_text": "Full contract text...",
+        "overview": {"contract_type": "SaaS"},
+        "summary": {"total_clauses": 2},
+        "clauses": [],
+        "analysis_mode": "fast",
+        "created_at": datetime(2026, 4, 13, tzinfo=timezone.utc),
+        "updated_at": None,
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1")
+
+    assert resp.status_code == 200
+    assert resp.json()["provenance"] == {}
+
+
 def test_delete_analysis_without_auth_returns_401():
     """DELETE /api/analyses/{id} without authentication returns 401."""
     from unittest.mock import patch

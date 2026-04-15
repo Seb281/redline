@@ -39,10 +39,12 @@ async def save_analysis(body: SaveAnalysisRequest, request: Request) -> dict:
         """
         INSERT INTO analyses
             (id, user_id, filename, file_type, page_count, char_count,
-             contract_text, overview, summary, clauses, analysis_mode, created_at)
+             contract_text, overview, summary, clauses, analysis_mode,
+             provenance, created_at)
         VALUES
             (:id, :user_id, :filename, :file_type, :page_count, :char_count,
-             :contract_text, :overview, :summary, :clauses, :analysis_mode, :created_at)
+             :contract_text, :overview, :summary, :clauses, :analysis_mode,
+             :provenance, :created_at)
         """,
         {
             "id": analysis_id,
@@ -56,6 +58,7 @@ async def save_analysis(body: SaveAnalysisRequest, request: Request) -> dict:
             "summary": json.dumps(body.summary),
             "clauses": json.dumps(body.clauses),
             "analysis_mode": body.analysis_mode,
+            "provenance": json.dumps(body.provenance),
             "created_at": now,
         },
     )
@@ -159,6 +162,19 @@ async def get_analysis(analysis_id: str, request: Request) -> SavedAnalysisRespo
     if isinstance(clauses, str):
         clauses = json.loads(clauses)
 
+    # Provenance may be absent on pre-migration rows (column default '{}').
+    provenance: dict = {}
+    try:
+        raw_provenance = row["provenance"]
+    except (KeyError, IndexError):
+        raw_provenance = None
+    if raw_provenance is not None:
+        provenance = (
+            json.loads(raw_provenance)
+            if isinstance(raw_provenance, str)
+            else raw_provenance
+        )
+
     created_at = row["created_at"]
     if isinstance(created_at, datetime):
         created_at = created_at.isoformat()
@@ -180,6 +196,7 @@ async def get_analysis(analysis_id: str, request: Request) -> SavedAnalysisRespo
         analysis_mode=row["analysis_mode"],
         created_at=created_at,
         updated_at=updated_at,
+        provenance=provenance,
     )
 
 

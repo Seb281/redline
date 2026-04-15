@@ -96,11 +96,39 @@ export interface AnalysisSummary {
   top_risks: string[];
 }
 
+/** Reasoning effort label per pipeline pass. */
+export type ReasoningEffortLabel = "low" | "medium" | "high";
+
+/** Per-analysis provenance metadata for EU AI Act transparency + auditability. */
+export interface AnalysisProvenance {
+  /** Provider name as configured at runtime, e.g. "mistral" or "openai". */
+  provider: string;
+  /** Logical model identifier, e.g. "mistral-small-4". */
+  model: string;
+  /** Versioned model snapshot (revision/date) for deterministic logging. */
+  snapshot: string;
+  /** Hosting region where the call resolved. */
+  region: string;
+  /** Reasoning effort applied to each pipeline pass. */
+  reasoning_effort_per_pass: {
+    overview: ReasoningEffortLabel;
+    extraction: ReasoningEffortLabel;
+    risk: ReasoningEffortLabel;
+    think_hard: ReasoningEffortLabel;
+  };
+  /** Prompt-template version string (bumped manually when prompts change). */
+  prompt_template_version: string;
+  /** ISO timestamp of when the analysis was assembled. */
+  timestamp: string;
+}
+
 /** Full response from POST /api/analyze. */
 export interface AnalyzeResponse {
   overview: ContractOverview;
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
+  /** Present once the pipeline assembles provenance (SP-1 Phase 5). */
+  provenance?: AnalysisProvenance;
 }
 
 /** User info returned by auth endpoints. */
@@ -134,6 +162,8 @@ export interface SaveAnalysisPayload {
   summary: AnalysisSummary;
   clauses: AnalyzedClause[];
   analysis_mode: string;
+  /** Attached in SP-1 Phase 5 once provenance is assembled by the pipeline. */
+  provenance?: AnalysisProvenance;
 }
 
 /** Full saved analysis returned by GET /api/analyses/{id}. */
@@ -150,4 +180,6 @@ export interface SavedAnalysis {
   analysis_mode: string;
   created_at: string;
   updated_at: string | null;
+  /** Missing on analyses saved before SP-1 Phase 5 rolled out. */
+  provenance?: AnalysisProvenance;
 }

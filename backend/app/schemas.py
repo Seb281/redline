@@ -144,7 +144,14 @@ class VerifyRequest(BaseModel):
 
 
 class SaveAnalysisRequest(BaseModel):
-    """Request body for saving an analysis."""
+    """Request body for saving an analysis.
+
+    The ``provenance`` dict carries per-analysis LLM metadata (provider,
+    model, snapshot, region, reasoning effort, prompt template version,
+    timestamp). Required for EU AI Act transparency logging. Defaults to
+    an empty dict so older clients still succeed during the SP-1 phased
+    rollout; SP-1 Phase 5 makes it mandatory end-to-end.
+    """
 
     filename: str
     file_type: str
@@ -155,6 +162,7 @@ class SaveAnalysisRequest(BaseModel):
     summary: dict
     clauses: list[dict]
     analysis_mode: str
+    provenance: dict = Field(default_factory=dict)
 
 
 class AnalysisListItem(BaseModel):
@@ -173,7 +181,11 @@ class AnalysisListItem(BaseModel):
 
 
 class SavedAnalysisResponse(BaseModel):
-    """Full saved analysis with metadata."""
+    """Full saved analysis with metadata.
+
+    The ``provenance`` dict carries LLM call metadata for AI Act
+    transparency. Older rows predating SP-1 Phase 5 hold an empty dict.
+    """
 
     id: str
     filename: str
@@ -187,3 +199,4 @@ class SavedAnalysisResponse(BaseModel):
     analysis_mode: str
     created_at: str
     updated_at: str | None = None
+    provenance: dict = Field(default_factory=dict)

@@ -4,7 +4,9 @@ import {
   formatInventoryPrompt,
   buildExtractionPrompt,
   buildAnalysisSystemPrompt,
+  buildProvenance,
 } from "./analyzer";
+import type { LLMProvider } from "@/lib/llm/provider";
 
 describe("buildRiskBreakdown", () => {
   it("counts each risk level correctly", () => {
@@ -98,5 +100,56 @@ describe("buildAnalysisSystemPrompt", () => {
     const prompt = buildAnalysisSystemPrompt(true, null, null);
     expect(prompt).toContain("jurisdiction_note");
     expect(prompt).toContain("null for all clauses");
+  });
+});
+
+describe("buildProvenance", () => {
+  /**
+   * Minimal fake provider for provenance assembly tests. The `model`
+   * factory is unused — `buildProvenance` only reads name/snapshot/region.
+   */
+  function fakeProvider(overrides: Partial<LLMProvider> = {}): LLMProvider {
+    return {
+      name: "mistral",
+      model: () => ({}) as never,
+      snapshot: () => "mistral-small-4-2026-03-16",
+      region: "eu-west-paris",
+      ...overrides,
+    };
+  }
+
+  it("mirrors the provider name, snapshot, and region", () => {
+    const p = fakeProvider();
+    const prov = buildProvenance(p);
+    expect(prov.provider).toBe("mistral");
+    expect(prov.snapshot).toBe("mistral-small-4-2026-03-16");
+    expect(prov.region).toBe("eu-west-paris");
+  });
+
+  it("derives model id from provider name", () => {
+    expect(buildProvenance(fakeProvider({ name: "mistral" })).model).toBe(
+      "mistral-small-4",
+    );
+    expect(buildProvenance(fakeProvider({ name: "openai" })).model).toBe(
+      "gpt-4.1-nano",
+    );
+  });
+
+  it("records the fixed per-pass reasoning-effort policy", () => {
+    const prov = buildProvenance(fakeProvider());
+    expect(prov.reasoning_effort_per_pass).toEqual({
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    });
+  });
+
+  it("emits a prompt-template version and ISO timestamp", () => {
+    const prov = buildProvenance(fakeProvider());
+    expect(prov.prompt_template_version).toMatch(/^\d+\.\d+/);
+    // ISO-8601 round-trip — parsing back gives a valid date.
+    expect(Number.isNaN(new Date(prov.timestamp).getTime())).toBe(false);
+    expect(prov.timestamp).toMatch(/T.*Z$/);
   });
 });

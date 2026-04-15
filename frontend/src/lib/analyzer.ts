@@ -14,7 +14,7 @@
 
 import { generateObject } from "ai";
 import { z } from "zod";
-import type { AnalyzeResponse, AnalysisMode } from "@/types";
+import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 
 // ---------------------------------------------------------------------------
@@ -361,6 +361,45 @@ export function buildExtractionPrompt(
   return `Extract the exact text of each of the following ${inventory.length} clauses from the contract below.\n\nClause inventory:\n${inventoryList}\n\nContract text:\n\n${text}`;
 }
 
+/**
+ * Bumped whenever any pipeline prompt (overview, extraction, analysis,
+ * chat) changes in a way that could materially alter model outputs.
+ * Part of the AI Act provenance record — auditors use it to correlate
+ * stored analyses back to the prompt contract they were produced under.
+ */
+const PROMPT_TEMPLATE_VERSION = "1.0";
+
+/**
+ * Assemble the provenance block attached to every analysis result.
+ *
+ * Reasoning-effort labels record the *policy intent* per pass (low for
+ * the cheap overview pass, high for risk/think-hard). The Mistral SDK
+ * currently ignores per-call effort overrides (see provider.ts header),
+ * so these labels are purely a transparency artifact — they describe
+ * what the pipeline *would* request if the SDK honored it.
+ *
+ * `timestamp` is set at call time (i.e. when the pipeline finishes
+ * assembling the final response), not when the request came in, so
+ * auditors reading the saved analysis see when it was produced.
+ */
+export function buildProvenance(provider: LLMProvider): AnalysisProvenance {
+  const model = provider.name === "mistral" ? "mistral-small-4" : "gpt-4.1-nano";
+  return {
+    provider: provider.name,
+    model,
+    snapshot: provider.snapshot(),
+    region: provider.region,
+    reasoning_effort_per_pass: {
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    },
+    prompt_template_version: PROMPT_TEMPLATE_VERSION,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 /** Build a risk breakdown object from a list of analyzed clauses. */
 export function buildRiskBreakdown(clauses: { risk_level: string }[]) {
   return {
@@ -451,5 +490,10 @@ export async function analyzeContract(
       .map((c) => `${c.title}: ${c.risk_explanation}`),
   };
 
-  return { overview, summary, clauses: analyzedClauses };
+  return {
+    overview,
+    summary,
+    clauses: analyzedClauses,
+    provenance: buildProvenance(provider),
+  };
 }

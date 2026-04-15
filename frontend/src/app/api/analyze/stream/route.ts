@@ -32,6 +32,13 @@ export async function POST(request: Request) {
     typeof body.jurisdiction === "string" && body.jurisdiction.trim().length > 0
       ? body.jurisdiction.trim()
       : null;
+  // Party names from the overview pass — used by the redaction layer
+  // to scrub Pass 1/Pass 2 input. Defaults to an empty list so the
+  // pattern-based scrubber still runs (emails, phones, IBANs, …) even
+  // if the client forgets to forward parties.
+  const parties: string[] = Array.isArray(body.parties)
+    ? body.parties.filter((p: unknown): p is string => typeof p === "string")
+    : [];
 
   if (!text.trim()) {
     return Response.json(
@@ -56,7 +63,16 @@ export async function POST(request: Request) {
       : undefined;
   const provider = getProvider(override);
 
-  const stream = streamExtractAndAnalyze(text, mode, withCitations, clauseInventory, userRole, jurisdiction, provider);
+  const stream = streamExtractAndAnalyze(
+    text,
+    mode,
+    withCitations,
+    clauseInventory,
+    userRole,
+    jurisdiction,
+    parties,
+    provider,
+  );
 
   return new Response(stream, {
     headers: {

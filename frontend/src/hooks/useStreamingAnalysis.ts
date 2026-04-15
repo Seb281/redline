@@ -180,6 +180,11 @@ export function useStreamingAnalysis() {
         // Governing jurisdiction from Pass 0 — forwarded to the stream
         // endpoint so jurisdiction-aware analysis rules can be applied.
         const jurisdiction = overviewRef.current?.governing_jurisdiction ?? null;
+        // Parties from Pass 0 — the stream route uses them to scrub
+        // party names out of extraction + analysis inputs. Overview
+        // itself ran on raw text (that's how we got the names), so
+        // sending them here is safe.
+        const parties = overviewRef.current?.parties ?? [];
 
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
@@ -191,6 +196,7 @@ export function useStreamingAnalysis() {
             user_role: userRole,
             clause_inventory: clauseInventory,
             jurisdiction,
+            parties,
           }),
           signal: controller.signal,
         });

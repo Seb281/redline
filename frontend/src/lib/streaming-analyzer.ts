@@ -31,6 +31,7 @@ import {
   buildProvenance,
   buildRiskBreakdown,
 } from "@/lib/analyzer";
+import { redact, rehydrate } from "@/lib/redaction";
 
 /**
  * Events emitted over the NDJSON stream (extraction + analysis only).
@@ -94,24 +95,38 @@ export function streamExtractAndAnalyze(
   clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
   jurisdiction?: string | null,
+  parties: string[] = [],
   provider: LLMProvider = getProvider(),
 ): ReadableStream<Uint8Array> {
   const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole, jurisdiction);
+  // Scrub party names + common PII (emails, phone numbers, IBANs, …)
+  // out of the contract text before it reaches extraction + analysis.
+  // The token map is kept in closure scope so Pass 1 / Pass 2 outputs
+  // can be rehydrated on the way back to the client — the UI always
+  // sees the real names, the LLM only sees `⟦PARTY_A⟧`-style tokens.
+  const { scrubbed, tokenMap } = redact(text, parties);
+
   return new ReadableStream({
     async start(controller) {
       try {
-        // Pass 1 — extract clauses guided by inventory from overview
+        // Pass 1 — extract clauses guided by inventory from overview.
+        // Runs on SCRUBBED text; clause_text comes back with tokens in
+        // place (we rehydrate at emit time for Pass 2 to re-scrub).
         const { object: extraction } = await generateObject({
           model: provider.model("medium"),
           schema: extractionResultSchema,
           system: EXTRACTION_SYSTEM_PROMPT,
-          prompt: buildExtractionPrompt(text, clauseInventory),
+          prompt: buildExtractionPrompt(scrubbed, clauseInventory),
         });
         controller.enqueue(
           encode({ type: "extraction-complete", data: { clauseCount: extraction.clauses.length } })
         );
 
-        // Pass 2 — analyze clauses
+        // Pass 2 — analyze clauses. We pass the SCRUBBED extraction
+        // into the LLM, then rehydrate each analyzed clause before
+        // emitting it to the UI. Streamed partials only get rehydrated
+        // once the SDK delivers a complete object — rehydrating
+        // mid-token would mangle the scrubbed token delimiters.
         let allClauses: AnalyzedClause[];
 
         if (mode === "deep") {
@@ -124,7 +139,7 @@ export function streamExtractAndAnalyze(
               system: analysisSystemPrompt,
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
             });
-            const analyzed = object as AnalyzedClause;
+            const analyzed = rehydrateClause(object as AnalyzedClause, tokenMap);
             results.push(analyzed);
             controller.enqueue(encode({ type: "clause", data: analyzed }));
             return analyzed;
@@ -140,7 +155,7 @@ export function streamExtractAndAnalyze(
             prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
           });
           for await (const clause of result.elementStream) {
-            const analyzed = clause as AnalyzedClause;
+            const analyzed = rehydrateClause(clause as AnalyzedClause, tokenMap);
             allClauses.push(analyzed);
             controller.enqueue(encode({ type: "clause", data: analyzed }));
           }
@@ -168,4 +183,40 @@ export function streamExtractAndAnalyze(
       }
     },
   });
+}
+
+/**
+ * Rehydrate every user-facing string field on an analyzed clause so the
+ * UI sees the real party names instead of `⟦PARTY_A⟧`-style tokens.
+ *
+ * Only operates on *complete* clause objects — streamed partials from
+ * `elementStream` are delivered as whole objects by the AI SDK, so we
+ * never rehydrate a half-formed token. Fields not present in `tokenMap`
+ * are left as-is (defensive: if the LLM leaks a stray token past what
+ * the scrubber registered, it is preserved verbatim rather than throwing).
+ */
+export function rehydrateClause(
+  c: AnalyzedClause,
+  tokenMap: Map<string, string>,
+): AnalyzedClause {
+  return {
+    ...c,
+    clause_text: rehydrate(c.clause_text, tokenMap),
+    title: rehydrate(c.title, tokenMap),
+    plain_english: rehydrate(c.plain_english, tokenMap),
+    risk_explanation: rehydrate(c.risk_explanation, tokenMap),
+    negotiation_suggestion: c.negotiation_suggestion
+      ? rehydrate(c.negotiation_suggestion, tokenMap)
+      : null,
+    unusual_explanation: c.unusual_explanation
+      ? rehydrate(c.unusual_explanation, tokenMap)
+      : null,
+    jurisdiction_note: c.jurisdiction_note
+      ? rehydrate(c.jurisdiction_note, tokenMap)
+      : null,
+    citations: c.citations?.map((cit) => ({
+      ...cit,
+      quoted_text: rehydrate(cit.quoted_text, tokenMap),
+    })),
+  };
 }

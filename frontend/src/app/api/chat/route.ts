@@ -9,6 +9,7 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
 import { buildChatContext } from "@/lib/chat-context";
+import { redact } from "@/lib/redaction";
 import type { AnalyzeResponse } from "@/types";
 
 const MAX_MESSAGES = 10;
@@ -92,11 +93,26 @@ INSTRUCTIONS:
 consulting a local attorney.
 - Keep responses concise (2-4 paragraphs max) unless the user asks for detail.`;
 
-  const modelMessages = await convertToModelMessages(messages);
+  // Redact PII (emails, phone numbers, IBANs, VAT IDs, …) out of the
+  // system prompt and every user message before the LLM sees them.
+  // Party names are intentionally NOT redacted for chat — the user
+  // already knows who they're contracting with and the chat UX relies
+  // on the assistant referring to them by name. The streamed reply is
+  // returned unmodified: since `useChat` consumes a UI-message stream,
+  // transparent mid-stream rehydration would mean rewriting that
+  // protocol wrapper, which is deferred to a follow-up SP-1 task.
+  const scrubbedSystemPrompt = redact(systemPrompt, []).scrubbed;
+  const scrubbedMessages: UIMessage[] = messages.map((m) => ({
+    ...m,
+    parts: m.parts?.map((p) =>
+      p.type === "text" ? { ...p, text: redact(p.text, []).scrubbed } : p,
+    ),
+  }));
+  const modelMessages = await convertToModelMessages(scrubbedMessages);
 
   const result = streamText({
     model: provider.model("medium"),
-    system: systemPrompt,
+    system: scrubbedSystemPrompt,
     messages: modelMessages,
   });
 

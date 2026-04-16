@@ -32,6 +32,7 @@ import {
   buildRiskBreakdown,
 } from "@/lib/analyzer";
 import { redact, rehydrate } from "@/lib/redaction";
+import { logPass } from "@/lib/llm/debug-log";
 
 /**
  * Events emitted over the NDJSON stream (extraction + analysis only).
@@ -65,13 +66,21 @@ export async function generateOverview(
   text: string,
   provider: LLMProvider = getProvider(),
 ): Promise<ContractOverview> {
+  const start = Date.now();
   const { object } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
   });
-  return object as ContractOverview;
+  const overview = object as ContractOverview;
+  logPass("overview", {
+    ms: Date.now() - start,
+    partyCount: overview.parties.length,
+    inventoryCount: overview.clause_inventory.length,
+    jurisdiction: overview.governing_jurisdiction ?? "null",
+  });
+  return overview;
 }
 
 /**
@@ -105,6 +114,11 @@ export function streamExtractAndAnalyze(
   // can be rehydrated on the way back to the client — the UI always
   // sees the real names, the LLM only sees `⟦PARTY_A⟧`-style tokens.
   const { scrubbed, tokenMap } = redact(text, parties);
+  logPass("redact", {
+    rawLen: text.length,
+    scrubbedLen: scrubbed.length,
+    tokenCount: tokenMap.size,
+  });
 
   return new ReadableStream({
     async start(controller) {
@@ -112,11 +126,17 @@ export function streamExtractAndAnalyze(
         // Pass 1 — extract clauses guided by inventory from overview.
         // Runs on SCRUBBED text; clause_text comes back with tokens in
         // place (we rehydrate at emit time for Pass 2 to re-scrub).
+        const pass1Start = Date.now();
         const { object: extraction } = await generateObject({
           model: provider.model("medium"),
           schema: extractionResultSchema,
           system: EXTRACTION_SYSTEM_PROMPT,
           prompt: buildExtractionPrompt(scrubbed, clauseInventory),
+        });
+        logPass("extraction", {
+          ms: Date.now() - pass1Start,
+          expected: clauseInventory.length,
+          returned: extraction.clauses.length,
         });
         controller.enqueue(
           encode({ type: "extraction-complete", data: { clauseCount: extraction.clauses.length } })
@@ -127,6 +147,7 @@ export function streamExtractAndAnalyze(
         // emitting it to the UI. Streamed partials only get rehydrated
         // once the SDK delivers a complete object — rehydrating
         // mid-token would mangle the scrubbed token delimiters.
+        const pass2Start = Date.now();
         let allClauses: AnalyzedClause[];
 
         if (mode === "deep") {
@@ -158,6 +179,17 @@ export function streamExtractAndAnalyze(
             controller.enqueue(encode({ type: "clause", data: analyzed }));
           }
         }
+
+        const pass2Histogram = buildRiskBreakdown(allClauses);
+        logPass("pass2", {
+          ms: Date.now() - pass2Start,
+          mode,
+          streamed: allClauses.length,
+          high: pass2Histogram.high,
+          medium: pass2Histogram.medium,
+          low: pass2Histogram.low,
+          informational: pass2Histogram.informational,
+        });
 
         // Build and emit summary
         const summary: AnalysisSummary = {

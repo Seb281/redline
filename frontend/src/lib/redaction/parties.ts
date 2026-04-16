@@ -95,9 +95,15 @@ export interface PartiesReplacement {
 export function replaceParties(text: string, parties: string[]): PartiesReplacement {
   const cleanedParties = parties.filter((p) => p && p.trim());
   const matches = findPartyMatches(text, cleanedParties);
+  // Only seed partyMap for parties that actually matched. A supplied name
+  // with zero occurrences (or one fully consumed by the pattern phase
+  // upstream, e.g. a party name that looks like an email) must not create
+  // a phantom ⟦PARTY_X⟧ entry — the UI uses partyMap as the source of
+  // truth for which tokens exist.
+  const matchedIndexes = new Set(matches.map((m) => m.partyIndex));
   const partyMap = new Map<string, string>();
   cleanedParties.forEach((name, i) => {
-    if (i < PARTY_LABELS.length) {
+    if (i < PARTY_LABELS.length && matchedIndexes.has(i)) {
       partyMap.set(`\u27E6PARTY_${PARTY_LABELS[i]}\u27E7`, name);
     }
   });

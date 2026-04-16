@@ -4,7 +4,13 @@
  * input. If this breaks, the user sees garbled clause text on display.
  */
 import { describe, it, expect } from "vitest";
-import { redact, rehydrate } from "./index";
+import {
+  redact,
+  redactPatterns,
+  redactParties,
+  rebuildScrubbed,
+  rehydrate,
+} from "./index";
 
 describe("redact + rehydrate round-trip", () => {
   it("preserves text when nothing matches", () => {
@@ -60,6 +66,118 @@ describe("redact + rehydrate round-trip", () => {
     const { scrubbed, tokenMap } = redact(text, ["ACME", "ACME"]);
     expect(rehydrate(scrubbed, tokenMap)).toBe(text);
     expect(scrubbed).not.toMatch(/PART[^\u27E6]*\u27E7[A-Z]/);
+  });
+});
+
+describe("redactPatterns — pre-Pass-0 phase (SP-1.6)", () => {
+  it("masks emails, phones, IBANs — leaves prose untouched", () => {
+    const text =
+      "Contact dpo@example.eu. Pay to NL91 ABNA 0417 1643 00. Call +31 20 123 4567.";
+    const { scrubbed, tokenMap } = redactPatterns(text);
+    expect(scrubbed).not.toContain("dpo@example.eu");
+    expect(scrubbed).not.toContain("NL91 ABNA 0417 1643 00");
+    expect(scrubbed).not.toContain("+31 20 123 4567");
+    expect(tokenMap.size).toBeGreaterThanOrEqual(3);
+    expect(scrubbed).toContain("\u27E6EMAIL_1\u27E7");
+    expect(scrubbed).toContain("\u27E6IBAN_1\u27E7");
+    expect(scrubbed).toContain("\u27E6PHONE_1\u27E7");
+  });
+
+  it("leaves party-like capitalized names untouched (no party phase here)", () => {
+    const text = "ACME Corp entered into agreement with Jane Doe.";
+    const { scrubbed } = redactPatterns(text);
+    expect(scrubbed).toContain("ACME Corp");
+    expect(scrubbed).toContain("Jane Doe");
+  });
+
+  it("round-trips via rehydrate", () => {
+    const text = "Email dpo@example.eu about invoice NL91 ABNA 0417 1643 00.";
+    const { scrubbed, tokenMap } = redactPatterns(text);
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+});
+
+describe("redactParties — post-Pass-0 phase (SP-1.6)", () => {
+  it("masks only supplied party names; leaves patterns untouched", () => {
+    const text = "ACME Corp and Jane Doe agreed. Email jane@acme.eu later.";
+    const { scrubbed, tokenMap } = redactParties(text, ["ACME Corp", "Jane Doe"]);
+    expect(scrubbed).not.toContain("ACME Corp");
+    expect(scrubbed).not.toContain("Jane Doe");
+    expect(scrubbed).toContain("\u27E6PARTY_A\u27E7");
+    expect(scrubbed).toContain("\u27E6PARTY_B\u27E7");
+    expect(scrubbed).toContain("jane@acme.eu");
+    expect(tokenMap.size).toBe(2);
+  });
+
+  it("works on already-patterns-masked text without colliding", () => {
+    const masked = "ACME Corp pays invoice \u27E6IBAN_1\u27E7 weekly.";
+    const { scrubbed } = redactParties(masked, ["ACME Corp"]);
+    expect(scrubbed).toContain("\u27E6PARTY_A\u27E7");
+    expect(scrubbed).toContain("\u27E6IBAN_1\u27E7");
+  });
+});
+
+describe("rebuildScrubbed — selective redaction (SP-1.6)", () => {
+  it("redacts every token when activeTokens contains all", () => {
+    const raw = "ACME Corp, email dpo@acme.eu, IBAN NL91 ABNA 0417 1643 00.";
+    const { tokenMap } = redact(raw, ["ACME Corp"]);
+    const out = rebuildScrubbed(raw, tokenMap);
+    expect(out).toContain("\u27E6PARTY_A\u27E7");
+    expect(out).toContain("\u27E6EMAIL_1\u27E7");
+    expect(out).toContain("\u27E6IBAN_1\u27E7");
+    expect(out).not.toContain("ACME Corp");
+    expect(out).not.toContain("dpo@acme.eu");
+  });
+
+  it("restores disabled tokens back to their originals", () => {
+    const raw = "ACME Corp, email dpo@acme.eu.";
+    const { tokenMap } = redact(raw, ["ACME Corp"]);
+    const active = new Map<string, string>();
+    for (const [k, v] of tokenMap) {
+      if (k.startsWith("\u27E6PARTY_")) active.set(k, v);
+    }
+    const out = rebuildScrubbed(raw, active);
+    expect(out).toContain("\u27E6PARTY_A\u27E7");
+    expect(out).toContain("dpo@acme.eu");
+    expect(out).not.toContain("ACME Corp");
+  });
+
+  it("is idempotent on repeated application", () => {
+    const raw = "ACME Corp pays dpo@acme.eu.";
+    const { tokenMap } = redact(raw, ["ACME Corp"]);
+    const once = rebuildScrubbed(raw, tokenMap);
+    const twice = rebuildScrubbed(raw, tokenMap);
+    expect(once).toBe(twice);
+  });
+
+  it("preserves PARTY label order regardless of activeTokens Map iteration order", () => {
+    // Regression: if a caller hands in activeTokens whose iteration order
+    // puts ⟦PARTY_B⟧ before ⟦PARTY_A⟧, we must still rebuild with
+    // ACME → A, Jane → B (the original assignment), not swapped.
+    const raw = "ACME Corp contracted Jane Doe.";
+    const { scrubbed: orig } = redact(raw, ["ACME Corp", "Jane Doe"]);
+    const reordered = new Map<string, string>();
+    reordered.set("\u27E6PARTY_B\u27E7", "Jane Doe");
+    reordered.set("\u27E6PARTY_A\u27E7", "ACME Corp");
+    const out = rebuildScrubbed(raw, reordered);
+    expect(out).toBe(orig);
+  });
+});
+
+describe("replaceParties phantom-entry regression (SP-1.6)", () => {
+  it("does not emit PARTY tokens for supplied names with zero occurrences", () => {
+    // Prior bug: partyMap was seeded from the parties array regardless of
+    // whether the name was found in text. UI would render a disabled-state
+    // checkbox for a party that appears nowhere. Fix: only seed matched.
+    const text = "ACME Corp signed the agreement.";
+    const { scrubbed, tokenMap } = redactParties(text, [
+      "ACME Corp",
+      "Not Present Co",
+    ]);
+    expect(tokenMap.has("\u27E6PARTY_A\u27E7")).toBe(true);
+    expect(tokenMap.has("\u27E6PARTY_B\u27E7")).toBe(false);
+    expect(tokenMap.size).toBe(1);
+    expect(scrubbed).toContain("\u27E6PARTY_A\u27E7");
   });
 });
 

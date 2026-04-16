@@ -176,8 +176,12 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
 
       {/* Clause cards */}
       <div className="space-y-4">
-        {filteredClauses.map((clause) => (
-          <ClauseCard key={`${clause.title}-${clause.risk_level}`} clause={clause} onAskAbout={onAskAboutClause} />
+        {filteredClauses.map((clause, i) => (
+          <ClauseCard
+            key={`${clause.title}-${clause.risk_level}-${i}`}
+            clause={clause}
+            onAskAbout={onAskAboutClause}
+          />
         ))}
         {filteredClauses.length === 0 && (
           <p className="py-9 text-center text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">

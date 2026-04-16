@@ -16,6 +16,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
+import { logPass } from "@/lib/llm/debug-log";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -472,11 +473,18 @@ export async function analyzeContract(
   provider: LLMProvider = getProvider(),
 ): Promise<AnalyzeResponse> {
   // Pass 0 — overview (low reasoning effort)
+  const pass0Start = Date.now();
   const { object: overview } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+  });
+  logPass("overview", {
+    ms: Date.now() - pass0Start,
+    partyCount: overview.parties.length,
+    inventoryCount: overview.clause_inventory.length,
+    jurisdiction: overview.governing_jurisdiction ?? "null",
   });
 
   const analysisSystemPrompt = buildAnalysisSystemPrompt(
@@ -486,15 +494,22 @@ export async function analyzeContract(
   );
 
   // Pass 1 — extraction (medium effort)
+  const pass1Start = Date.now();
   const { object: extraction } = await generateObject({
     model: provider.model("medium"),
     schema: extractionResultSchema,
     system: EXTRACTION_SYSTEM_PROMPT,
     prompt: buildExtractionPrompt(text, overview.clause_inventory),
   });
+  logPass("extraction", {
+    ms: Date.now() - pass1Start,
+    expected: overview.clause_inventory.length,
+    returned: extraction.clauses.length,
+  });
 
   // Pass 2 — risk analysis (high effort)
   const passEffort: ReasoningEffort = "high";
+  const pass2Start = Date.now();
   let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
 
   if (mode === "deep") {
@@ -518,6 +533,17 @@ export async function analyzeContract(
     });
     analyzedClauses = analysis.clauses;
   }
+
+  const pass2Histogram = buildRiskBreakdown(analyzedClauses);
+  logPass("pass2", {
+    ms: Date.now() - pass2Start,
+    mode,
+    streamed: analyzedClauses.length,
+    high: pass2Histogram.high,
+    medium: pass2Histogram.medium,
+    low: pass2Histogram.low,
+    informational: pass2Histogram.informational,
+  });
 
   const summary = {
     total_clauses: analyzedClauses.length,

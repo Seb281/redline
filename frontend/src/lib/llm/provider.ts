@@ -43,13 +43,13 @@ export interface LLMProvider {
 }
 
 /**
- * Mistral model IDs. `mistral-small-4-latest` is a rolling alias; the
- * SDK's typed enum doesn't list it yet but accepts any string via its
- * fallback type. Snapshot constant is the pinned revision we log to
- * provenance for AI Act compliance.
+ * Mistral model IDs. Mistral's API does not include the major version
+ * in the identifier — `mistral-small-latest` is the rolling alias that
+ * currently resolves to Mistral Small 4 (v26.03). Snapshot constant is
+ * the pinned revision we log to provenance for AI Act compliance.
  */
-const MISTRAL_MODEL_ID = "mistral-small-4-latest";
-const MISTRAL_SNAPSHOT = "mistral-small-4-2026-03-16";
+const MISTRAL_MODEL_ID = "mistral-small-latest";
+const MISTRAL_SNAPSHOT = "mistral-small-2603";
 
 /** OpenAI rollback target. Kept behind `LLM_PROVIDER=openai`. */
 const OPENAI_MODEL_ID = "gpt-4.1-nano";

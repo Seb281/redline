@@ -112,7 +112,7 @@ describe("buildProvenance", () => {
     return {
       name: "mistral",
       model: () => ({}) as never,
-      snapshot: () => "mistral-small-4-2026-03-16",
+      snapshot: () => "mistral-small-2603",
       region: "eu-west-paris",
       ...overrides,
     };
@@ -122,7 +122,7 @@ describe("buildProvenance", () => {
     const p = fakeProvider();
     const prov = buildProvenance(p);
     expect(prov.provider).toBe("mistral");
-    expect(prov.snapshot).toBe("mistral-small-4-2026-03-16");
+    expect(prov.snapshot).toBe("mistral-small-2603");
     expect(prov.region).toBe("eu-west-paris");
   });
 

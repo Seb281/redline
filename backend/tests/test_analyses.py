@@ -37,7 +37,7 @@ SAVE_PAYLOAD = {
     "provenance": {
         "provider": "mistral",
         "model": "mistral-small-4",
-        "snapshot": "mistral-small-4-2026-03-16",
+        "snapshot": "mistral-small-2603",
         "region": "eu-west-paris",
         "reasoning_effort_per_pass": {
             "overview": "low",
@@ -265,7 +265,7 @@ def test_save_analysis_persists_provenance():
     provenance = {
         "provider": "mistral",
         "model": "mistral-small-4",
-        "snapshot": "mistral-small-4-2026-03-16",
+        "snapshot": "mistral-small-2603",
         "region": "eu-west-paris",
         "reasoning_effort_per_pass": {
             "overview": "low",
@@ -297,7 +297,7 @@ def test_get_analysis_returns_provenance_round_trip():
     provenance = {
         "provider": "mistral",
         "model": "mistral-small-4",
-        "snapshot": "mistral-small-4-2026-03-16",
+        "snapshot": "mistral-small-2603",
         "region": "eu-west-paris",
         "reasoning_effort_per_pass": {
             "overview": "low",

@@ -21,9 +21,11 @@ import type {
 } from "@/types";
 import { getProvider, type LLMProvider } from "@/lib/llm/provider";
 import {
+  capInventory,
   contractOverviewSchema,
   extractionResultSchema,
   analyzedClauseSchema,
+  OVERVIEW_SEED,
   OVERVIEW_SYSTEM_PROMPT,
   EXTRACTION_SYSTEM_PROMPT,
   buildAnalysisSystemPrompt,
@@ -67,18 +69,32 @@ export async function generateOverview(
   provider: LLMProvider = getProvider(),
 ): Promise<ContractOverview> {
   const start = Date.now();
+  // temperature=0 + fixed seed pin the output as tightly as the provider
+  // allows — see analyzer.ts `analyzeContract` Pass 0 for context. Without
+  // this, inventory count drifted 24→46 on identical input and collapsed
+  // the downstream Pass 2 batch analysis.
   const { object } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+    temperature: 0,
+    seed: OVERVIEW_SEED,
   });
-  const overview = object as ContractOverview;
+  const raw = object as ContractOverview;
+  const { inventory: cappedInventory, capped, originalCount } = capInventory(
+    raw.clause_inventory,
+    text.length,
+  );
+  const overview: ContractOverview = { ...raw, clause_inventory: cappedInventory };
   logPass("overview", {
     ms: Date.now() - start,
     partyCount: overview.parties.length,
     inventoryCount: overview.clause_inventory.length,
     jurisdiction: overview.governing_jurisdiction ?? "null",
+    capped,
+    rawCount: originalCount,
+    rawLen: text.length,
   });
   return overview;
 }

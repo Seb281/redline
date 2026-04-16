@@ -28,7 +28,10 @@ function getActiveStep(status: StreamingAnalysisState["status"]): number {
       return 0;
     case "analyzing_overview":
       return 1;
+    case "awaiting_redaction":
     case "awaiting_role":
+      // Both park at the "role" step until Phase 5 adds a dedicated
+      // "Redact" step to the indicator.
       return 2;
     case "analyzing":
       return 3;

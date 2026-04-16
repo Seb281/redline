@@ -3,30 +3,37 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "redline-cookie-dismissed";
-
-/** Read dismissed state from localStorage, defaulting to hidden during SSR. */
-function getInitialDismissed(): boolean {
-  if (typeof window === "undefined") return true;
-  return localStorage.getItem(STORAGE_KEY) === "true";
-}
 
 /**
  * Non-blocking informational banner. No consent gate — Redline uses only
  * essential localStorage (theme preference), so GDPR does not require
  * prior opt-in. The banner simply informs and links to the privacy policy.
+ *
+ * Renders nothing on the server and on the first client paint — we only
+ * reveal it after reading localStorage post-mount, so SSR HTML and the
+ * client's first render always match.
  */
 export function CookieBanner() {
-  const [dismissed, setDismissed] = useState(getInitialDismissed);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) !== "true") {
+      // Intentional setState-in-effect: we must wait for mount to read
+      // localStorage so the SSR HTML matches the first client render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVisible(true);
+    }
+  }, []);
 
   const dismiss = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, "true");
-    setDismissed(true);
+    setVisible(false);
   }, []);
 
-  if (dismissed) return null;
+  if (!visible) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">

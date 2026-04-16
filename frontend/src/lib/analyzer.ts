@@ -443,6 +443,7 @@ export function buildProvenance(provider: LLMProvider): AnalysisProvenance {
     },
     prompt_template_version: PROMPT_TEMPLATE_VERSION,
     timestamp: new Date().toISOString(),
+    redaction_location: "client",
   };
 }
 

@@ -1,12 +1,14 @@
 /**
- * Unit tests for helpers in the streaming analysis pipeline.
+ * Unit tests for the client-side `rehydrateClause` helper.
  *
- * Focused on the `rehydrateClause` helper — end-to-end streaming
- * behavior is covered by the hook tests in `useStreamingAnalysis.test`.
+ * Historically lived in streaming-analyzer.ts; moved to the redaction
+ * module in SP-1.6 when the server became a pass-through. Kept here
+ * because the fixture coverage (partial tokens, null fields, empty
+ * map) is complementary to the basic tests in rehydrate-clause.test.ts.
  */
 
 import { describe, it, expect } from "vitest";
-import { rehydrateClause } from "./streaming-analyzer";
+import { rehydrateClause } from "./redaction/rehydrate-clause";
 import type { AnalyzedClause } from "@/types";
 
 describe("rehydrateClause", () => {

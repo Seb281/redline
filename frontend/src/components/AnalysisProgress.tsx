@@ -16,6 +16,7 @@ interface AnalysisProgressProps {
 const STEPS = [
   { label: "Upload" },
   { label: "Overview" },
+  { label: "Redact" },
   { label: "Role" },
   { label: "Analysis" },
   { label: "Complete" },
@@ -29,14 +30,13 @@ function getActiveStep(status: StreamingAnalysisState["status"]): number {
     case "analyzing_overview":
       return 1;
     case "awaiting_redaction":
-    case "awaiting_role":
-      // Both park at the "role" step until Phase 5 adds a dedicated
-      // "Redact" step to the indicator.
       return 2;
-    case "analyzing":
+    case "awaiting_role":
       return 3;
-    case "complete":
+    case "analyzing":
       return 4;
+    case "complete":
+      return 5;
     case "error":
       return -1;
   }
@@ -127,6 +127,11 @@ export function AnalysisProgress({
         {status === "analyzing_overview" && (
           <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
             Extracting contract metadata...
+          </p>
+        )}
+        {status === "awaiting_redaction" && (
+          <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+            Review what will be masked
           </p>
         )}
         {status === "awaiting_role" && (

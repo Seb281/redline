@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type {
   AnalyzedClause,
   AnalysisSummary,
@@ -86,12 +86,11 @@ export function useStreamingAnalysis() {
   // Mirrored here so runAnalysis can read the overview without depending
   // on stale closure state from the last render.
   const overviewRef = useRef<ContractOverview | null>(null);
-  // Mirror of state for runAnalysis — lets it read the latest rawText /
-  // tokenMap without re-registering a stale closure every render.
-  const stateRef = useRef<StreamingAnalysisState>(INITIAL_STATE);
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
+  // Synchronous mirrors updated at the call site (not via useEffect), so
+  // runAnalysis can fire immediately after runOverview/confirmRedaction
+  // without waiting for React to flush a render.
+  const rawTextRef = useRef<string | null>(null);
+  const tokenMapRef = useRef<Map<string, string> | null>(null);
 
   /** Cancel any in-flight fetch (overview or stream). */
   const abort = useCallback(() => {
@@ -103,6 +102,8 @@ export function useStreamingAnalysis() {
   const reset = useCallback(() => {
     abort();
     overviewRef.current = null;
+    rawTextRef.current = null;
+    tokenMapRef.current = null;
     setState(INITIAL_STATE);
   }, [abort]);
 
@@ -120,11 +121,18 @@ export function useStreamingAnalysis() {
    * `awaiting_role`.
    */
   const runOverview = useCallback(
-    async (text: string): Promise<ContractOverview | null> => {
+    async (
+      text: string,
+    ): Promise<{
+      overview: ContractOverview;
+      tokenMap: Map<string, string>;
+    } | null> => {
       abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
+      rawTextRef.current = text;
+      tokenMapRef.current = null;
       setState({
         status: "analyzing_overview",
         overview: null,
@@ -182,13 +190,14 @@ export function useStreamingAnalysis() {
           console.info("[redline] redaction map", { total: fullMap.size, byKind });
         }
 
+        tokenMapRef.current = fullMap;
         setState((prev) => ({
           ...prev,
           status: nextStatus,
           overview: body.overview,
           tokenMap: fullMap,
         }));
-        return body.overview;
+        return { overview: body.overview, tokenMap: fullMap };
       } catch (err) {
         if ((err as Error).name === "AbortError") return null;
         setState((prev) => ({
@@ -210,6 +219,7 @@ export function useStreamingAnalysis() {
    * the trimmed map.
    */
   const confirmRedaction = useCallback((activeTokens: Map<string, string>) => {
+    tokenMapRef.current = activeTokens;
     setState((prev) => ({
       ...prev,
       status: "awaiting_role",
@@ -250,8 +260,8 @@ export function useStreamingAnalysis() {
       // Pulled from the ref so we don't have to depend on stale closure
       // state to fold it back into the final AnalyzeResponse below.
       const capturedOverview = overviewRef.current;
-      const rawText = stateRef.current.rawText;
-      const activeTokens = stateRef.current.tokenMap ?? new Map<string, string>();
+      const rawText = rawTextRef.current;
+      const activeTokens = tokenMapRef.current ?? new Map<string, string>();
 
       if (!rawText) {
         setState((prev) => ({

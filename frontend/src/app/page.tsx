@@ -114,8 +114,11 @@ export default function Home() {
       presetRole: string,
     ) => {
       setState({ view: "analyzing", upload, contractText });
-      const overview = await streaming.runOverview(contractText);
-      if (!overview) return;
+      const result = await streaming.runOverview(contractText);
+      if (!result) return;
+      // Demo mode skips the RedactionPreview entirely — auto-confirm
+      // with the full map so Pass 1/2 see a fully redacted payload.
+      streaming.confirmRedaction(result.tokenMap);
       await runAnalysisAndFinish(
         upload,
         contractText,
@@ -158,6 +161,18 @@ export default function Home() {
       "Contractor",
     );
   }, [startAnalysisWithPresetRole]);
+
+  /**
+   * Called when the user confirms the RedactionPreview. Forwards the
+   * chosen active-token subset to the hook, which trims its tokenMap and
+   * transitions to `awaiting_role` so the RolePicker can render next.
+   */
+  const handleRedactionConfirmed = useCallback(
+    (activeTokens: Map<string, string>) => {
+      streaming.confirmRedaction(activeTokens);
+    },
+    [streaming],
+  );
 
   /**
    * Called when the user picks (or skips) a party in the RolePicker.
@@ -333,6 +348,7 @@ export default function Home() {
           upload={state.upload}
           onReset={handleReset}
           onRolePicked={handleRolePicked}
+          onRedactionConfirmed={handleRedactionConfirmed}
           onRetry={handleRetry}
           retryCount={retryCount}
         />

@@ -21,15 +21,18 @@ import type {
 } from "@/types";
 import { getProvider, type LLMProvider } from "@/lib/llm/provider";
 import {
+  capInventory,
   contractOverviewSchema,
   extractionResultSchema,
   analyzedClauseSchema,
+  OVERVIEW_SEED,
   OVERVIEW_SYSTEM_PROMPT,
   EXTRACTION_SYSTEM_PROMPT,
   buildAnalysisSystemPrompt,
   buildExtractionPrompt,
   buildProvenance,
   buildRiskBreakdown,
+  shouldRetryPass2,
 } from "@/lib/analyzer";
 import { redact, rehydrate } from "@/lib/redaction";
 import { logPass } from "@/lib/llm/debug-log";
@@ -67,18 +70,32 @@ export async function generateOverview(
   provider: LLMProvider = getProvider(),
 ): Promise<ContractOverview> {
   const start = Date.now();
+  // temperature=0 + fixed seed pin the output as tightly as the provider
+  // allows — see analyzer.ts `analyzeContract` Pass 0 for context. Without
+  // this, inventory count drifted 24→46 on identical input and collapsed
+  // the downstream Pass 2 batch analysis.
   const { object } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+    temperature: 0,
+    seed: OVERVIEW_SEED,
   });
-  const overview = object as ContractOverview;
+  const raw = object as ContractOverview;
+  const { inventory: cappedInventory, capped, originalCount } = capInventory(
+    raw.clause_inventory,
+    text.length,
+  );
+  const overview: ContractOverview = { ...raw, clause_inventory: cappedInventory };
   logPass("overview", {
     ms: Date.now() - start,
     partyCount: overview.parties.length,
     inventoryCount: overview.clause_inventory.length,
     jurisdiction: overview.governing_jurisdiction ?? "null",
+    capped,
+    rawCount: originalCount,
+    rawLen: text.length,
   });
   return overview;
 }
@@ -149,6 +166,7 @@ export function streamExtractAndAnalyze(
         // mid-token would mangle the scrubbed token delimiters.
         const pass2Start = Date.now();
         let allClauses: AnalyzedClause[];
+        let pass2Retried = false;
 
         if (mode === "deep") {
           // Fan-out: one LLM call per clause, stream each as it resolves.
@@ -165,19 +183,51 @@ export function streamExtractAndAnalyze(
           });
           allClauses = await Promise.all(promises);
         } else {
-          // Batch: stream elements from a single LLM call via Output.array
+          // Batch: stream elements from a single LLM call via Output.array.
+          // If the first attempt returns fewer than half the expected
+          // clauses, fire a second streamText call on the same HTTP stream
+          // and continue emitting. Dedupe is ONLY active during the retry
+          // pass — on the first attempt every clause is emitted as-is so
+          // a contract with legitimately repeated titles (e.g. two
+          // "Confidentiality" clauses) isn't silently deduplicated into a
+          // spurious collapse.
           allClauses = [];
-          const result = streamText({
-            model: provider.model("high"),
-            output: Output.array({ element: analyzedClauseSchema }),
-            system: analysisSystemPrompt,
-            prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
-          });
-          for await (const clause of result.elementStream) {
-            const analyzed = rehydrateClause(clause as AnalyzedClause, tokenMap);
-            allClauses.push(analyzed);
-            controller.enqueue(encode({ type: "clause", data: analyzed }));
+          const emittedTitles = new Set<string>();
+          const runBatchStream = async (isRetry: boolean) => {
+            const result = streamText({
+              model: provider.model("high"),
+              output: Output.array({ element: analyzedClauseSchema }),
+              system: analysisSystemPrompt,
+              prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
+            });
+            for await (const clause of result.elementStream) {
+              const analyzed = rehydrateClause(clause as AnalyzedClause, tokenMap);
+              if (isRetry && emittedTitles.has(analyzed.title)) continue;
+              emittedTitles.add(analyzed.title);
+              allClauses.push(analyzed);
+              controller.enqueue(encode({ type: "clause", data: analyzed }));
+            }
+          };
+          await runBatchStream(false);
+          // Retry is opt-out via PASS2_RETRY_ENABLED=false. Worst case on a
+          // collapsed first attempt is 2x Pass 2 latency and LLM cost —
+          // acceptable for the rare collapse path, but prod operators can
+          // disable it if a provider incident is causing every call to
+          // short-return and they don't want to pay 2x during an outage.
+          const retryEnabled = process.env.PASS2_RETRY_ENABLED !== "false";
+          const didRetry =
+            retryEnabled &&
+            shouldRetryPass2(allClauses.length, extraction.clauses.length);
+          if (didRetry) {
+            logPass("pass2", {
+              retried: true,
+              attempt: 1,
+              streamed: allClauses.length,
+              expected: extraction.clauses.length,
+            });
+            await runBatchStream(true);
           }
+          pass2Retried = didRetry;
         }
 
         const pass2Histogram = buildRiskBreakdown(allClauses);
@@ -189,6 +239,7 @@ export function streamExtractAndAnalyze(
           medium: pass2Histogram.medium,
           low: pass2Histogram.low,
           informational: pass2Histogram.informational,
+          retried: pass2Retried,
         });
 
         // Build and emit summary

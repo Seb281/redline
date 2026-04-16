@@ -321,13 +321,21 @@ Rules:
   someone would want to know before reading the full contract.
 - Keep key_terms concise: one sentence each, plain English, no legal jargon.
 
-Clause inventory:
-- List EVERY distinct clause in the contract — substantive, boilerplate, \
-  definitions, and procedural clauses alike. Do not skip any.
+Clause inventory — critical rules:
+- List only TOP-LEVEL contract clauses (the numbered sections, articles, or \
+  equivalent headings you would cite when referring to the clause).
+- Do NOT split a clause into multiple entries for its sub-sections, numbered \
+  sub-items, lettered sub-items, or bullet lists. Sub-parts of the same \
+  top-level clause are ONE inventory entry.
+- Do NOT list individual definitions. If the contract has a "Definitions" \
+  section, emit that section as ONE inventory entry — not one entry per term.
+- Do NOT list recitals, signature blocks, or schedules as separate clauses \
+  unless they function as substantive clauses in their own right.
+- Typical well-drafted commercial contracts have 10-30 top-level clauses. If \
+  your inventory has more than ~30 entries, you are almost certainly \
+  over-segmenting — consolidate sub-items into their parent clause.
 - Give each clause a short descriptive title (3-6 words).
 - Include the section reference (e.g. "Section 3.1") when identifiable.
-- If a clause spans multiple sub-sections that serve the same purpose, list it \
-  as one entry.
 - Order clauses as they appear in the document.`;
 
 // ---------------------------------------------------------------------------
@@ -438,6 +446,110 @@ export function buildProvenance(provider: LLMProvider): AnalysisProvenance {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Inventory cap — defends Pass 2 from over-segmented overviews
+// ---------------------------------------------------------------------------
+
+/**
+ * Bytes-of-raw-text per permitted inventory item. Derived empirically from
+ * the NL/DE snapshot runs: the collapse case produced 46 items for 8754
+ * bytes (~190 bytes/item) and the healthy case produced 24 items for the
+ * same text (~365 bytes/item). 400 gives a slightly generous ceiling that
+ * cleanly rejects the pathological case while allowing healthy outputs
+ * through. See `docs/diagnostics/2026-04-16-nl-freelance-mistral-small.md`.
+ */
+export const INVENTORY_CAP_BYTES_PER_ITEM = 400;
+
+/**
+ * Absolute maximum inventory size regardless of contract length. Protects
+ * against pathological output on very long contracts (a 100KB contract
+ * would permit 250 items by the per-byte divisor alone, which is almost
+ * certainly over-segmented). 40 sits above the realistic ceiling for
+ * well-drafted commercial contracts (~30 top-level clauses).
+ */
+export const INVENTORY_CAP_CEILING = 40;
+
+/**
+ * Absolute minimum inventory size. Guards tiny contracts (50–399 chars —
+ * above the backend <50 floor but below one full item by the divisor)
+ * from being reduced to an empty inventory, which would make Pass 1
+ * extraction meaningless.
+ */
+export const INVENTORY_CAP_FLOOR = 1;
+
+/**
+ * Deterministic seed forwarded to Mistral's `random_seed`. Non-zero so
+ * behavior is consistent across providers that might treat `0` as
+ * "unset" — Mistral itself forwards the literal value unchanged.
+ */
+export const OVERVIEW_SEED = 1;
+
+/** Shape of a single inventory entry, derived from the overview schema. */
+type InventoryItem = z.infer<typeof clauseInventoryItemSchema>;
+
+/**
+ * Return a copy of the Pass 0 clause inventory clamped to a defensible
+ * upper bound so a pathological overview (46+ entries on a 9KB contract)
+ * cannot blow up Pass 2 batch analysis. Pure function — callers are
+ * responsible for logging the truncation via the `capped` flag returned
+ * alongside the sliced array, so the overview log line stays singular.
+ *
+ * Cap formula: clamp `floor(rawLen / BYTES_PER_ITEM)` between
+ * `CAP_FLOOR` (never wipe a non-empty inventory) and `CAP_CEILING`
+ * (never trust more than ~40 top-level clauses regardless of length).
+ */
+export function capInventory(
+  inventory: InventoryItem[],
+  rawLen: number,
+): { inventory: InventoryItem[]; capped: boolean; originalCount: number } {
+  const cap = Math.max(
+    INVENTORY_CAP_FLOOR,
+    Math.min(
+      INVENTORY_CAP_CEILING,
+      Math.floor(rawLen / INVENTORY_CAP_BYTES_PER_ITEM),
+    ),
+  );
+  const originalCount = inventory.length;
+  if (originalCount <= cap) {
+    return { inventory, capped: false, originalCount };
+  }
+  return {
+    inventory: inventory.slice(0, cap),
+    capped: true,
+    originalCount,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Pass 2 retry helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Ratio of expected clauses that must be present after Pass 2 to consider
+ * the attempt successful. Below this, the call is treated as a collapse
+ * and retried once. 0.5 was chosen empirically — the observed collapse
+ * returned 1 out of 20+ clauses, so any threshold above `1 / expected`
+ * catches it; 0.5 gives generous headroom without firing on mild drift.
+ */
+export const PASS2_RETRY_THRESHOLD = 0.5;
+
+/**
+ * Decide whether Pass 2 returned enough analyzed clauses to call it a
+ * success. Pure helper — both the non-streaming batch path and the
+ * streaming batch path consult it before kicking off a retry.
+ *
+ * Returns `true` iff:
+ *   - `expected > 0` (there was something to analyze), AND
+ *   - `streamed < ceil(expected * PASS2_RETRY_THRESHOLD)` (too few came back).
+ *
+ * `expected === 0` is a defensive early-out: an empty extraction
+ * shouldn't trigger retry, since the retry would analyze nothing either.
+ */
+export function shouldRetryPass2(streamed: number, expected: number): boolean {
+  if (expected <= 0) return false;
+  return streamed < Math.ceil(expected * PASS2_RETRY_THRESHOLD);
+}
+
 /** Build a risk breakdown object from a list of analyzed clauses. */
 export function buildRiskBreakdown(clauses: { risk_level: string }[]) {
   return {
@@ -472,19 +584,33 @@ export async function analyzeContract(
   userRole?: string | null,
   provider: LLMProvider = getProvider(),
 ): Promise<AnalyzeResponse> {
-  // Pass 0 — overview (low reasoning effort)
+  // Pass 0 — overview (low reasoning effort).
+  // temperature=0 + fixed seed pin the output as tightly as the provider
+  // allows — necessary because an inventory count drift of 20→46 on the
+  // same input was observed to collapse Pass 2 downstream (see diagnostic
+  // transcript 2026-04-16-nl-freelance-mistral-small.md).
   const pass0Start = Date.now();
-  const { object: overview } = await generateObject({
+  const { object: rawOverview } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
     system: OVERVIEW_SYSTEM_PROMPT,
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
+    temperature: 0,
+    seed: OVERVIEW_SEED,
   });
+  const { inventory: cappedInventory, capped, originalCount } = capInventory(
+    rawOverview.clause_inventory,
+    text.length,
+  );
+  const overview = { ...rawOverview, clause_inventory: cappedInventory };
   logPass("overview", {
     ms: Date.now() - pass0Start,
     partyCount: overview.parties.length,
     inventoryCount: overview.clause_inventory.length,
     jurisdiction: overview.governing_jurisdiction ?? "null",
+    capped,
+    rawCount: originalCount,
+    rawLen: text.length,
   });
 
   const analysisSystemPrompt = buildAnalysisSystemPrompt(
@@ -511,6 +637,7 @@ export async function analyzeContract(
   const passEffort: ReasoningEffort = "high";
   const pass2Start = Date.now();
   let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
+  let pass2Retried = false;
 
   if (mode === "deep") {
     analyzedClauses = await Promise.all(
@@ -525,13 +652,39 @@ export async function analyzeContract(
       })
     );
   } else {
-    const { object: analysis } = await generateObject({
-      model: provider.model(passEffort),
-      schema: batchAnalysisSchema,
-      system: analysisSystemPrompt,
-      prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
-    });
-    analyzedClauses = analysis.clauses;
+    // Non-streaming batch: issue the call, and if the model returns fewer
+    // than half of the expected clauses, retry once. No mid-flight UI
+    // emission in this path (the caller only sees the final object), so
+    // reissuing is atomic and safe. Retry is opt-out via
+    // PASS2_RETRY_ENABLED=false for prod cost control during provider
+    // incidents where every call short-returns.
+    const runBatch = () =>
+      generateObject({
+        model: provider.model(passEffort),
+        schema: batchAnalysisSchema,
+        system: analysisSystemPrompt,
+        prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
+      });
+    const { object: firstAttempt } = await runBatch();
+    const retryEnabled = process.env.PASS2_RETRY_ENABLED !== "false";
+    const shouldRetry =
+      retryEnabled &&
+      shouldRetryPass2(firstAttempt.clauses.length, extraction.clauses.length);
+    if (shouldRetry) {
+      pass2Retried = true;
+      logPass("pass2", {
+        retried: true,
+        attempt: 1,
+        streamed: firstAttempt.clauses.length,
+        expected: extraction.clauses.length,
+      });
+      const { object: retry } = await runBatch();
+      analyzedClauses = retry.clauses.length > firstAttempt.clauses.length
+        ? retry.clauses
+        : firstAttempt.clauses;
+    } else {
+      analyzedClauses = firstAttempt.clauses;
+    }
   }
 
   const pass2Histogram = buildRiskBreakdown(analyzedClauses);
@@ -543,6 +696,7 @@ export async function analyzeContract(
     medium: pass2Histogram.medium,
     low: pass2Histogram.low,
     informational: pass2Histogram.informational,
+    retried: pass2Retried,
   });
 
   const summary = {

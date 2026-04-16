@@ -1,10 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
   buildRiskBreakdown,
+  capInventory,
   formatInventoryPrompt,
   buildExtractionPrompt,
   buildAnalysisSystemPrompt,
   buildProvenance,
+  shouldRetryPass2,
+  INVENTORY_CAP_CEILING,
+  INVENTORY_CAP_BYTES_PER_ITEM,
+  INVENTORY_CAP_FLOOR,
+  PASS2_RETRY_THRESHOLD,
 } from "./analyzer";
 import type { LLMProvider } from "@/lib/llm/provider";
 
@@ -151,5 +157,129 @@ describe("buildProvenance", () => {
     // ISO-8601 round-trip — parsing back gives a valid date.
     expect(Number.isNaN(new Date(prov.timestamp).getTime())).toBe(false);
     expect(prov.timestamp).toMatch(/T.*Z$/);
+  });
+});
+
+/**
+ * `capInventory` protects Pass 2 from collapsing on over-segmented
+ * overviews. See `docs/diagnostics/2026-04-16-nl-freelance-mistral-small.md`.
+ *
+ * Formula: `max(FLOOR, min(CEILING, floor(rawLen / BYTES_PER_ITEM)))`.
+ * Tests here lock the divisor, the absolute ceiling, and the absolute
+ * floor so none can silently drift. Pure function — no logger spy.
+ */
+describe("capInventory", () => {
+  const fakeItem = (title: string) => ({ title, section_ref: null });
+
+  it("returns the inventory unchanged when under the cap", () => {
+    const inventory = Array.from({ length: 10 }, (_, i) => fakeItem(`c${i}`));
+    const rawLen = 10 * INVENTORY_CAP_BYTES_PER_ITEM + 1;
+    const result = capInventory(inventory, rawLen);
+    expect(result.inventory).toHaveLength(10);
+    expect(result.inventory).toEqual(inventory);
+    expect(result.capped).toBe(false);
+    expect(result.originalCount).toBe(10);
+  });
+
+  it("truncates the inventory to rawLen/BYTES_PER_ITEM when under the ceiling", () => {
+    // 9000 / 400 = 22 → inventory of 46 should cap at 22.
+    const rawLen = 9000;
+    const expected = Math.floor(rawLen / INVENTORY_CAP_BYTES_PER_ITEM);
+    const inventory = Array.from({ length: 46 }, (_, i) => fakeItem(`c${i}`));
+    const result = capInventory(inventory, rawLen);
+    expect(result.inventory).toHaveLength(expected);
+    expect(result.inventory[0]).toEqual(fakeItem("c0"));
+    expect(result.inventory[expected - 1]).toEqual(fakeItem(`c${expected - 1}`));
+    expect(result.capped).toBe(true);
+    expect(result.originalCount).toBe(46);
+  });
+
+  it("never exceeds the absolute ceiling regardless of rawLen", () => {
+    // 100KB would permit 250 items by the divisor; ceiling must clamp to 40.
+    const rawLen = 100_000;
+    const inventory = Array.from({ length: 300 }, (_, i) => fakeItem(`c${i}`));
+    const result = capInventory(inventory, rawLen);
+    expect(result.inventory).toHaveLength(INVENTORY_CAP_CEILING);
+    expect(result.capped).toBe(true);
+  });
+
+  it("returns inventory unchanged when within both cap and ceiling", () => {
+    const rawLen = 100_000;
+    const inventory = Array.from({ length: 35 }, (_, i) => fakeItem(`c${i}`));
+    // 35 < ceiling 40, and 35 < 100000/400 = 250 → no truncation.
+    const result = capInventory(inventory, rawLen);
+    expect(result.inventory).toHaveLength(35);
+    expect(result.capped).toBe(false);
+  });
+
+  it("handles empty inventories without throwing", () => {
+    expect(capInventory([], 0)).toEqual({
+      inventory: [],
+      capped: false,
+      originalCount: 0,
+    });
+    expect(capInventory([], 10_000)).toEqual({
+      inventory: [],
+      capped: false,
+      originalCount: 0,
+    });
+  });
+
+  it("clamps cap to FLOOR so tiny contracts never wipe a non-empty inventory", () => {
+    // rawLen < BYTES_PER_ITEM → divisor gives 0. FLOOR must rescue the cap
+    // so a 50–399-char contract (above backend <50 gate, below one item by
+    // divisor) still forwards at least one clause to Pass 1.
+    const inventory = Array.from({ length: 5 }, (_, i) => fakeItem(`c${i}`));
+    for (const rawLen of [0, 50, 399]) {
+      const result = capInventory(inventory, rawLen);
+      expect(result.inventory).toHaveLength(INVENTORY_CAP_FLOOR);
+      expect(result.inventory[0]).toEqual(fakeItem("c0"));
+      expect(result.capped).toBe(true);
+    }
+  });
+});
+
+/**
+ * `shouldRetryPass2` decides when to reissue a Pass 2 call after the
+ * model returned fewer analyzed clauses than Pass 1 extracted. The
+ * retry guard defends the fast-mode batch path (streaming and
+ * non-streaming) from the collapse observed on Mistral Small where
+ * Pass 2 short-circuited to a single informational clause.
+ */
+describe("shouldRetryPass2", () => {
+  it("exposes the empirical 0.5 threshold", () => {
+    expect(PASS2_RETRY_THRESHOLD).toBe(0.5);
+  });
+
+  it("returns false when expected is 0 (no work to retry)", () => {
+    expect(shouldRetryPass2(0, 0)).toBe(false);
+    expect(shouldRetryPass2(5, 0)).toBe(false);
+  });
+
+  it("returns false when expected is negative (defensive)", () => {
+    expect(shouldRetryPass2(0, -1)).toBe(false);
+  });
+
+  it("returns true when streamed count is below half the expected", () => {
+    expect(shouldRetryPass2(0, 20)).toBe(true);
+    expect(shouldRetryPass2(1, 20)).toBe(true);  // the observed collapse
+    expect(shouldRetryPass2(9, 20)).toBe(true);
+  });
+
+  it("returns false when streamed count meets or exceeds half the expected", () => {
+    expect(shouldRetryPass2(10, 20)).toBe(false); // ceil(20*0.5) = 10
+    expect(shouldRetryPass2(11, 20)).toBe(false);
+    expect(shouldRetryPass2(20, 20)).toBe(false);
+  });
+
+  it("handles expected=1 (streamed=0 retries, streamed=1 does not)", () => {
+    expect(shouldRetryPass2(0, 1)).toBe(true);
+    expect(shouldRetryPass2(1, 1)).toBe(false);
+  });
+
+  it("uses ceil, not floor, for odd expected counts", () => {
+    // expected=3 → ceil(1.5) = 2 → streamed<2 retries
+    expect(shouldRetryPass2(1, 3)).toBe(true);
+    expect(shouldRetryPass2(2, 3)).toBe(false);
   });
 });

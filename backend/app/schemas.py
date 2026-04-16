@@ -176,6 +176,9 @@ class ProvenanceModel(BaseModel):
     reasoning_effort_per_pass: ReasoningEffortPerPass
     prompt_template_version: str = Field(min_length=1)
     timestamp: str = Field(min_length=1)
+    # SP-1.6: client-side redaction. Optional so pre-SP-1.6 payloads
+    # deserialize unchanged; ``None`` means "unknown / legacy".
+    redaction_location: Literal["client", "server"] | None = None
 
     @field_validator("provider")
     @classmethod

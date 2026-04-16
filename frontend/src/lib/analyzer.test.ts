@@ -6,9 +6,11 @@ import {
   buildExtractionPrompt,
   buildAnalysisSystemPrompt,
   buildProvenance,
+  shouldRetryPass2,
   INVENTORY_CAP_CEILING,
   INVENTORY_CAP_BYTES_PER_ITEM,
   INVENTORY_CAP_FLOOR,
+  PASS2_RETRY_THRESHOLD,
 } from "./analyzer";
 import type { LLMProvider } from "@/lib/llm/provider";
 
@@ -234,5 +236,50 @@ describe("capInventory", () => {
       expect(result.inventory[0]).toEqual(fakeItem("c0"));
       expect(result.capped).toBe(true);
     }
+  });
+});
+
+/**
+ * `shouldRetryPass2` decides when to reissue a Pass 2 call after the
+ * model returned fewer analyzed clauses than Pass 1 extracted. The
+ * retry guard defends the fast-mode batch path (streaming and
+ * non-streaming) from the collapse observed on Mistral Small where
+ * Pass 2 short-circuited to a single informational clause.
+ */
+describe("shouldRetryPass2", () => {
+  it("exposes the empirical 0.5 threshold", () => {
+    expect(PASS2_RETRY_THRESHOLD).toBe(0.5);
+  });
+
+  it("returns false when expected is 0 (no work to retry)", () => {
+    expect(shouldRetryPass2(0, 0)).toBe(false);
+    expect(shouldRetryPass2(5, 0)).toBe(false);
+  });
+
+  it("returns false when expected is negative (defensive)", () => {
+    expect(shouldRetryPass2(0, -1)).toBe(false);
+  });
+
+  it("returns true when streamed count is below half the expected", () => {
+    expect(shouldRetryPass2(0, 20)).toBe(true);
+    expect(shouldRetryPass2(1, 20)).toBe(true);  // the observed collapse
+    expect(shouldRetryPass2(9, 20)).toBe(true);
+  });
+
+  it("returns false when streamed count meets or exceeds half the expected", () => {
+    expect(shouldRetryPass2(10, 20)).toBe(false); // ceil(20*0.5) = 10
+    expect(shouldRetryPass2(11, 20)).toBe(false);
+    expect(shouldRetryPass2(20, 20)).toBe(false);
+  });
+
+  it("handles expected=1 (streamed=0 retries, streamed=1 does not)", () => {
+    expect(shouldRetryPass2(0, 1)).toBe(true);
+    expect(shouldRetryPass2(1, 1)).toBe(false);
+  });
+
+  it("uses ceil, not floor, for odd expected counts", () => {
+    // expected=3 → ceil(1.5) = 2 → streamed<2 retries
+    expect(shouldRetryPass2(1, 3)).toBe(true);
+    expect(shouldRetryPass2(2, 3)).toBe(false);
   });
 });

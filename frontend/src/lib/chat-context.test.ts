@@ -7,7 +7,10 @@ import type { AnalyzeResponse, AnalyzedClause } from "@/types";
 const mockAnalysis: AnalyzeResponse = {
   overview: {
     contract_type: "Service Agreement",
-    parties: ["Alice Corp", "Bob LLC"],
+    parties: [
+      { name: "Alice Corp", role_label: null },
+      { name: "Bob LLC", role_label: null },
+    ],
     effective_date: "2025-01-01",
     duration: "12 months",
     total_value: null,
@@ -79,6 +82,20 @@ const mockAnalysis: AnalyzeResponse = {
       citations: [],
     },
   ],
+  provenance: {
+    provider: "test",
+    model: "test",
+    snapshot: "test",
+    region: "test",
+    reasoning_effort_per_pass: {
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    },
+    prompt_template_version: "1.1",
+    timestamp: "2026-04-17T00:00:00.000Z",
+  },
 };
 
 describe("buildChatContext", () => {

@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import type { AnalyzedClause } from "@/types";
 import { RiskBadge } from "@/components/RiskBadge";
 import { ClauseExplanation } from "@/components/ClauseExplanation";
+import { ApplicableLawCite } from "@/components/ApplicableLawCite";
 
 const BORDER_COLORS = {
   high: "border-l-[var(--risk-high)]",
@@ -82,11 +83,8 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
               {clause.unusual_explanation}
             </p>
           )}
-          {clause.jurisdiction_note && (
-            <p className="mt-2.5">
-              <strong className="text-amber-600 dark:text-amber-400">Jurisdiction:</strong>{" "}
-              {clause.jurisdiction_note}
-            </p>
+          {clause.applicable_law && (
+            <ApplicableLawCite applicableLaw={clause.applicable_law} />
           )}
           <details className="mt-2.5">
             <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">

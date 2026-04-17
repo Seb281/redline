@@ -455,13 +455,19 @@ export function buildExtractionPrompt(
 export function reconcileJurisdiction<
   T extends {
     governing_jurisdiction: string | null;
-    jurisdiction_evidence: {
-      source_type: "stated" | "inferred" | "unknown";
-      source_text: string | null;
-    };
+    jurisdiction_evidence:
+      | {
+          source_type: "stated" | "inferred" | "unknown";
+          source_text: string | null;
+        }
+      | null;
   },
 >(overview: T): T {
   const { governing_jurisdiction, jurisdiction_evidence } = overview;
+  // Legacy rows and orchestrator call-sites that don't carry evidence
+  // (pre-SP-1.7) pass through unchanged — reconciliation only fires on
+  // a fresh Pass 0 payload.
+  if (jurisdiction_evidence === null) return overview;
   const isUnknown = jurisdiction_evidence.source_type === "unknown";
   if (isUnknown && governing_jurisdiction !== null) {
     return { ...overview, governing_jurisdiction: null };

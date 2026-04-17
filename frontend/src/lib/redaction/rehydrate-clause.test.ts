@@ -65,7 +65,7 @@ describe("rehydrateClause", () => {
       unusual_explanation: null,
       applicable_law: null,
       citations: [
-        { quoted_text: "\u27E6PARTY_A\u27E7 may end contract.", section_ref: "§3" },
+        { id: 1, quoted_text: "\u27E6PARTY_A\u27E7 may end contract." },
       ],
     } as AnalyzedClause;
     const out = rehydrateClause(clause, tokenMap);
@@ -156,8 +156,8 @@ describe("rehydrateClause — applicable_law (SP-1.7)", () => {
         observation: "Observation text.",
         source_type: "statute_cited",
         citations: [
-          { code: "NL_BW_7_650", footnote_marker: "[\u00A71]" },
-          { code: "EU_GDPR", footnote_marker: "[\u00A72]" },
+          { code: "NL_BW_7_650" },
+          { code: "EU_GDPR" },
         ],
       },
     };

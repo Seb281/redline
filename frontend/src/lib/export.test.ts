@@ -5,7 +5,10 @@ import type { AnalyzeResponse } from "@/types";
 const base: AnalyzeResponse = {
   overview: {
     contract_type: "Test Agreement",
-    parties: ["Alice", "Bob"],
+    parties: [
+      { name: "Alice", role_label: null },
+      { name: "Bob", role_label: null },
+    ],
     effective_date: null,
     duration: null,
     total_value: null,
@@ -38,6 +41,20 @@ const base: AnalyzeResponse = {
       ],
     },
   ],
+  provenance: {
+    provider: "test",
+    model: "test",
+    snapshot: "test",
+    region: "test",
+    reasoning_effort_per_pass: {
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    },
+    prompt_template_version: "1.1",
+    timestamp: "2026-04-17T00:00:00.000Z",
+  },
 };
 
 describe("generateMarkdown — citations", () => {

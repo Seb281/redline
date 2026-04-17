@@ -23,7 +23,7 @@ describe("rehydrateClause", () => {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
     };
     const out = rehydrateClause(clause, tokenMap);
     expect(out.clause_text).toBe("ACME Corp notifies at dpo@acme.eu.");
@@ -43,7 +43,7 @@ describe("rehydrateClause", () => {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
     } as AnalyzedClause;
     const out = rehydrateClause(clause, tokenMap);
     expect(out.clause_text).toBe("\u27E6PARTY_Z\u27E7 is rogue.");
@@ -63,7 +63,7 @@ describe("rehydrateClause", () => {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
       citations: [
         { quoted_text: "\u27E6PARTY_A\u27E7 may end contract.", section_ref: "§3" },
       ],
@@ -86,11 +86,84 @@ describe("rehydrateClause", () => {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
     };
     const out = rehydrateClause(clause, tokenMap);
     expect(out.negotiation_suggestion).toBeNull();
     expect(out.unusual_explanation).toBeNull();
-    expect(out.jurisdiction_note).toBeNull();
+    expect(out.applicable_law).toBeNull();
+  });
+});
+
+describe("rehydrateClause — applicable_law (SP-1.7)", () => {
+  it("rehydrates applicable_law.observation when present", () => {
+    const tokenMap = new Map<string, string>([
+      ["\u27E6PARTY_A\u27E7", "Sofia van Dijk"],
+    ]);
+    const clause: AnalyzedClause = {
+      clause_text: "t",
+      category: "other",
+      title: "t",
+      plain_english: "p",
+      risk_level: "low",
+      risk_explanation: "r",
+      negotiation_suggestion: null,
+      is_unusual: false,
+      unusual_explanation: null,
+      applicable_law: {
+        observation: "\u27E6PARTY_A\u27E7 has standing under Dutch law.",
+        source_type: "general_principle",
+        citations: [],
+      },
+    };
+    const out = rehydrateClause(clause, tokenMap);
+    expect(out.applicable_law?.observation).toBe(
+      "Sofia van Dijk has standing under Dutch law.",
+    );
+  });
+
+  it("leaves applicable_law null when it was null", () => {
+    const clause: AnalyzedClause = {
+      clause_text: "t",
+      category: "other",
+      title: "t",
+      plain_english: "p",
+      risk_level: "low",
+      risk_explanation: "r",
+      negotiation_suggestion: null,
+      is_unusual: false,
+      unusual_explanation: null,
+      applicable_law: null,
+    };
+    const out = rehydrateClause(clause, new Map());
+    expect(out.applicable_law).toBeNull();
+  });
+
+  it("does not touch applicable_law.citations (statute codes are static)", () => {
+    // Citations reference fixed StatuteCode enum entries — they contain no
+    // PII tokens, so rehydrate must leave them byte-identical.
+    const clause: AnalyzedClause = {
+      clause_text: "t",
+      category: "other",
+      title: "t",
+      plain_english: "p",
+      risk_level: "low",
+      risk_explanation: "r",
+      negotiation_suggestion: null,
+      is_unusual: false,
+      unusual_explanation: null,
+      applicable_law: {
+        observation: "Observation text.",
+        source_type: "statute_cited",
+        citations: [
+          { code: "NL_BW_7_650", footnote_marker: "[\u00A71]" },
+          { code: "EU_GDPR", footnote_marker: "[\u00A72]" },
+        ],
+      },
+    };
+    const out = rehydrateClause(clause, new Map());
+    expect(out.applicable_law?.citations).toEqual(
+      clause.applicable_law?.citations,
+    );
   });
 });

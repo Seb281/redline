@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeLabel } from "./role-heuristics";
+import { normalizeLabel, heuristicLabels } from "./role-heuristics";
 
 describe("normalizeLabel", () => {
   it("uppercases ASCII", () => {
@@ -27,5 +27,35 @@ describe("normalizeLabel", () => {
   it("returns empty string for all-punctuation input", () => {
     expect(normalizeLabel("---")).toBe("");
     expect(normalizeLabel("")).toBe("");
+  });
+});
+
+describe("heuristicLabels", () => {
+  const cases: Array<[string, string, string]> = [
+    ["Employment Agreement", "EMPLOYER", "EMPLOYEE"],
+    ["Residential Lease", "LANDLORD", "TENANT"],
+    ["Tenancy Agreement", "LANDLORD", "TENANT"],
+    ["Asset Purchase Agreement", "SELLER", "BUYER"],
+    ["Software License Agreement", "LICENSOR", "LICENSEE"],
+    ["Loan Agreement", "LENDER", "BORROWER"],
+    ["Mutual Non-Disclosure Agreement", "DISCLOSING_PARTY", "RECEIVING_PARTY"],
+    ["Master Services Agreement", "PROVIDER", "CLIENT"],
+    ["Consulting Agreement", "PROVIDER", "CLIENT"],
+    ["Freelance Services Agreement", "PROVIDER", "CLIENT"],
+    ["Partnership Agreement", "PARTY_A", "PARTY_B"],
+  ];
+  for (const [ctype, first, second] of cases) {
+    it(`maps "${ctype}" → ${first}/${second}`, () => {
+      const labels = heuristicLabels(ctype, 2);
+      expect(labels[0]).toBe(first);
+      expect(labels[1]).toBe(second);
+    });
+  }
+  it("returns PARTY_C, PARTY_D for parties beyond first two", () => {
+    const labels = heuristicLabels("Master Services Agreement", 4);
+    expect(labels).toEqual(["PROVIDER", "CLIENT", "PARTY_C", "PARTY_D"]);
+  });
+  it("returns PARTY_A only when one party", () => {
+    expect(heuristicLabels("Something", 1)).toEqual(["PARTY_A"]);
   });
 });

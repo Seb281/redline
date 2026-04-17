@@ -21,3 +21,49 @@ export function normalizeLabel(raw: string): string {
   const trimmed = replaced.replace(/^_+|_+$/g, "");
   return trimmed.slice(0, MAX_LABEL_LEN);
 }
+
+interface HeuristicRow {
+  keywords: string[];
+  first: string;
+  second: string;
+}
+
+const HEURISTICS: HeuristicRow[] = [
+  { keywords: ["employment", "labor"], first: "EMPLOYER", second: "EMPLOYEE" },
+  { keywords: ["lease", "tenancy", "rental"], first: "LANDLORD", second: "TENANT" },
+  { keywords: ["purchase", "sale"], first: "SELLER", second: "BUYER" },
+  { keywords: ["license", "licensing"], first: "LICENSOR", second: "LICENSEE" },
+  { keywords: ["loan", "credit"], first: "LENDER", second: "BORROWER" },
+  {
+    keywords: ["nda", "non-disclosure", "confidentiality"],
+    first: "DISCLOSING_PARTY",
+    second: "RECEIVING_PARTY",
+  },
+  {
+    keywords: ["service", "consulting", "freelance", "msa"],
+    first: "PROVIDER",
+    second: "CLIENT",
+  },
+];
+
+const POSITIONAL = ["PARTY_A", "PARTY_B", "PARTY_C", "PARTY_D", "PARTY_E", "PARTY_F", "PARTY_G", "PARTY_H"];
+
+/**
+ * Return an array of `n` canonical labels based on `contract_type`.
+ * Parties 0 and 1 get semantic labels when a keyword matches; parties
+ * 2+ always fall back to positional PARTY_C/D/... because heuristics
+ * cannot guess a third role (joint ventures are rare and ambiguous).
+ */
+export function heuristicLabels(contractType: string, n: number): string[] {
+  const lower = (contractType || "").toLowerCase();
+  const match = HEURISTICS.find((row) =>
+    row.keywords.some((kw) => lower.includes(kw)),
+  );
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (i === 0) out.push(match ? match.first : POSITIONAL[0]);
+    else if (i === 1) out.push(match ? match.second : POSITIONAL[1]);
+    else out.push(POSITIONAL[Math.min(i, POSITIONAL.length - 1)]);
+  }
+  return out;
+}

@@ -4,8 +4,11 @@ from app.schemas import (
     AnalyzedClause,
     AnalyzeResponse,
     AnalysisSummary,
+    ApplicableLaw,
+    ApplicableLawCitation,
     ClauseCategory,
     ContractOverview,
+    JurisdictionEvidence,
     Party,
     RiskBreakdown,
     RiskLevel,
@@ -135,3 +138,67 @@ def test_render_report_html_includes_unusual_badge(sample_analyzed_clauses):
     )
     html = render_report_html(data)
     assert "ATYPICAL" in html
+
+
+# --- SP-1.7 jurisdiction grounding ---
+
+
+def test_overview_jurisdiction_pill_stated():
+    """Overview renders STATED pill + escaped country name."""
+    data = _make_sample_response()
+    data.overview.governing_jurisdiction = "Netherlands"
+    data.overview.jurisdiction_evidence = JurisdictionEvidence(
+        source_type="stated",
+        source_text="§14 Governing Law",
+    )
+    html = render_report_html(data)
+    assert "Jurisdiction:</strong> Netherlands" in html
+    assert "STATED" in html
+
+
+def test_overview_jurisdiction_unknown_em_dash():
+    """Unknown jurisdiction renders em-dash + UNKNOWN pill."""
+    data = _make_sample_response()
+    data.overview.governing_jurisdiction = None
+    data.overview.jurisdiction_evidence = JurisdictionEvidence(
+        source_type="unknown",
+        source_text=None,
+    )
+    html = render_report_html(data)
+    assert "Jurisdiction:</strong> —" in html
+    assert "UNKNOWN" in html
+
+
+def test_clause_applicable_law_statute_cited():
+    """Clause with statute_cited renders observation + canonical label."""
+    data = _make_sample_response()
+    data.clauses[0].applicable_law = ApplicableLaw(
+        observation="Void under German law",
+        source_type="statute_cited",
+        citations=[ApplicableLawCitation(code="DE_BGB_276")],
+    )
+    html = render_report_html(data)
+    assert "Jurisdiction:</strong> Void under German law" in html
+    assert "BGB §276" in html
+
+
+def test_clause_applicable_law_general_principle_no_cite_block():
+    """general_principle renders observation but no 'Cited:' block."""
+    data = _make_sample_response()
+    data.clauses[0].applicable_law = ApplicableLaw(
+        observation="General EU principle",
+        source_type="general_principle",
+        citations=[],
+    )
+    html = render_report_html(data)
+    assert "General EU principle" in html
+    assert "Cited:" not in html or "BGB" not in html
+
+
+def test_clause_applicable_law_null_renders_nothing():
+    """applicable_law=None emits no Jurisdiction block on the clause."""
+    data = _make_sample_response()
+    data.clauses[0].applicable_law = None
+    html = render_report_html(data)
+    clause_section = html.split(data.clauses[0].title)[1].split("\n")[0]
+    assert "Jurisdiction:</strong> " not in clause_section

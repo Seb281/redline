@@ -234,6 +234,7 @@ export function buildAnalysisSystemPrompt(
   withCitations: boolean,
   userRole?: string | null,
   jurisdiction?: string | null,
+  jurisdictionEvidence?: JurisdictionEvidence | null,
 ): string {
   const citationsSection = withCitations
     ? `\
@@ -253,35 +254,47 @@ Citations (disabled for this run):
 - Do NOT insert any [^N] markers in \`plain_english\`.
 - The \`citations\` field is still required by the schema — just leave it empty.`;
 
-  const jurisdictionSection = jurisdiction
-    ? `\
-Jurisdiction-Aware Analysis (${jurisdiction}):
-This contract is governed by ${jurisdiction}. Apply jurisdiction-specific rules:
+  const jurisdictionSection = (() => {
+    if (!jurisdictionEvidence || jurisdictionEvidence.source_type === "unknown") {
+      return `\
+Applicable law (jurisdiction unknown):
+Jurisdiction is unknown. Emit applicable_law: null for EVERY clause. No \
+exceptions. Do not speculate.`;
+    }
 
-EU Member State rules (apply when jurisdiction is in the EU/EEA):
-- Non-competes: Many EU states restrict or void non-competes without compensation. \
-Netherlands: requires written form + compensation. Germany: max 2 years, requires \
-Karenzentschädigung (compensation during restriction). France: requires contrepartie \
-financière. Overly broad scope/duration often void.
-- Data protection: GDPR supersedes conflicting contractual terms. Clauses limiting \
-data subject rights are void regardless of contract.
-- Unfair terms: EU Directive 93/13/EEC can void one-sided clauses in B2C and \
-sometimes B2B (varies by national implementation).
-- Limitation of liability: Exclusion of gross negligence/intentional misconduct \
-void in most EU jurisdictions (German BGB §276 makes this explicit).
-- IP assignment: Overly broad IP clauses (pre-existing IP, work outside scope) may \
-conflict with employee invention laws (German ArbNErfG, Dutch patent law).
-- Confidentiality: Perpetual obligations often unenforceable; 5+ years unusual in \
-EU commercial practice.
+    const whitelist = STATUTE_CODES.map(
+      (code) => `- ${code}: ${STATUTE_LABELS[code]}`,
+    ).join("\n");
 
-For each clause, set \`jurisdiction_note\` to a one-line observation about how \
-${jurisdiction} law specifically affects this clause (e.g., "Likely unenforceable \
-under Dutch law — no compensation offered for post-contractual restriction"). \
-Set to null if the clause has no jurisdiction-specific concern.`
-    : `\
-Jurisdiction note:
-- The governing jurisdiction is not stated or not recognized. Set \
-\`jurisdiction_note\` to null for all clauses.`;
+    const juris = jurisdiction ?? "the stated jurisdiction";
+    return `\
+Applicable law (${juris}):
+For each clause, emit applicable_law: null UNLESS a canonical statute from \
+the list below applies to that specific clause.
+
+Whitelist (code — canonical label):
+${whitelist}
+
+Applicability guidance:
+- DE_BGB_276: liability exclusion covering gross negligence or intentional misconduct.
+- DE_ARBNERFG: broad IP-assignment clause conflicting with employee invention rights.
+- DE_KARENZENTSCHAEDIGUNG: German non-compete lacking paid Karenzentschädigung compensation.
+- NL_BW_7_650: Dutch non-compete lacking written form or clear scope.
+- NL_BW_7_653: Dutch non-compete of questionable validity (scope, duration, compensation).
+- FR_CODE_TRAVAIL_NONCOMPETE: French non-compete without contrepartie financière.
+- EU_GDPR: data-protection clause waiving data subject rights or conflicting with Regulation 2016/679.
+- EU_DIR_93_13_EEC: markedly one-sided clause (consumer, sometimes B2B per national implementation).
+
+Emission rules:
+- When a whitelist statute applies: set applicable_law.source_type="statute_cited"; \
+populate citations with one or more entries where code EXACTLY matches an enum value \
+above (the human-readable label is rendered client-side from a canonical map; emit code only); \
+set observation to a one-line note explaining the concern for a non-lawyer.
+- When a jurisdiction-specific issue is real but no enum code fits: set \
+source_type="general_principle" with citations=[]; state the principle in observation. \
+Do NOT invent codes outside the list above.
+- For all other clauses (the common case): return applicable_law=null.`;
+  })();
 
   const trimmedRole = userRole?.trim();
   const perspectiveLine = trimmedRole
@@ -468,7 +481,7 @@ export function reconcileJurisdiction<
  * Part of the AI Act provenance record — auditors use it to correlate
  * stored analyses back to the prompt contract they were produced under.
  */
-const PROMPT_TEMPLATE_VERSION = "1.0";
+export const PROMPT_TEMPLATE_VERSION = "1.1";
 
 /**
  * Sentinel `provider` value for the legacy-provenance placeholder. The
@@ -695,7 +708,10 @@ export async function analyzeContract(
     rawOverview.clause_inventory,
     text.length,
   );
-  const overview = { ...rawOverview, clause_inventory: cappedInventory };
+  const overview = reconcileJurisdiction({
+    ...rawOverview,
+    clause_inventory: cappedInventory,
+  });
   logPass("overview", {
     ms: Date.now() - pass0Start,
     partyCount: overview.parties.length,
@@ -710,6 +726,7 @@ export async function analyzeContract(
     withCitations,
     userRole,
     overview.governing_jurisdiction,
+    overview.jurisdiction_evidence,
   );
 
   // Pass 1 — extraction (medium effort)

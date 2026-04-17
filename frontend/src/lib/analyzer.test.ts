@@ -9,6 +9,7 @@ import {
   buildAnalysisSystemPrompt,
   buildProvenance,
   OVERVIEW_SYSTEM_PROMPT,
+  PROMPT_TEMPLATE_VERSION,
   reconcileJurisdiction,
   shouldRetryPass2,
   INVENTORY_CAP_CEILING,
@@ -99,18 +100,6 @@ describe("buildAnalysisSystemPrompt", () => {
     expect(prompt).toContain("weaker");
   });
 
-  it("includes jurisdiction rules when jurisdiction provided", () => {
-    const prompt = buildAnalysisSystemPrompt(true, null, "the Netherlands");
-    expect(prompt).toContain("the Netherlands");
-    expect(prompt).toContain("Karenzentschädigung");
-    expect(prompt).toContain("jurisdiction_note");
-  });
-
-  it("instructs null jurisdiction_note when no jurisdiction", () => {
-    const prompt = buildAnalysisSystemPrompt(true, null, null);
-    expect(prompt).toContain("jurisdiction_note");
-    expect(prompt).toContain("null for all clauses");
-  });
 });
 
 describe("buildProvenance", () => {
@@ -476,5 +465,44 @@ describe("reconcileJurisdiction (SP-1.7)", () => {
     });
     expect(out.jurisdiction_evidence.source_type).toBe("unknown");
     expect(out.governing_jurisdiction).toBeNull();
+  });
+});
+
+describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
+  it("when jurisdiction is unknown, instructs applicable_law=null for every clause", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, null, {
+      source_type: "unknown",
+      source_text: null,
+    });
+    expect(prompt).toContain("applicable_law: null");
+    expect(prompt).toContain("EVERY clause");
+    // The whitelist must NOT appear when we have no jurisdiction anchor.
+    expect(prompt).not.toContain("DE_BGB_276");
+  });
+
+  it("when jurisdiction is stated, includes the whitelist and cites-from-list instruction", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Germany", {
+      source_type: "stated",
+      source_text: "§20 Governing Law",
+    });
+    expect(prompt).toContain("DE_BGB_276");
+    expect(prompt).toContain("EU_GDPR");
+    expect(prompt).toContain("EU_DIR_93_13_EEC");
+    expect(prompt).toContain("Do NOT invent codes");
+    expect(prompt).toContain("applicable_law: null UNLESS");
+  });
+
+  it("no longer mentions jurisdiction_note anywhere", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Netherlands", {
+      source_type: "stated",
+      source_text: "§14",
+    });
+    expect(prompt).not.toContain("jurisdiction_note");
+  });
+});
+
+describe("PROMPT_TEMPLATE_VERSION", () => {
+  it("is bumped to 1.1 for SP-1.7", () => {
+    expect(PROMPT_TEMPLATE_VERSION).toBe("1.1");
   });
 });

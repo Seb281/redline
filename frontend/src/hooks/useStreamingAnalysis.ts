@@ -249,6 +249,12 @@ export function useStreamingAnalysis() {
         return { overview: body.overview, tokenMap: fullMap };
       } catch (err) {
         if ((err as Error).name === "AbortError") return null;
+        // Surface the full error + stack so prod crashes like "X is not
+        // a function" land in the devtools console with actionable context
+        // (minified messages alone hide the call site).
+        if (typeof console !== "undefined") {
+          console.error("[redline] runOverview failed", err);
+        }
         setState((prev) => ({
           ...prev,
           status: "error",

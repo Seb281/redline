@@ -213,4 +213,16 @@ describe("RedactionPreview — editable labels (SP-1.9)", () => {
     );
     expect(screen.getByText(/Distinguished from row above/i)).toBeTruthy();
   });
+
+  it("does not show collision hint for labels ending in _1 (not a disambiguation suffix)", () => {
+    render(
+      <RedactionPreview
+        {...baseProps}
+        editableLabels={["PARTNER_1", "PARTNER_2"]}
+      />,
+    );
+    // Only PARTNER_2 should trigger the hint, not PARTNER_1.
+    const hints = screen.queryAllByText(/Distinguished from row above/i);
+    expect(hints).toHaveLength(1);
+  });
 });

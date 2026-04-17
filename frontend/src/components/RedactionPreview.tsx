@@ -188,7 +188,10 @@ export function RedactionPreview({
           <ul className="divide-y divide-[var(--border-primary)]">
             {parties.map((party, i) => {
               const label = editableLabels[i] ?? "";
-              const isDuplicate = /_\d+$/.test(label);
+              // Collision suffix from `disambiguateLabels` is always `_2`, `_3`, …
+              // Matching `_[2-9]\d*$` avoids false positives on labels whose
+              // normalized form naturally ends in `_1` (e.g. "Partner 1").
+              const isDuplicate = /_[2-9]\d*$/.test(label);
               return (
                 <li key={i} className="flex items-center gap-3 px-4 py-3">
                   <input
@@ -294,9 +297,16 @@ export function RedactionPreview({
         {showInline ? "\u25BE" : "\u25B8"} {showInline ? "Hide" : "Show"} inline text
       </button>
       {showInline && (
-        <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
-          {renderInlineWithDisabled(scrubbed, tokenMap, disabled)}
-        </pre>
+        <>
+          {parties.length > 0 && (
+            <p className="mt-2 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
+              Party tokens below reflect the initial scan — your label edits take effect on Confirm.
+            </p>
+          )}
+          <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
+            {renderInlineWithDisabled(scrubbed, tokenMap, disabled)}
+          </pre>
+        </>
       )}
 
       <p className="mt-4 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">

@@ -10,6 +10,7 @@ const base: AnalyzeResponse = {
     duration: null,
     total_value: null,
     governing_jurisdiction: null,
+    jurisdiction_evidence: null,
     key_terms: ["A term"],
     clause_inventory: [{ title: "Mutual termination", section_ref: null }],
   },
@@ -31,7 +32,7 @@ const base: AnalyzeResponse = {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
       citations: [
         { id: 1, quoted_text: "thirty (30) days written notice" },
       ],
@@ -98,14 +99,32 @@ describe("generateMarkdown — optional fields", () => {
     expect(md).toContain("**ATYPICAL**");
   });
 
-  it("renders jurisdiction_note when present", () => {
+  it("renders applicable_law with statute_cited + canonical label (SP-1.7)", () => {
     const data = structuredClone(base);
-    data.clauses[0].jurisdiction_note = "May conflict with Dutch employment law.";
+    data.clauses[0].applicable_law = {
+      observation: "Void under German law",
+      source_type: "statute_cited",
+      citations: [{ code: "DE_BGB_276" }],
+    };
     const md = generateMarkdown(data);
-    expect(md).toContain("**Jurisdiction:** May conflict with Dutch employment law.");
+    expect(md).toContain("**Jurisdiction:** Void under German law");
+    expect(md).toContain("BGB §276");
   });
 
-  it("omits jurisdiction_note line when null", () => {
+  it("renders applicable_law with general_principle (no citation line)", () => {
+    const data = structuredClone(base);
+    data.clauses[0].applicable_law = {
+      observation: "General EU principle",
+      source_type: "general_principle",
+      citations: [],
+    };
+    const md = generateMarkdown(data);
+    expect(md).toContain("**Jurisdiction:** General EU principle");
+    const clauseSection = md.split("## Clauses")[1];
+    expect(clauseSection).not.toMatch(/Cited: /);
+  });
+
+  it("omits the jurisdiction line when applicable_law is null", () => {
     const md = generateMarkdown(base);
     const clauseSection = md.split("## Clauses")[1];
     expect(clauseSection).not.toContain("**Jurisdiction:**");

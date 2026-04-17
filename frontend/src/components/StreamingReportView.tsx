@@ -108,7 +108,11 @@ export function StreamingReportView({
       {/* Role picker — shown between redaction and Pass 1 so the user can
           declare which party they are before risk analysis runs. */}
       {status === "awaiting_role" && overview && (
-        <RolePicker parties={overview.parties} onPick={onRolePicked} />
+        <RolePicker
+          parties={overview.parties}
+          labels={state.editableLabels}
+          onPick={onRolePicked}
+        />
       )}
 
       {/* Risk summary — placeholder until complete */}

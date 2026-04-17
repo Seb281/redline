@@ -7,7 +7,7 @@
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
 import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
-import type { AnalysisMode } from "@/types";
+import type { AnalysisMode, JurisdictionEvidence } from "@/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -31,6 +31,12 @@ export async function POST(request: Request) {
   const jurisdiction: string | null =
     typeof body.jurisdiction === "string" && body.jurisdiction.trim().length > 0
       ? body.jurisdiction.trim()
+      : null;
+  // SP-1.7 — forwarded from Pass 0 so Pass 2 prompt can dispatch on the
+  // whitelist vs emit applicable_law=null for every clause.
+  const jurisdictionEvidence: JurisdictionEvidence | null =
+    body.jurisdiction_evidence && typeof body.jurisdiction_evidence === "object"
+      ? (body.jurisdiction_evidence as JurisdictionEvidence)
       : null;
   if (!text.trim()) {
     return Response.json(
@@ -62,6 +68,7 @@ export async function POST(request: Request) {
     clauseInventory,
     userRole,
     jurisdiction,
+    jurisdictionEvidence,
     provider,
   );
 

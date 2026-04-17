@@ -22,6 +22,7 @@ const overview = {
   duration: null,
   total_value: null,
   governing_jurisdiction: null,
+  jurisdiction_evidence: { source_type: "unknown", source_text: null } as const,
   key_terms: ["Payment terms", "Termination notice"],
   clause_inventory: [],
 };
@@ -91,5 +92,68 @@ describe("ContractOverview (SP-1.9)", () => {
     expect(screen.getByText(/Services Agreement/)).toBeTruthy();
     expect(screen.getByText(/Payment terms/)).toBeTruthy();
     expect(screen.getByText(/Termination notice/)).toBeTruthy();
+  });
+});
+
+describe("ContractOverview — jurisdiction pill (SP-1.7)", () => {
+  it("renders STATED pill next to jurisdiction when source_type is stated", () => {
+    render(
+      <RehydrateProvider>
+        <ContractOverview
+          overview={{
+            ...overview,
+            governing_jurisdiction: "Netherlands",
+            jurisdiction_evidence: {
+              source_type: "stated",
+              source_text: "\u00A714 Governing Law",
+            },
+          }}
+          labels={["PROVIDER", "CLIENT"]}
+        />
+      </RehydrateProvider>,
+    );
+    expect(screen.getByText(/Jurisdiction: Netherlands/)).toBeTruthy();
+    const pill = screen.getByTestId("jurisdiction-pill");
+    expect(pill.textContent).toMatch(/stated/i);
+    expect(pill.getAttribute("title")).toContain("\u00A714 Governing Law");
+  });
+
+  it("renders INFERRED pill with reason tooltip", () => {
+    render(
+      <RehydrateProvider>
+        <ContractOverview
+          overview={{
+            ...overview,
+            governing_jurisdiction: "Germany",
+            jurisdiction_evidence: {
+              source_type: "inferred",
+              source_text: "Party addresses in Berlin",
+            },
+          }}
+          labels={["PROVIDER", "CLIENT"]}
+        />
+      </RehydrateProvider>,
+    );
+    const pill = screen.getByTestId("jurisdiction-pill");
+    expect(pill.textContent).toMatch(/inferred/i);
+    expect(pill.getAttribute("title")).toContain("Party addresses in Berlin");
+  });
+
+  it("renders UNKNOWN pill with em-dash in place of country", () => {
+    render(
+      <RehydrateProvider>
+        <ContractOverview
+          overview={{
+            ...overview,
+            governing_jurisdiction: null,
+            jurisdiction_evidence: { source_type: "unknown", source_text: null },
+          }}
+          labels={["PROVIDER", "CLIENT"]}
+        />
+      </RehydrateProvider>,
+    );
+    expect(screen.getByText(/Jurisdiction: —/)).toBeTruthy();
+    const pill = screen.getByTestId("jurisdiction-pill");
+    expect(pill.textContent).toMatch(/unknown/i);
   });
 });

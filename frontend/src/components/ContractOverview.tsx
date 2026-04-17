@@ -38,6 +38,21 @@ function titleCase(label: string): string {
     .join(" ");
 }
 
+/**
+ * SP-1.7 — Tailwind classes for the jurisdiction-evidence pill. Green
+ * means "explicitly stated in the contract", amber means "inferred from
+ * addresses/language/currency", gray means "could not determine".
+ */
+function pillClassFor(sourceType: "stated" | "inferred" | "unknown"): string {
+  if (sourceType === "stated") {
+    return "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+  }
+  if (sourceType === "inferred") {
+    return "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
+  }
+  return "bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+}
+
 /** Renders structured contract metadata at the top of the report. */
 export function ContractOverview({ overview, labels }: ContractOverviewProps) {
   const { rehydrate } = useRehydrate();
@@ -47,9 +62,6 @@ export function ContractOverview({ overview, labels }: ContractOverviewProps) {
   if (overview.effective_date) details.push(`Effective: ${overview.effective_date}`);
   if (overview.duration) details.push(`Duration: ${overview.duration}`);
   if (overview.total_value) details.push(`Value: ${overview.total_value}`);
-  if (overview.governing_jurisdiction) {
-    details.push(`Jurisdiction: ${overview.governing_jurisdiction}`);
-  }
 
   // Role-first display; legal name disclosed only when rehydrate is on.
   const partyDisplay = overview.parties
@@ -72,6 +84,19 @@ export function ContractOverview({ overview, labels }: ContractOverviewProps) {
       {details.length > 0 && (
         <p className="mb-3.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
           {details.join(" · ")}
+        </p>
+      )}
+
+      {overview.jurisdiction_evidence && (
+        <p className="mb-3.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
+          Jurisdiction: {overview.governing_jurisdiction ?? "—"}
+          <span
+            data-testid="jurisdiction-pill"
+            title={overview.jurisdiction_evidence.source_text ?? undefined}
+            className={`ml-2 inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[1px] ${pillClassFor(overview.jurisdiction_evidence.source_type)}`}
+          >
+            {overview.jurisdiction_evidence.source_type}
+          </span>
         </p>
       )}
 

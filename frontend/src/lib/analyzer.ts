@@ -14,9 +14,10 @@
 
 import { generateObject } from "ai";
 import { z } from "zod";
-import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode } from "@/types";
+import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvidence } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
+import { STATUTE_CODES, STATUTE_LABELS } from "@/lib/applicable-law";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -117,12 +118,35 @@ export const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("What is atypical and why it matters. Null if not unusual."),
-  jurisdiction_note: z
-    .string()
+  applicable_law: z
+    .object({
+      observation: z.string().min(1),
+      source_type: z.enum(["statute_cited", "general_principle"]),
+      citations: z.array(
+        z.object({
+          code: z.enum(STATUTE_CODES),
+        }),
+      ),
+    })
     .nullable()
+    .superRefine((val, ctx) => {
+      if (val === null) return;
+      if (val.source_type === "statute_cited" && val.citations.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "statute_cited requires at least one citation",
+        });
+      }
+      if (val.source_type === "general_principle" && val.citations.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "general_principle requires citations to be empty",
+        });
+      }
+    })
     .describe(
-      "One-line note about jurisdiction-specific concerns. " +
-      "Null if governing law is unknown or clause has no jurisdiction-specific issue.",
+      "Structured legal grounding for this clause, or null when no canonical " +
+        "statute applies and there is no general principle worth flagging.",
     ),
   // Required (not optional) because OpenAI's strict structured-output mode
   // forces every property into `required`. Emit an empty array when no

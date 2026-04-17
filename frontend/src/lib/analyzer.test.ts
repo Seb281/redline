@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  analyzedClauseSchema,
   buildRiskBreakdown,
   capInventory,
   formatInventoryPrompt,
@@ -281,5 +282,97 @@ describe("shouldRetryPass2", () => {
     // expected=3 → ceil(1.5) = 2 → streamed<2 retries
     expect(shouldRetryPass2(1, 3)).toBe(true);
     expect(shouldRetryPass2(2, 3)).toBe(false);
+  });
+});
+
+describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
+  const clauseBase = {
+    clause_text: "x",
+    category: "other" as const,
+    title: "t",
+    plain_english: "p",
+    risk_level: "low" as const,
+    risk_explanation: "r",
+    negotiation_suggestion: null,
+    is_unusual: false,
+    unusual_explanation: null,
+    citations: [],
+  };
+
+  it("accepts applicable_law=null (the common case)", () => {
+    const r = analyzedClauseSchema.safeParse({ ...clauseBase, applicable_law: null });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts statute_cited with citations", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "void under German law",
+        source_type: "statute_cited",
+        citations: [{ code: "DE_BGB_276" }],
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts general_principle with empty citations", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "general EU principle",
+        source_type: "general_principle",
+        citations: [],
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects statute_cited with empty citations (invariant)", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "void",
+        source_type: "statute_cited",
+        citations: [],
+      },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects general_principle with non-empty citations (invariant)", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "principle",
+        source_type: "general_principle",
+        citations: [{ code: "EU_GDPR" }],
+      },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects off-enum citation codes", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "fake",
+        source_type: "statute_cited",
+        citations: [{ code: "NOT_A_REAL_STATUTE" }],
+      },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects empty observation", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "",
+        source_type: "general_principle",
+        citations: [],
+      },
+    });
+    expect(r.success).toBe(false);
   });
 });

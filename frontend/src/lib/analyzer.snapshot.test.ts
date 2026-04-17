@@ -58,6 +58,14 @@ describeIfKey("snapshot harness — Mistral provider", () => {
       expect(result.clauses.length).toBeGreaterThanOrEqual(8);
       expect(result.clauses.length).toBeLessThanOrEqual(20);
 
+      // SP-1.7 — a stated-jurisdiction fixture must produce at least one
+      // canonical citation. Catches prompt-regression where the model
+      // stops emitting applicable_law entirely.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
+
       const cats = result.clauses.map((c) => c.category);
       expect(cats).toContain("non_compete");
       expect(cats).toContain("ip_assignment");
@@ -106,6 +114,13 @@ describeIfKey("snapshot harness — Mistral provider", () => {
       // French non-compete missing contrepartie financière = high risk.
       expect(nonCompete?.risk_level).toBe("high");
 
+      // SP-1.7 — FR non-compete without contrepartie must trigger the
+      // FR_CODE_TRAVAIL_NONCOMPETE citation.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
+
       expect(result.provenance.provider).toBe("mistral");
     },
     TIMEOUT_MS,
@@ -137,6 +152,12 @@ describeIfKey("snapshot harness — Mistral provider", () => {
 
       expect(result.summary.risk_breakdown.high).toBeGreaterThan(0);
       expect(result.provenance.provider).toBe("mistral");
+
+      // SP-1.7 — DE DPA must ground data-protection clauses on GDPR.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
     },
     TIMEOUT_MS,
   );

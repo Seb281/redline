@@ -60,6 +60,12 @@ describeIfKey("SP-1.6 Pass 0 parity — raw vs patterns-masked", () => {
         // Jurisdiction — must still be detected on masked input.
         expect(masked.governing_jurisdiction?.toLowerCase()).toMatch(c.juris);
 
+        // SP-1.7 — evidence block must travel with the detected jurisdiction.
+        // Masking shouldn't downgrade a stated jurisdiction to unknown.
+        expect(masked.jurisdiction_evidence?.source_type).toMatch(
+          /stated|inferred/,
+        );
+
         // Inventory band — within ±30% of raw count.
         const lo = Math.floor(raw.clause_inventory.length * 0.7);
         const hi = Math.ceil(raw.clause_inventory.length * 1.3);

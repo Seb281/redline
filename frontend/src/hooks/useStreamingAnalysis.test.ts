@@ -54,6 +54,7 @@ const fakeOverview = {
   duration: null,
   total_value: null,
   governing_jurisdiction: "the Netherlands",
+  jurisdiction_evidence: { source_type: "stated", source_text: null },
   key_terms: ["Term 1"],
   clause_inventory: [{ title: "Clause 1", section_ref: null }],
 };
@@ -68,7 +69,7 @@ const fakeClause = {
   negotiation_suggestion: null,
   is_unusual: false,
   unusual_explanation: null,
-  jurisdiction_note: null,
+  applicable_law: null,
   citations: [],
 };
 

@@ -33,7 +33,17 @@ def render_report_html(data: AnalyzeResponse) -> str:
         negotiation suggestion, and unusual-clause explanation
     """
     # Build overview section
-    parties_html = ", ".join(html_module.escape(p) for p in data.overview.parties)
+    # SP-1.9 — `parties` carries `Party` objects (name + optional role_label).
+    # Render `role (name)` when a role_label is present, else just the name.
+    def _party_display(party) -> str:
+        """Format a single party for the PDF header."""
+        if party.role_label:
+            return f"{party.role_label} ({party.name})"
+        return party.name
+
+    parties_html = ", ".join(
+        html_module.escape(_party_display(p)) for p in data.overview.parties
+    )
     key_terms_html = "".join(
         f"<li>{html_module.escape(term)}</li>" for term in data.overview.key_terms
     )

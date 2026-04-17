@@ -65,11 +65,25 @@ class ClauseInventoryItem(BaseModel):
     section_ref: str | None = None
 
 
+class Party(BaseModel):
+    """A party to the contract.
+
+    SP-1.9 — carries the defined term the contract introduces for the
+    party (e.g. ``"Provider"``, ``"Tenant"``) in addition to the legal
+    name. ``role_label`` is nullable because contracts don't always
+    introduce a shorthand; the frontend falls back to a heuristic
+    derived from ``contract_type`` in that case.
+    """
+
+    name: str
+    role_label: str | None = None
+
+
 class ContractOverview(BaseModel):
     """High-level contract metadata extracted in Pass 0."""
 
     contract_type: str
-    parties: list[str]
+    parties: list[Party]
     effective_date: str | None = None
     duration: str | None = None
     total_value: str | None = None

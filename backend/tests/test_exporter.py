@@ -6,6 +6,7 @@ from app.schemas import (
     AnalysisSummary,
     ClauseCategory,
     ContractOverview,
+    Party,
     RiskBreakdown,
     RiskLevel,
 )
@@ -16,7 +17,7 @@ def _make_sample_response() -> AnalyzeResponse:
     """Build a sample AnalyzeResponse for testing."""
     overview = ContractOverview(
         contract_type="Consulting Agreement",
-        parties=["Acme Corp", "The Consultant"],
+        parties=[Party(name="Acme Corp", role_label="Provider"), Party(name="The Consultant", role_label="Consultant")],
         effective_date=None,
         duration=None,
         total_value=None,
@@ -88,7 +89,7 @@ def test_render_report_html_includes_overview(sample_analyzed_clauses):
     """PDF HTML template includes contract overview section."""
     overview = ContractOverview(
         contract_type="Consulting Agreement",
-        parties=["Acme Corp", "The Consultant"],
+        parties=[Party(name="Acme Corp", role_label="Provider"), Party(name="The Consultant", role_label="Consultant")],
         effective_date="2026-01-15",
         duration="12 months",
         total_value="$120,000",
@@ -116,7 +117,7 @@ def test_render_report_html_includes_unusual_badge(sample_analyzed_clauses):
     """PDF HTML template shows ATYPICAL badge for unusual clauses."""
     overview = ContractOverview(
         contract_type="Agreement",
-        parties=["A", "B"],
+        parties=[Party(name="A"), Party(name="B")],
         effective_date=None,
         duration=None,
         total_value=None,

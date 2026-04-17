@@ -21,7 +21,7 @@ SAVE_PAYLOAD = {
     "page_count": 5,
     "char_count": 12000,
     "contract_text": "Full contract text...",
-    "overview": {"contract_type": "SaaS", "parties": ["A", "B"], "key_terms": []},
+    "overview": {"contract_type": "SaaS", "parties": [{"name": "A", "role_label": None}, {"name": "B", "role_label": None}], "key_terms": []},
     "summary": {
         "total_clauses": 2,
         "risk_breakdown": {"high": 1, "medium": 0, "low": 1, "informational": 0},
@@ -139,7 +139,7 @@ def test_list_analyses_with_auth_returns_items():
             "id": "analysis-1",
             "filename": "contract.pdf",
             "file_type": "pdf",
-            "overview": {"contract_type": "SaaS", "parties": ["A", "B"]},
+            "overview": {"contract_type": "SaaS", "parties": [{"name": "A", "role_label": None}, {"name": "B", "role_label": None}]},
             "clauses": [
                 {"title": "Non-Compete", "risk_level": "high"},
                 {"title": "Governing Law", "risk_level": "low"},

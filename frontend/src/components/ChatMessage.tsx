@@ -1,4 +1,13 @@
-/** Individual chat message bubble — user or assistant. */
+/**
+ * Individual chat message bubble — user or assistant.
+ *
+ * SP-1.9: Assistant messages may cite party names (⟦PROVIDER⟧). By
+ * default we prettify those tokens into readable labels ("Provider")
+ * so screenshots are privacy-safe. When the user flips the global
+ * "Show real names" toggle we rehydrate to the legal party name.
+ * PII tokens (⟦EMAIL_1⟧ etc.) are never rehydrated here — the client
+ * does not hold their originals.
+ */
 
 import { useMemo } from "react";
 import type { UIMessage } from "ai";
@@ -8,6 +17,7 @@ import {
   normalizeLabel,
   disambiguateLabels,
 } from "@/lib/redaction/role-heuristics";
+import { useRehydrate } from "@/contexts/RehydrateContext";
 import type { Party } from "@/types";
 
 interface ChatMessageProps {
@@ -28,6 +38,22 @@ interface ChatMessageProps {
   contractType?: string;
 }
 
+/**
+ * Replace every `⟦LABEL⟧` token in `text` with a title-cased
+ * human-readable form (`⟦PROVIDER⟧` → `Provider`). Used as the
+ * privacy-default display mode — no legal names surface unless the
+ * user explicitly flips the rehydrate toggle.
+ */
+function prettifyTokens(text: string): string {
+  return text.replace(/\u27E6([A-Z0-9_]+)\u27E7/g, (_, label: string) =>
+    label
+      .split("_")
+      .filter(Boolean)
+      .map((p) => p.charAt(0) + p.slice(1).toLowerCase())
+      .join(" "),
+  );
+}
+
 /** Renders a single chat message with role-appropriate styling. */
 export function ChatMessage({
   message,
@@ -36,6 +62,7 @@ export function ChatMessage({
   contractType = "",
 }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const { rehydrate: showRealNames } = useRehydrate();
 
   const partyMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -57,7 +84,12 @@ export function ChatMessage({
     .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
     .map((p) => p.text)
     .join("");
-  const textContent = partyMap.size ? rehydrate(rawText, partyMap) : rawText;
+
+  // Rehydrate to legal names when toggled on; otherwise show prettified
+  // role labels so a screenshot can't leak party identity.
+  const textContent = showRealNames
+    ? rehydrate(rawText, partyMap)
+    : prettifyTokens(rawText);
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>

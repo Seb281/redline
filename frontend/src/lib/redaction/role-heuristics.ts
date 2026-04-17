@@ -67,3 +67,22 @@ export function heuristicLabels(contractType: string, n: number): string[] {
   }
   return out;
 }
+
+/**
+ * Append `_2`, `_3`, … to labels that repeat earlier entries. First
+ * occurrence keeps its base form; empties are passed through unchanged.
+ */
+export function disambiguateLabels(labels: string[]): string[] {
+  const counts = new Map<string, number>();
+  const out: string[] = [];
+  for (const label of labels) {
+    if (!label) {
+      out.push(label);
+      continue;
+    }
+    const seen = counts.get(label) ?? 0;
+    out.push(seen === 0 ? label : `${label}_${seen + 1}`);
+    counts.set(label, seen + 1);
+  }
+  return out;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeLabel, heuristicLabels } from "./role-heuristics";
+import { normalizeLabel, heuristicLabels, disambiguateLabels } from "./role-heuristics";
 
 describe("normalizeLabel", () => {
   it("uppercases ASCII", () => {
@@ -57,5 +57,38 @@ describe("heuristicLabels", () => {
   });
   it("returns PARTY_A only when one party", () => {
     expect(heuristicLabels("Something", 1)).toEqual(["PARTY_A"]);
+  });
+});
+
+describe("disambiguateLabels", () => {
+  it("passes unique labels through unchanged", () => {
+    expect(disambiguateLabels(["PROVIDER", "CLIENT"])).toEqual([
+      "PROVIDER",
+      "CLIENT",
+    ]);
+  });
+  it("suffixes duplicate with _2", () => {
+    expect(disambiguateLabels(["PROVIDER", "PROVIDER"])).toEqual([
+      "PROVIDER",
+      "PROVIDER_2",
+    ]);
+  });
+  it("suffixes triplicates _2, _3", () => {
+    expect(disambiguateLabels(["PROV", "PROV", "PROV"])).toEqual([
+      "PROV",
+      "PROV_2",
+      "PROV_3",
+    ]);
+  });
+  it("keeps first-seen base label even with later collisions", () => {
+    expect(disambiguateLabels(["A", "B", "A", "B"])).toEqual([
+      "A",
+      "B",
+      "A_2",
+      "B_2",
+    ]);
+  });
+  it("does not alter empty entries (caller's responsibility)", () => {
+    expect(disambiguateLabels(["", "PROVIDER"])).toEqual(["", "PROVIDER"]);
   });
 });

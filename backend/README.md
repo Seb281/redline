@@ -34,7 +34,7 @@ tesseract --list-langs | grep -E "^(eng|fra|deu|nld|spa|ita)$"
 pdftoppm -v
 ```
 
-Railway deploys install these automatically via `backend/nixpacks.toml`. The
+Railway deploys install these automatically via `backend/Dockerfile`. The
 `/api/health` endpoint exposes an `ocr` sub-status (`ok` / `unavailable`) so
 production readiness checks can surface OCR breakage without a full upload.
 

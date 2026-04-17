@@ -9,7 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# System dependencies for WeasyPrint PDF rendering.
+# System dependencies:
+#   * WeasyPrint (PDF export) — pango/cairo/gdk-pixbuf/harfbuzz + fonts
+#   * SP-1.5 OCR — tesseract + 6 EU language packs + poppler (pdftoppm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpango-1.0-0 \
         libpangoft2-1.0-0 \
@@ -20,6 +22,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         shared-mime-info \
         fonts-dejavu \
         fonts-liberation \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        tesseract-ocr-fra \
+        tesseract-ocr-deu \
+        tesseract-ocr-nld \
+        tesseract-ocr-spa \
+        tesseract-ocr-ita \
+        poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

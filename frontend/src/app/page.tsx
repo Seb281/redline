@@ -68,9 +68,24 @@ export default function Home() {
         userRole,
       );
       if (result) {
+        // SP-1.5: text_source is a parse-time fact only the upload
+        // response knows. Fold it into provenance so the footer and any
+        // saved analyses record whether OCR ran.
+        const resultWithTextSource = {
+          ...result,
+          provenance: {
+            ...result.provenance,
+            text_source: upload.text_source,
+          },
+        };
         setState((prev) =>
           prev.view === "analyzing"
-            ? { view: "report", upload: prev.upload, contractText: prev.contractText, analysis: result }
+            ? {
+                view: "report",
+                upload: prev.upload,
+                contractText: prev.contractText,
+                analysis: resultWithTextSource,
+              }
             : prev,
         );
       }

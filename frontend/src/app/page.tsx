@@ -117,8 +117,8 @@ export default function Home() {
       const result = await streaming.runOverview(contractText);
       if (!result) return;
       // Demo mode skips the RedactionPreview entirely — auto-confirm
-      // with the full map so Pass 1/2 see a fully redacted payload.
-      streaming.confirmRedaction(result.tokenMap);
+      // with empty disabled set so all tokens stay masked (full redaction).
+      streaming.confirmRedaction(new Set<string>());
       await runAnalysisAndFinish(
         upload,
         contractText,
@@ -164,12 +164,12 @@ export default function Home() {
 
   /**
    * Called when the user confirms the RedactionPreview. Forwards the
-   * chosen active-token subset to the hook, which trims its tokenMap and
-   * transitions to `awaiting_role` so the RolePicker can render next.
+   * disabled-token set to the hook (SP-1.9: tokens to leave visible),
+   * which transitions to `awaiting_role` so the RolePicker can render.
    */
   const handleRedactionConfirmed = useCallback(
-    (activeTokens: Map<string, string>) => {
-      streaming.confirmRedaction(activeTokens);
+    (disabledTokens: Set<string>) => {
+      streaming.confirmRedaction(disabledTokens);
     },
     [streaming],
   );

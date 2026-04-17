@@ -3,34 +3,55 @@
 import { useMemo } from "react";
 import type { UIMessage } from "ai";
 import { rehydrate } from "@/lib/redaction";
+import {
+  heuristicLabels,
+  normalizeLabel,
+  disambiguateLabels,
+} from "@/lib/redaction/role-heuristics";
+import type { Party } from "@/types";
 
 interface ChatMessageProps {
   message: UIMessage;
   isStreaming?: boolean;
   /**
-   * Party names from the analysis. The chat route scrubs these out of
-   * the LLM input; we rebuild the same PARTY_A..PARTY_H token map here
-   * to replace any tokens the assistant echoed back before display. PII
-   * tokens (⟦EMAIL_1⟧ etc.) are NOT rehydrated because the client
-   * doesn't hold their originals — those stay visible as tokens and the
-   * user can look them up in the clause card.
+   * Parties from the analysis (SP-1.9 shape: Party[]).
+   * The chat route scrubs names with semantic role tokens; we rebuild
+   * the same token map here to replace any tokens the assistant echoed
+   * back before display. PII tokens (⟦EMAIL_1⟧ etc.) are NOT rehydrated
+   * because the client doesn't hold their originals.
    */
-  parties?: string[];
+  parties?: Party[];
+  /**
+   * Contract type forwarded from Pass 0 so the heuristic pipeline can
+   * derive the same labels used during redaction.
+   */
+  contractType?: string;
 }
 
-const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-
 /** Renders a single chat message with role-appropriate styling. */
-export function ChatMessage({ message, isStreaming, parties = [] }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  isStreaming,
+  parties = [],
+  contractType = "",
+}: ChatMessageProps) {
   const isUser = message.role === "user";
 
   const partyMap = useMemo(() => {
     const m = new Map<string, string>();
-    parties.slice(0, LABELS.length).forEach((name, i) => {
-      if (name && name.trim()) m.set(`\u27E6PARTY_${LABELS[i]}\u27E7`, name);
+    if (parties.length === 0) return m;
+    const heuristic = heuristicLabels(contractType, parties.length);
+    const seeded = parties.map((p, i) =>
+      normalizeLabel(p.role_label ?? "") || heuristic[i],
+    );
+    const labels = disambiguateLabels(seeded);
+    parties.forEach((p, i) => {
+      if (p.name && p.name.trim() && labels[i]) {
+        m.set(`\u27E6${labels[i]}\u27E7`, p.name);
+      }
     });
     return m;
-  }, [parties]);
+  }, [parties, contractType]);
 
   const rawText = message.parts
     .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")

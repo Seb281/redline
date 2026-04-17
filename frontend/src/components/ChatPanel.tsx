@@ -135,6 +135,7 @@ export function ChatPanel({
               message={msg}
               isStreaming={status === "streaming" && msg === messages[messages.length - 1] && msg.role === "assistant"}
               parties={analysis.overview.parties}
+              contractType={analysis.overview.contract_type}
             />
           ))}
           <div ref={messagesEndRef} />

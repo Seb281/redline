@@ -8,9 +8,11 @@
 "use client";
 
 import { useState } from "react";
+import type { Party } from "@/types";
 
 interface RolePickerProps {
-  parties: string[];
+  /** Parties extracted by Pass 0. SP-1.9: shaped as Party objects. */
+  parties: Party[];
   /** Called with the picked role, or null for "skip". */
   onPick: (role: string | null) => void;
 }
@@ -43,12 +45,12 @@ export function RolePicker({ parties, onPick }: RolePickerProps) {
       <div className="flex flex-wrap gap-2.5">
         {parties.map((party) => (
           <button
-            key={party}
+            key={party.name}
             type="button"
-            onClick={() => onPick(party)}
+            onClick={() => onPick(party.name)}
             className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2.5 text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]"
           >
-            I&apos;m {party}
+            I&apos;m {party.name}
           </button>
         ))}
 

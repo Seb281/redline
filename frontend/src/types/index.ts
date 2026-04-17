@@ -25,10 +25,16 @@ export interface ClauseInventoryItem {
   section_ref: string | null;
 }
 
+/** A party to the contract, optionally with a defined term extracted from the preamble. */
+export interface Party {
+  name: string;
+  role_label: string | null;
+}
+
 /** High-level contract metadata extracted in Pass 0. */
 export interface ContractOverview {
   contract_type: string;
-  parties: string[];
+  parties: Party[];
   effective_date: string | null;
   duration: string | null;
   total_value: string | null;

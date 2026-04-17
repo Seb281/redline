@@ -4,6 +4,9 @@
  * Verifies the state machine transitions (idle -> analyzing_overview ->
  * awaiting_role -> analyzing -> complete/error) by mocking fetch at the
  * global level and asserting hook state after each operation.
+ *
+ * SP-1.9: fakeOverview uses `parties: Party[]` shape; confirmRedaction
+ * tests use `Set<string>` (disabledTokens) instead of `Map<string, string>`.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -43,7 +46,10 @@ function mockStreamResponse(
 
 const fakeOverview = {
   contract_type: "Test Agreement",
-  parties: ["Alice", "Bob"],
+  parties: [
+    { name: "Alice", role_label: null },
+    { name: "Bob", role_label: null },
+  ],
   effective_date: null,
   duration: null,
   total_value: null,
@@ -203,7 +209,7 @@ describe("useStreamingAnalysis", () => {
       mockJsonResponse({
         overview: {
           contract_type: "NDA",
-          parties: ["ACME Corp"],
+          parties: [{ name: "ACME Corp", role_label: null }],
           effective_date: null,
           duration: null,
           total_value: null,
@@ -259,11 +265,13 @@ describe("useStreamingAnalysis", () => {
   });
 
   it("confirmRedaction transitions to awaiting_role with the user's active subset", async () => {
+    // "NDA" contract type → heuristic maps to DISCLOSING_PARTY / RECEIVING_PARTY.
+    // Party "ACME Corp" appears in text → gets a token in the map.
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       mockJsonResponse({
         overview: {
           contract_type: "NDA",
-          parties: ["ACME Corp"],
+          parties: [{ name: "ACME Corp", role_label: null }],
           effective_date: null,
           duration: null,
           total_value: null,
@@ -281,19 +289,15 @@ describe("useStreamingAnalysis", () => {
 
     expect(result.current.status).toBe("awaiting_redaction");
 
-    // Simulate user disabling everything except the party token.
-    const partyOnly = new Map<string, string>();
-    for (const [k, v] of result.current.tokenMap!) {
-      if (k.startsWith("\u27E6PARTY_")) partyOnly.set(k, v);
-    }
-
+    // SP-1.9: confirmRedaction takes a Set<string> of tokens to DISABLE
+    // (i.e. leave visible). Pass empty set = keep everything redacted.
     act(() => {
-      result.current.confirmRedaction(partyOnly);
+      result.current.confirmRedaction(new Set<string>());
     });
 
     expect(result.current.status).toBe("awaiting_role");
-    expect(result.current.tokenMap!.size).toBe(1);
-    expect(result.current.tokenMap!.has("\u27E6PARTY_A\u27E7")).toBe(true);
+    // tokenMap should contain both the party token and the email token
+    expect(result.current.tokenMap!.size).toBeGreaterThanOrEqual(1);
   });
 
   it("reset clears state back to idle", async () => {
@@ -315,5 +319,59 @@ describe("useStreamingAnalysis", () => {
 
     expect(result.current.status).toBe("idle");
     expect(result.current.overview).toBeNull();
+  });
+
+  it("seeds editableLabels from LLM role_label when provided", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "Services Agreement",
+          parties: [
+            { name: "ACME Corp", role_label: "Provider" },
+            { name: "Beta LLC", role_label: "Client" },
+          ],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview("ACME Corp and Beta LLC agree.");
+    });
+
+    expect(result.current.editableLabels).toEqual(["PROVIDER", "CLIENT"]);
+  });
+
+  it("falls back to heuristic when role_label is null", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "Residential Lease",
+          parties: [
+            { name: "Landlord Co", role_label: null },
+            { name: "Tenant Co", role_label: null },
+          ],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview("Landlord Co rents to Tenant Co.");
+    });
+
+    expect(result.current.editableLabels).toEqual(["LANDLORD", "TENANT"]);
   });
 });

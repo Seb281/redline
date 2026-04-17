@@ -32,11 +32,11 @@ interface StreamingReportViewProps {
    */
   onRolePicked: (role: string | null) => void;
   /**
-   * Callback fired when the user confirms the redaction preview. Receives
-   * the subset of tokens they chose to keep masked — disabled entries
-   * reappear as their original values in the payload sent to Pass 1/2.
+   * Callback fired when the user confirms the redaction preview.
+   * SP-1.9: receives the set of tokens to leave visible (disabled) —
+   * the hook re-derives the active map from labels + raw text.
    */
-  onRedactionConfirmed: (activeTokens: Map<string, string>) => void;
+  onRedactionConfirmed: (disabledTokens: Set<string>) => void;
   /** Retry the last failed step (overview or analysis). */
   onRetry?: () => void;
   /** How many retries have been attempted so far. */
@@ -92,9 +92,20 @@ export function StreamingReportView({
       {status === "awaiting_redaction" && rawText && tokenMap && (
         <RedactionPreview
           raw={rawText}
-          scrubbed={rebuildScrubbed(rawText, tokenMap)}
+          scrubbed={rebuildScrubbed(rawText, tokenMap, tokenMap)}
           tokenMap={tokenMap}
-          onConfirm={onRedactionConfirmed}
+          onConfirm={(activeTokens: Map<string, string>) => {
+            // SP-1.9 Phase 6 will replace this adapter. The hook now
+            // expects disabledTokens: Set<string> but RedactionPreview
+            // still emits activeTokens: Map<string, string>. Convert here
+            // until Phase 6 updates the component signature end-to-end.
+            const allTokens = new Set(tokenMap.keys());
+            const disabled = new Set<string>();
+            for (const token of allTokens) {
+              if (!activeTokens.has(token)) disabled.add(token);
+            }
+            onRedactionConfirmed(disabled);
+          }}
           onCancel={onReset}
         />
       )}

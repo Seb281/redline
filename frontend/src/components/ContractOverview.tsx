@@ -22,7 +22,7 @@ export function ContractOverview({ overview }: ContractOverviewProps) {
         {overview.contract_type}
       </h2>
       <p className="mb-3.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        {overview.parties.join(" · ")}
+        {overview.parties.map((p) => p.name).join(" · ")}
       </p>
 
       {details.length > 0 && (

@@ -271,3 +271,94 @@ def test_contract_overview_rejects_bare_string_parties():
             parties=["ACME Corp", "Beta LLC"],
             key_terms=[],
         )
+
+
+# --- SP-1.5 text_source regression tests ---
+
+
+def test_upload_response_defaults_text_source_native():
+    """SP-1.5: UploadResponse defaults text_source to 'native' when omitted."""
+    response = UploadResponse(
+        filename="x.pdf",
+        file_type="pdf",
+        page_count=1,
+        extracted_text="x" * 100,
+        char_count=100,
+    )
+    assert response.text_source == "native"
+
+
+def test_upload_response_accepts_ocr_text_source():
+    """SP-1.5: UploadResponse carries text_source='ocr' end-to-end."""
+    response = UploadResponse(
+        filename="scan.pdf",
+        file_type="pdf",
+        page_count=3,
+        extracted_text="y" * 100,
+        char_count=100,
+        text_source="ocr",
+    )
+    assert response.text_source == "ocr"
+
+
+def test_upload_response_accepts_hybrid_text_source():
+    """SP-1.5: UploadResponse carries text_source='hybrid' end-to-end."""
+    response = UploadResponse(
+        filename="mix.pdf",
+        file_type="pdf",
+        page_count=5,
+        extracted_text="z" * 100,
+        char_count=100,
+        text_source="hybrid",
+    )
+    assert response.text_source == "hybrid"
+
+
+def test_upload_response_rejects_unknown_text_source():
+    """Unknown text_source values fail validation."""
+    with pytest.raises(ValidationError):
+        UploadResponse(
+            filename="x.pdf",
+            file_type="pdf",
+            page_count=1,
+            extracted_text="x" * 100,
+            char_count=100,
+            text_source="scanned",
+        )
+
+
+def test_provenance_model_accepts_text_source():
+    """SP-1.5: ProvenanceModel accepts optional text_source."""
+    from app.schemas import ProvenanceModel, ReasoningEffortPerPass
+
+    p = ProvenanceModel(
+        provider="mistral",
+        model="mistral-small-4",
+        snapshot="mistral-small-2503",
+        region="eu-west",
+        reasoning_effort_per_pass=ReasoningEffortPerPass(
+            overview="low", extraction="medium", risk="high", think_hard="high"
+        ),
+        prompt_template_version="1.0",
+        timestamp="2026-04-17T00:00:00Z",
+        text_source="hybrid",
+    )
+    assert p.text_source == "hybrid"
+
+
+def test_provenance_model_text_source_defaults_none():
+    """Legacy provenance payloads without text_source deserialize unchanged."""
+    from app.schemas import ProvenanceModel, ReasoningEffortPerPass
+
+    p = ProvenanceModel(
+        provider="mistral",
+        model="mistral-small-4",
+        snapshot="mistral-small-2503",
+        region="eu-west",
+        reasoning_effort_per_pass=ReasoningEffortPerPass(
+            overview="low", extraction="medium", risk="high", think_hard="high"
+        ),
+        prompt_template_version="1.0",
+        timestamp="2026-04-17T00:00:00Z",
+    )
+    assert p.text_source is None

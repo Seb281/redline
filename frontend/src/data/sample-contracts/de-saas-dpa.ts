@@ -185,4 +185,5 @@ export const DE_SAAS_DPA_UPLOAD: UploadResponse = {
   page_count: 5,
   extracted_text: DE_SAAS_DPA_TEXT,
   char_count: DE_SAAS_DPA_TEXT.length,
+  text_source: "native",
 };

@@ -349,6 +349,7 @@ export default function Home() {
           onReset={handleReset}
           onRolePicked={handleRolePicked}
           onRedactionConfirmed={handleRedactionConfirmed}
+          onEditPartyLabel={streaming.updatePartyLabel}
           onRetry={handleRetry}
           retryCount={retryCount}
         />

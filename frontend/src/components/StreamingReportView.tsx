@@ -37,6 +37,8 @@ interface StreamingReportViewProps {
    * the hook re-derives the active map from labels + raw text.
    */
   onRedactionConfirmed: (disabledTokens: Set<string>) => void;
+  /** Callback fired when the user edits a party label in the RedactionPreview. */
+  onEditPartyLabel: (index: number, rawLabel: string) => void;
   /** Retry the last failed step (overview or analysis). */
   onRetry?: () => void;
   /** How many retries have been attempted so far. */
@@ -50,6 +52,7 @@ export function StreamingReportView({
   onReset,
   onRolePicked,
   onRedactionConfirmed,
+  onEditPartyLabel,
   onRetry,
   retryCount,
 }: StreamingReportViewProps) {
@@ -94,18 +97,10 @@ export function StreamingReportView({
           raw={rawText}
           scrubbed={rebuildScrubbed(rawText, tokenMap, tokenMap)}
           tokenMap={tokenMap}
-          onConfirm={(activeTokens: Map<string, string>) => {
-            // SP-1.9 Phase 6 will replace this adapter. The hook now
-            // expects disabledTokens: Set<string> but RedactionPreview
-            // still emits activeTokens: Map<string, string>. Convert here
-            // until Phase 6 updates the component signature end-to-end.
-            const allTokens = new Set(tokenMap.keys());
-            const disabled = new Set<string>();
-            for (const token of allTokens) {
-              if (!activeTokens.has(token)) disabled.add(token);
-            }
-            onRedactionConfirmed(disabled);
-          }}
+          parties={state.overview!.parties}
+          editableLabels={state.editableLabels}
+          onEditLabel={onEditPartyLabel}
+          onConfirm={onRedactionConfirmed}
           onCancel={onReset}
         />
       )}

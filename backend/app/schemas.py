@@ -14,13 +14,21 @@ class FileType(str, Enum):
 
 
 class UploadResponse(BaseModel):
-    """Response from the upload endpoint after text extraction."""
+    """Response from the upload endpoint after text extraction.
+
+    ``text_source`` records whether OCR ran during extraction (SP-1.5).
+    ``"native"`` = pdfplumber only; ``"ocr"`` = every page OCR'd;
+    ``"hybrid"`` = some native, some OCR'd. The frontend uses this to
+    surface an on-device OCR note in the analysis footer and to flag
+    provenance for transparency.
+    """
 
     filename: str
     file_type: FileType
     page_count: int
     extracted_text: str
     char_count: int
+    text_source: Literal["native", "ocr", "hybrid"] = "native"
 
 
 
@@ -193,6 +201,9 @@ class ProvenanceModel(BaseModel):
     # SP-1.6: client-side redaction. Optional so pre-SP-1.6 payloads
     # deserialize unchanged; ``None`` means "unknown / legacy".
     redaction_location: Literal["client", "server"] | None = None
+    # SP-1.5: text extraction source. Optional so pre-SP-1.5 payloads
+    # deserialize unchanged; ``None`` means "unknown / legacy".
+    text_source: Literal["native", "ocr", "hybrid"] | None = None
 
     @field_validator("provider")
     @classmethod

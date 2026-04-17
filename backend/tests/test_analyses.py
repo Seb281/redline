@@ -287,9 +287,10 @@ def test_save_analysis_persists_provenance():
     assert resp.status_code == 201
     db.execute.assert_awaited_once()
     call_params = db.execute.await_args.args[1]
-    # `redaction_location` defaults to None in SP-1.6; round-tripped
-    # provenance carries the optional field alongside the input.
-    expected = {**provenance, "redaction_location": None}
+    # `redaction_location` defaults to None in SP-1.6; `text_source`
+    # defaults to None in SP-1.5. Round-tripped provenance carries the
+    # optional fields alongside the input.
+    expected = {**provenance, "redaction_location": None, "text_source": None}
     assert json.loads(call_params["provenance"]) == expected
 
 

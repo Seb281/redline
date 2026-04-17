@@ -95,3 +95,47 @@ describe("AnalysisFooter", () => {
     expect(screen.queryByRole("button", { name: /details/i })).toBeNull();
   });
 });
+
+describe("AnalysisFooter OCR note (SP-1.5)", () => {
+  afterEach(cleanup);
+
+  it("shows no OCR note when text_source is native or absent", () => {
+    render(<AnalysisFooter provenance={freshProvenance} />);
+    expect(screen.queryByTestId("ocr-note")).toBeNull();
+  });
+
+  it("shows no OCR note when text_source is explicitly 'native'", () => {
+    render(
+      <AnalysisFooter
+        provenance={{ ...freshProvenance, text_source: "native" }}
+      />,
+    );
+    expect(screen.queryByTestId("ocr-note")).toBeNull();
+  });
+
+  it("shows the full-OCR note when text_source is 'ocr'", () => {
+    render(
+      <AnalysisFooter
+        provenance={{ ...freshProvenance, text_source: "ocr" }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /Text extracted via on-device OCR — no third-party vision model\./i,
+      ),
+    ).toBeTruthy();
+  });
+
+  it("shows the hybrid-OCR note when text_source is 'hybrid'", () => {
+    render(
+      <AnalysisFooter
+        provenance={{ ...freshProvenance, text_source: "hybrid" }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /Some pages extracted via on-device OCR — no third-party vision model\./i,
+      ),
+    ).toBeTruthy();
+  });
+});

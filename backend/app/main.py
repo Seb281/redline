@@ -13,6 +13,7 @@ from slowapi.util import get_remote_address
 
 from app.db import connect_db, disconnect_db
 from app.routers import analyses, auth, export, upload
+from app.services.ocr import healthcheck as ocr_healthcheck
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -63,5 +64,14 @@ app.include_router(analyses.router)
 
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:
-    """Health check endpoint."""
-    return {"status": "ok"}
+    """Health check endpoint.
+
+    Reports API readiness plus the SP-1.5 OCR subsystem status. ``ocr``
+    is ``"ok"`` when tesseract + poppler are both on PATH, otherwise
+    ``"unavailable"``. The endpoint still returns HTTP 200 in both
+    cases — OCR is a secondary path, not a hard dependency.
+    """
+    return {
+        "status": "ok",
+        "ocr": "ok" if ocr_healthcheck() else "unavailable",
+    }

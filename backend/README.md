@@ -15,6 +15,29 @@ uvicorn app.main:app --reload --port 8001
 
 The backend works without a database — auth and persistence features are disabled when `DATABASE_URL` is unset.
 
+### OCR for scanned PDFs (SP-1.5)
+
+Scanned or image-only PDFs are handled by a per-page Tesseract fallback. The
+OCR path is optional for local development — the backend still accepts
+native-text PDFs without tesseract — but OCR-dependent tests self-skip if the
+binaries are missing.
+
+```bash
+brew install tesseract tesseract-lang poppler
+```
+
+Verify:
+
+```bash
+tesseract --version
+tesseract --list-langs | grep -E "^(eng|fra|deu|nld|spa|ita)$"
+pdftoppm -v
+```
+
+Railway deploys install these automatically via `backend/nixpacks.toml`. The
+`/api/health` endpoint exposes an `ocr` sub-status (`ok` / `unavailable`) so
+production readiness checks can surface OCR breakage without a full upload.
+
 ## API Endpoints
 
 | Method | Path | Description |

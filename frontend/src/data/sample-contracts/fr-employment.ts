@@ -130,4 +130,5 @@ export const FR_EMPLOYMENT_UPLOAD: UploadResponse = {
   page_count: 3,
   extracted_text: FR_EMPLOYMENT_TEXT,
   char_count: FR_EMPLOYMENT_TEXT.length,
+  text_source: "native",
 };

@@ -195,6 +195,23 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           This analysis was produced by a generative AI system. Logged per EU AI Act transparency requirements.
         </p>
       </div>
+
+      {provenance.text_source === "ocr" && (
+        <p
+          className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+          data-testid="ocr-note"
+        >
+          Text extracted via on-device OCR — no third-party vision model.
+        </p>
+      )}
+      {provenance.text_source === "hybrid" && (
+        <p
+          className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+          data-testid="ocr-note"
+        >
+          Some pages extracted via on-device OCR — no third-party vision model.
+        </p>
+      )}
     </footer>
   );
 }

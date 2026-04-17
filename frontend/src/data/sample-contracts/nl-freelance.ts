@@ -176,4 +176,5 @@ export const SAMPLE_UPLOAD_RESPONSE: UploadResponse = {
   page_count: 4,
   extracted_text: SAMPLE_CONTRACT_TEXT,
   char_count: SAMPLE_CONTRACT_TEXT.length,
+  text_source: "native",
 };

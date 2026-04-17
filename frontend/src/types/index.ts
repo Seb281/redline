@@ -11,6 +11,16 @@ export interface UploadResponse {
   page_count: number;
   extracted_text: string;
   char_count: number;
+  /**
+   * Where the extracted text came from at parse time (SP-1.5).
+   * - "native": pdfplumber only (no OCR)
+   * - "ocr":    every page rendered + OCR'd on-device via Tesseract
+   * - "hybrid": mix — some pages native, some OCR'd
+   *
+   * Surfaced in the analysis footer so users can see when on-device
+   * OCR ran (reinforces the "no third-party vision model" guarantee).
+   */
+  text_source: "native" | "ocr" | "hybrid";
 }
 
 /** Request body for POST /api/analyze. */
@@ -133,6 +143,13 @@ export interface AnalysisProvenance {
    * pre-SP-1.6 saved analyses deserialize unchanged.
    */
   redaction_location?: "client" | "server";
+  /**
+   * Whether OCR ran during parse (SP-1.5). Optional so pre-SP-1.5
+   * saved analyses deserialize unchanged (rendered as absent in the
+   * footer note). "native" = pdfplumber only, "ocr" = every page
+   * OCR'd, "hybrid" = mix.
+   */
+  text_source?: "native" | "ocr" | "hybrid";
 }
 
 /** Full response from POST /api/analyze. */

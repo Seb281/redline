@@ -8,18 +8,30 @@
  * Layout C (hybrid, picked in brainstorming): grouped legend on top,
  * collapsible inline text below for the auditors who want to see the
  * exact string that will hit the model.
+ *
+ * SP-1.9 Phase 6: the parties block has editable label inputs so the
+ * user can rename tokens (e.g. "PARTY_A" → "PROVIDER") before the text
+ * hits the model. `editableLabels` is held by the hook; `onEditLabel`
+ * lets this component trigger normalise + disambiguate logic there.
  */
 
 "use client";
 
 import { useMemo, useState } from "react";
+import type { Party } from "@/types";
 
 interface RedactionPreviewProps {
   raw: string;
   scrubbed: string;
   tokenMap: Map<string, string>;
-  /** Fires with the subset of tokens the user wants to keep masked. */
-  onConfirm: (activeTokens: Map<string, string>) => void;
+  /** Parties from Pass 0, parallel to `editableLabels`. */
+  parties: Party[];
+  /** Canonical labels held by the hook — this component renders them and calls `onEditLabel` to mutate. */
+  editableLabels: string[];
+  /** User edited a label in row `index`. Hook normalizes + disambiguates. */
+  onEditLabel: (index: number, rawLabel: string) => void;
+  /** Fires with the set of tokens the user wants to LEAVE visible (disabled). */
+  onConfirm: (disabled: Set<string>) => void;
   /** Fires when the user backs out — resets the whole run (Pass 0 is eaten). */
   onCancel: () => void;
 }
@@ -35,11 +47,14 @@ interface KindGroup {
   entities: GroupedEntity[];
 }
 
-/** Map the internal kind code to a human-friendly plural label. */
+/**
+ * Map the internal kind code to a human-friendly plural label.
+ * NOTE: "PARTY" is intentionally absent — semantic party labels
+ * (PROVIDER, TENANT, etc.) are rendered in the dedicated parties block
+ * above the groups list and should not appear here.
+ */
 function kindLabel(kind: string): string {
   switch (kind) {
-    case "PARTY":
-      return "Parties";
     case "EMAIL":
       return "Emails";
     case "PHONE":
@@ -84,6 +99,9 @@ function groupByKind(tokenMap: Map<string, string>): KindGroup[] {
 export function RedactionPreview({
   scrubbed,
   tokenMap,
+  parties,
+  editableLabels,
+  onEditLabel,
   onConfirm,
   onCancel,
 }: RedactionPreviewProps) {
@@ -113,12 +131,32 @@ export function RedactionPreview({
   const activeCount = tokenMap.size - disabled.size;
   const allDisabled = activeCount === 0 && tokenMap.size > 0;
 
+  // Tokens that map to party labels — excluded from the generic kind-groups
+  // block below; shown instead in the dedicated editable parties block.
+  const partyTokens = useMemo(
+    () =>
+      new Set<string>(
+        parties
+          .map((_, i) => editableLabels[i])
+          .filter(Boolean)
+          .map((label) => `\u27E6${label}\u27E7`),
+      ),
+    [parties, editableLabels],
+  );
+
+  /** Non-party kind groups — party tokens are displayed in their own block. */
+  const nonPartyGroups = useMemo(
+    () => groups.filter((g) => g.entities.every((e) => !partyTokens.has(e.token))),
+    [groups, partyTokens],
+  );
+
+  /** True if any party label field is empty — gates the Confirm button. */
+  const hasEmpty = editableLabels.some((l) => !l);
+  const canConfirm = !hasEmpty;
+
+  /** Emit the set of tokens the user wants to leave visible (disabled). */
   const handleConfirm = () => {
-    const active = new Map<string, string>();
-    for (const [token, original] of tokenMap) {
-      if (!disabled.has(token)) active.set(token, original);
-    }
-    onConfirm(active);
+    onConfirm(disabled);
   };
 
   return (
@@ -141,8 +179,54 @@ export function RedactionPreview({
         entity visible.
       </p>
 
+      {/* Parties block — one editable label input per party */}
+      {parties.length > 0 && (
+        <div className="mb-4 rounded border border-[var(--border-primary)] bg-[var(--bg-card)]">
+          <p className="px-4 pt-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-[var(--text-secondary)] font-[var(--font-body)]">
+            Parties ({parties.length})
+          </p>
+          <ul className="divide-y divide-[var(--border-primary)]">
+            {parties.map((party, i) => {
+              const label = editableLabels[i] ?? "";
+              // Collision suffix from `disambiguateLabels` is always `_2`, `_3`, …
+              // Matching `_[2-9]\d*$` avoids false positives on labels whose
+              // normalized form naturally ends in `_1` (e.g. "Partner 1").
+              const isDuplicate = /_[2-9]\d*$/.test(label);
+              return (
+                <li key={i} className="flex items-center gap-3 px-4 py-3">
+                  <input
+                    type="text"
+                    data-testid="party-label-input"
+                    value={label}
+                    onChange={(e) => onEditLabel(i, e.target.value)}
+                    className="w-44 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2 py-1.5 font-mono text-[13px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    aria-label={`Label for ${party.name}`}
+                  />
+                  <span aria-hidden="true">→</span>
+                  <span className="flex-1 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">{party.name}</span>
+                  <code className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-mono text-[12px] text-[var(--text-tertiary)]">
+                    {label ? `\u27E6${label}\u27E7` : "—"}
+                  </code>
+                  {isDuplicate && (
+                    <span className="ml-2 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
+                      Distinguished from row above
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {hasEmpty && (
+            <p className="px-4 pb-3 text-[12px] text-[var(--risk-medium)] font-[var(--font-body)]">
+              Label required — every party must have a label before continuing.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Kind-groups block — non-party PII tokens only */}
       <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] divide-y divide-[var(--border-primary)]">
-        {groups.map((group) => {
+        {nonPartyGroups.map((group) => {
           const expanded = expandedKinds.has(group.kind);
           const examples = group.entities
             .slice(0, 2)
@@ -213,9 +297,16 @@ export function RedactionPreview({
         {showInline ? "\u25BE" : "\u25B8"} {showInline ? "Hide" : "Show"} inline text
       </button>
       {showInline && (
-        <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
-          {renderInlineWithDisabled(scrubbed, tokenMap, disabled)}
-        </pre>
+        <>
+          {parties.length > 0 && (
+            <p className="mt-2 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
+              Party tokens below reflect the initial scan — your label edits take effect on Confirm.
+            </p>
+          )}
+          <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
+            {renderInlineWithDisabled(scrubbed, tokenMap, disabled)}
+          </pre>
+        </>
       )}
 
       <p className="mt-4 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
@@ -238,7 +329,8 @@ export function RedactionPreview({
         <button
           type="button"
           onClick={handleConfirm}
-          className="rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90"
+          disabled={!canConfirm}
+          className="rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Confirm → Next
         </button>

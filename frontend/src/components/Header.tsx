@@ -4,12 +4,14 @@
 
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRehydrate } from "@/contexts/RehydrateContext";
 import { useTheme } from "@/hooks/useTheme";
 
 /** Top bar shown on every screen. */
 export function Header() {
   const { theme, toggle } = useTheme();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { rehydrate, setRehydrate } = useRehydrate();
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
@@ -30,6 +32,24 @@ export function Header() {
           >
             History
           </Link>
+
+          {/* Session-only toggle — "Show real names" swaps role labels back to
+              party names across the report. No localStorage; resets each
+              session so privacy is the default. */}
+          <button
+            type="button"
+            onClick={() => setRehydrate(!rehydrate)}
+            aria-pressed={rehydrate}
+            aria-label={rehydrate ? "Hide real names" : "Show real names"}
+            title={rehydrate ? "Hide real names" : "Show real names"}
+            className={`rounded px-2 py-1 text-sm font-[var(--font-body)] transition-colors ${
+              rehydrate
+                ? "text-[var(--accent)] hover:text-[var(--text-primary)]"
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {rehydrate ? "Hide names" : "Show names"}
+          </button>
 
           {/* User info + logout — only when authenticated */}
           {!isLoading && isAuthenticated && (

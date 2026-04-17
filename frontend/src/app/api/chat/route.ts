@@ -10,6 +10,7 @@ import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
 import { buildChatContext } from "@/lib/chat-context";
 import { redact } from "@/lib/redaction";
+import { heuristicLabels, normalizeLabel, disambiguateLabels } from "@/lib/redaction/role-heuristics";
 import type { AnalyzeResponse } from "@/types";
 
 const MAX_MESSAGES = 10;
@@ -106,7 +107,20 @@ consulting a local attorney.
   // reaches the UI with `⟦PARTY_A⟧`-style tokens intact. Rehydrating
   // on the client (ChatPanel) using the publicly-known parties list is
   // tracked as SP-1 follow-up — not a blocker for the privacy gate.
-  const parties = analysis.overview.parties ?? [];
+  // SP-1.9: derive LabeledParty[] so redact() gets the correct shape.
+  // Chat route uses the same heuristic pipeline as the main analysis hook —
+  // LLM role_label first, heuristic fallback, normalize, disambiguate.
+  const rawParties = analysis.overview.parties ?? [];
+  const heuristic = heuristicLabels(
+    analysis.overview.contract_type ?? "",
+    rawParties.length,
+  );
+  const seeded = rawParties.map((p, i) =>
+    normalizeLabel(p.role_label ?? "") || heuristic[i],
+  );
+  const labels = disambiguateLabels(seeded);
+  const parties = rawParties.map((p, i) => ({ name: p.name, label: labels[i] }));
+
   const scrubbedSystemPrompt = redact(systemPrompt, parties).scrubbed;
   const scrubbedMessages: UIMessage[] = messages.map((m) => ({
     ...m,

@@ -10,6 +10,7 @@ from app.schemas import (
     ClauseCategory,
     ContractOverview,
     ExtractedClause,
+    Party,
     RiskBreakdown,
     RiskLevel,
     UploadResponse,
@@ -81,7 +82,7 @@ def test_analyze_response_complete():
     response = AnalyzeResponse(
         overview=ContractOverview(
             contract_type="Consulting Agreement",
-            parties=["Acme Corp", "Consultant"],
+            parties=[Party(name="Acme Corp"), Party(name="Consultant")],
             effective_date=None,
             duration=None,
             total_value=None,
@@ -129,7 +130,7 @@ def test_contract_overview_valid():
     """ContractOverview accepts fully populated data."""
     overview = ContractOverview(
         contract_type="Freelance Services Agreement",
-        parties=["Acme Corp", "Jane Doe"],
+        parties=[Party(name="Acme Corp"), Party(name="Jane Doe")],
         effective_date="2026-01-15",
         duration="12 months",
         total_value="$120,000",
@@ -149,7 +150,7 @@ def test_contract_overview_nullable_fields():
     """ContractOverview allows null optional fields."""
     overview = ContractOverview(
         contract_type="NDA",
-        parties=["Company A", "Company B"],
+        parties=[Party(name="Company A"), Party(name="Company B")],
         effective_date=None,
         duration=None,
         total_value=None,
@@ -197,7 +198,7 @@ def test_analyze_response_with_overview():
     response = AnalyzeResponse(
         overview=ContractOverview(
             contract_type="Services Agreement",
-            parties=["Acme Corp", "Jane Doe"],
+            parties=[Party(name="Acme Corp"), Party(name="Jane Doe")],
             effective_date="2026-01-15",
             duration="12 months",
             total_value="$120,000",
@@ -223,3 +224,50 @@ def test_analyze_response_with_overview():
     )
     assert response.overview.contract_type == "Services Agreement"
     assert len(response.overview.parties) == 2
+
+
+# --- SP-1.9 Party schema regression tests ---
+
+
+def test_party_roundtrip_with_role_label():
+    """Party accepts both legal name and defined-term role label."""
+    party = Party(name="ACME Corp", role_label="Provider")
+    assert party.name == "ACME Corp"
+    assert party.role_label == "Provider"
+
+
+def test_party_role_label_nullable():
+    """role_label is optional — contracts that skip defined terms still validate."""
+    party = Party(name="ACME Corp", role_label=None)
+    assert party.role_label is None
+
+
+def test_party_role_label_default_none():
+    """Omitting role_label defaults to None (so existing payloads stay valid)."""
+    party = Party(name="ACME Corp")
+    assert party.role_label is None
+
+
+def test_contract_overview_parties_are_party_objects():
+    """ContractOverview.parties coerces dicts into Party objects."""
+    overview = ContractOverview(
+        contract_type="Services Agreement",
+        parties=[
+            {"name": "ACME Corp", "role_label": "Provider"},
+            {"name": "Beta LLC", "role_label": None},
+        ],
+        key_terms=["term1"],
+    )
+    assert isinstance(overview.parties[0], Party)
+    assert overview.parties[0].role_label == "Provider"
+    assert overview.parties[1].role_label is None
+
+
+def test_contract_overview_rejects_bare_string_parties():
+    """SP-1.9 is a clean break — plain strings are no longer accepted."""
+    with pytest.raises(ValidationError):
+        ContractOverview(
+            contract_type="Services Agreement",
+            parties=["ACME Corp", "Beta LLC"],
+            key_terms=[],
+        )

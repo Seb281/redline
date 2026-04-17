@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lora, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RehydrateProvider } from "@/contexts/RehydrateContext";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -32,10 +33,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${lora.variable} ${dmSans.variable}`}>
       <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased theme-transition font-[var(--font-body)]">
         <AuthProvider>
-          <Header />
-          {children}
-          <Footer />
-          <CookieBanner />
+          <RehydrateProvider>
+            <Header />
+            {children}
+            <Footer />
+            <CookieBanner />
+          </RehydrateProvider>
         </AuthProvider>
       </body>
     </html>

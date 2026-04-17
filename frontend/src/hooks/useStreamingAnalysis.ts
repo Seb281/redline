@@ -8,12 +8,17 @@
  *      endpoint with the chosen role and feeds extraction + analysis
  *      events into state as they arrive.
  *
+ * SP-1.9: role labels are computed from Pass 0's `role_label` fields (with
+ * heuristic fallback) and stored in `editableLabels` during
+ * `awaiting_redaction`. `updatePartyLabel` lets the RedactionPreview mutate
+ * them; `confirmRedaction` re-derives the final token map from the labels.
+ *
  * `reset()` clears state and aborts whichever fetch is in flight.
  */
 
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AnalyzedClause,
   AnalysisSummary,
@@ -21,10 +26,16 @@ import type {
   AnalyzeResponse,
   ContractOverview,
   AnalysisMode,
+  Party,
 } from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
-import { redactPatterns, redactParties, rebuildScrubbed } from "@/lib/redaction";
+import { redactPatterns, redactParties, redact, rebuildScrubbed } from "@/lib/redaction";
 import { rehydrateClause } from "@/lib/redaction/rehydrate-clause";
+import {
+  heuristicLabels,
+  normalizeLabel,
+  disambiguateLabels,
+} from "@/lib/redaction/role-heuristics";
 
 export interface StreamingAnalysisState {
   status:
@@ -59,6 +70,14 @@ export interface StreamingAnalysisState {
    * user has toggled some tokens off in the preview.
    */
   rawText: string | null;
+  /**
+   * Per-party editable labels held during `awaiting_redaction`. Parallel
+   * array to `overview.parties`. Seeded from `role_label ?? heuristicLabels()`
+   * and disambiguated. The RedactionPreview mutates this via
+   * `updatePartyLabel`; on Continue the normalized + disambiguated copy
+   * is handed to redactParties.
+   */
+  editableLabels: string[];
   error: string | null;
 }
 
@@ -71,6 +90,7 @@ const INITIAL_STATE: StreamingAnalysisState = {
   provenance: null,
   tokenMap: null,
   rawText: null,
+  editableLabels: [],
   error: null,
 };
 
@@ -91,6 +111,14 @@ export function useStreamingAnalysis() {
   // without waiting for React to flush a render.
   const rawTextRef = useRef<string | null>(null);
   const tokenMapRef = useRef<Map<string, string> | null>(null);
+  // Tracks the latest state snapshot so confirmRedaction can read
+  // editableLabels without a stale closure.
+  const stateRef = useRef<StreamingAnalysisState | null>(null);
+
+  // Keep stateRef current on every render.
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   /** Cancel any in-flight fetch (overview or stream). */
   const abort = useCallback(() => {
@@ -108,13 +136,15 @@ export function useStreamingAnalysis() {
   }, [abort]);
 
   /**
-   * Fetch the contract overview. In SP-1.6 this is a three-step flow:
+   * Fetch the contract overview. In SP-1.9 this is a three-step flow:
    *   1. Mask PII patterns (email/phone/IBAN/VAT/national ID) locally
    *      so the server's Pass 0 call never sees raw values.
    *   2. POST the pattern-masked text to `/api/analyze/overview`.
-   *   3. Take the parties returned by Pass 0 and mask them too, merging
-   *      both token maps into one and transitioning to
-   *      `awaiting_redaction` so the UI can show the preview.
+   *   3. Take the parties returned by Pass 0, compute their role labels
+   *      (from `role_label` → heuristic fallback → normalize →
+   *      disambiguate), and mask them too, merging both token maps into
+   *      one. Transition to `awaiting_redaction` with `editableLabels`
+   *      seeded so the RedactionPreview can render editable label rows.
    *
    * Zero-detection short-circuit: if neither patterns nor parties produced
    * any tokens, the preview has nothing to show, so skip straight to
@@ -142,6 +172,7 @@ export function useStreamingAnalysis() {
         provenance: null,
         tokenMap: null,
         rawText: text,
+        editableLabels: [],
         error: null,
       });
 
@@ -170,8 +201,24 @@ export function useStreamingAnalysis() {
         const body = (await response.json()) as { overview: ContractOverview };
         overviewRef.current = body.overview;
 
+        // SP-1.9 — compute role labels: LLM's role_label first, then
+        // heuristic fill, then normalize + disambiguate.
+        const heuristic = heuristicLabels(
+          body.overview.contract_type,
+          body.overview.parties.length,
+        );
+        const seeded = body.overview.parties.map((p: Party, i: number) =>
+          normalizeLabel(p.role_label ?? "") || heuristic[i],
+        );
+        const labels = disambiguateLabels(seeded);
+
+        const labeled = body.overview.parties.map((p: Party, i: number) => ({
+          name: p.name,
+          label: labels[i],
+        }));
+
         // Phase 2 — mask the party names Pass 0 just told us about.
-        const partyPhase = redactParties(patternPhase.scrubbed, body.overview.parties);
+        const partyPhase = redactParties(patternPhase.scrubbed, labeled);
         const fullMap = new Map<string, string>();
         for (const [k, v] of patternPhase.tokenMap) fullMap.set(k, v);
         for (const [k, v] of partyPhase.tokenMap) fullMap.set(k, v);
@@ -184,7 +231,8 @@ export function useStreamingAnalysis() {
         if (typeof console !== "undefined") {
           const byKind: Record<string, number> = {};
           for (const token of fullMap.keys()) {
-            const kind = token.slice(1, -1).split("_")[0];
+            const inner = token.slice(1, -1);
+            const kind = inner.split("_")[0];
             byKind[kind] = (byKind[kind] ?? 0) + 1;
           }
           console.info("[redline] redaction map", { total: fullMap.size, byKind });
@@ -196,6 +244,7 @@ export function useStreamingAnalysis() {
           status: nextStatus,
           overview: body.overview,
           tokenMap: fullMap,
+          editableLabels: labels,
         }));
         return { overview: body.overview, tokenMap: fullMap };
       } catch (err) {
@@ -212,19 +261,49 @@ export function useStreamingAnalysis() {
   );
 
   /**
-   * Called when the user confirms the RedactionPreview screen. Replaces
-   * the hook's tokenMap with `activeTokens` (the subset the user chose
-   * to keep redacted) and transitions to `awaiting_role`. Actual scrubbed
-   * text for Pass 1/2 is rebuilt at `runAnalysis` time from `rawText` +
-   * the trimmed map.
+   * RedactionPreview calls this when the user edits a label. Applies
+   * the same normalize + disambiguate pipeline so the live token preview
+   * always shows canonical form.
    */
-  const confirmRedaction = useCallback((activeTokens: Map<string, string>) => {
-    tokenMapRef.current = activeTokens;
-    setState((prev) => ({
-      ...prev,
-      status: "awaiting_role",
-      tokenMap: activeTokens,
+  const updatePartyLabel = useCallback((index: number, raw: string) => {
+    setState((prev) => {
+      const next = [...prev.editableLabels];
+      next[index] = normalizeLabel(raw);
+      return { ...prev, editableLabels: disambiguateLabels(next) };
+    });
+  }, []);
+
+  /**
+   * RedactionPreview confirmation. Rebuilds the scrubbed + tokenMap from
+   * the final edited labels, then intersects with the user's "keep-masked"
+   * subset. Empty labels are rejected here defensively (UI blocks them).
+   *
+   * SP-1.9: takes `disabledTokens: Set<string>` (tokens to leave visible)
+   * instead of the old `activeTokens: Map<string, string>`. The hook
+   * reconstructs the full map from labels + raw text, then subtracts the
+   * disabled set to produce the active subset.
+   */
+  const confirmRedaction = useCallback((disabledTokens: Set<string>) => {
+    const raw = rawTextRef.current;
+    const overview = overviewRef.current;
+    if (!raw || !overview) return;
+
+    const labels = (stateRef.current?.editableLabels ?? []);
+    if (labels.some((l) => !l)) {
+      return; // UI prevents this path
+    }
+    const labeled = overview.parties.map((p: Party, i: number) => ({
+      name: p.name,
+      label: labels[i],
     }));
+    const { tokenMap: fullMap } = redact(raw, labeled);
+
+    const active = new Map<string, string>();
+    for (const [token, original] of fullMap) {
+      if (!disabledTokens.has(token)) active.set(token, original);
+    }
+    tokenMapRef.current = active;
+    setState((prev) => ({ ...prev, status: "awaiting_role", tokenMap: active }));
   }, []);
 
   /**
@@ -262,8 +341,14 @@ export function useStreamingAnalysis() {
       const capturedOverview = overviewRef.current;
       const rawText = rawTextRef.current;
       const activeTokens = tokenMapRef.current ?? new Map<string, string>();
+      // fullMap is also activeTokens here: confirmRedaction already
+      // trimmed to the user's chosen active subset, so we pass it as both
+      // fullMap and activeTokens to rebuildScrubbed.
+      const scrubbedForAnalysis = rawText
+        ? rebuildScrubbed(rawText, activeTokens, activeTokens)
+        : null;
 
-      if (!rawText) {
+      if (!rawText || !scrubbedForAnalysis) {
         setState((prev) => ({
           ...prev,
           status: "error",
@@ -271,11 +356,6 @@ export function useStreamingAnalysis() {
         }));
         return null;
       }
-
-      // Rebuild a scrubbed copy of the raw text using the user's chosen
-      // active tokens. Tokens the user toggled off reappear as their
-      // real values; tokens they kept active stay as `⟦KIND_N⟧`.
-      const scrubbedForAnalysis = rebuildScrubbed(rawText, activeTokens);
 
       setState((prev) => ({
         ...prev,
@@ -396,5 +476,15 @@ export function useStreamingAnalysis() {
     [abort],
   );
 
-  return { ...state, runOverview, runAnalysis, confirmRedaction, abort, reset };
+  return {
+    state,
+    runOverview,
+    confirmRedaction,
+    updatePartyLabel,
+    runAnalysis,
+    reset,
+    abort,
+    // Spread state so consumers can destructure fields directly (existing API).
+    ...state,
+  };
 }

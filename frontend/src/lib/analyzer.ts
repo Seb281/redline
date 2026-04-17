@@ -46,29 +46,31 @@ export const clauseInventoryItemSchema = z.object({
     .describe("Section number if identifiable, e.g. 'Section 3.1'"),
 });
 
+export const partySchema = z.object({
+  name: z
+    .string()
+    .describe("Full legal name of the party exactly as written in the preamble"),
+  role_label: z
+    .string()
+    .nullable()
+    .describe(
+      "Defined term introduced for this party in the preamble (e.g. 'Provider', 'Tenant'). " +
+      "Look for constructions like 'hereinafter the Provider', '(the \"Provider\")', or " +
+      "'referred to as Provider'. Return null if the contract introduces no defined term.",
+    ),
+});
+
 export const contractOverviewSchema = z.object({
   contract_type: z
     .string()
     .describe("Type of contract, e.g. 'Freelance Services Agreement'"),
   parties: z
-    .array(z.string())
-    .describe("Names of the parties involved"),
-  effective_date: z
-    .string()
-    .nullable()
-    .describe("Effective or start date if stated"),
-  duration: z
-    .string()
-    .nullable()
-    .describe("Contract duration if stated, e.g. '12 months'"),
-  total_value: z
-    .string()
-    .nullable()
-    .describe("Total contract value if stated, e.g. '$120,000'"),
-  governing_jurisdiction: z
-    .string()
-    .nullable()
-    .describe("Governing law jurisdiction if stated"),
+    .array(partySchema)
+    .describe("Parties to the contract, in the order they appear in the preamble"),
+  effective_date: z.string().nullable().describe("Effective or start date if stated"),
+  duration: z.string().nullable().describe("Contract duration if stated, e.g. '12 months'"),
+  total_value: z.string().nullable().describe("Total contract value if stated, e.g. '$120,000'"),
+  governing_jurisdiction: z.string().nullable().describe("Governing law jurisdiction if stated"),
   key_terms: z
     .array(z.string())
     .describe("3-5 most important terms, one sentence each, plain English"),
@@ -320,6 +322,19 @@ Rules:
 - For key_terms, list 3-5 of the most important substantive terms — the things \
   someone would want to know before reading the full contract.
 - Keep key_terms concise: one sentence each, plain English, no legal jargon.
+
+Parties — defined-term extraction:
+- For each party, capture the full legal name exactly as written in the preamble.
+- Also capture the defined term the contract uses to refer to that party \
+  throughout (role_label). Look for explicit introductions like:
+    "Acme Corp (hereinafter the \"Provider\")"
+    "Beta Ltd., referred to as the Client"
+    "XYZ B.V. (the \"Licensor\")"
+- role_label must be a single noun or short noun phrase as written in the \
+  contract ("Provider", "Service Provider", "Landlord"), not a description.
+- If the contract does NOT introduce a defined term for a party, set role_label \
+  to null. Do not invent one.
+- List parties in the order they appear in the preamble.
 
 Clause inventory — critical rules:
 - List only TOP-LEVEL contract clauses (the numbered sections, articles, or \

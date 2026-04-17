@@ -20,7 +20,9 @@
  */
 
 import { PATTERNS, type Pattern } from "./patterns";
-import { replaceParties } from "./parties";
+import { replaceParties, type LabeledParty } from "./parties";
+
+export type { LabeledParty };
 
 export interface RedactionResult {
   scrubbed: string;
@@ -43,11 +45,11 @@ export function redactPatterns(text: string): RedactionResult {
 }
 
 /**
- * Party-only redaction phase (SP-1.6). Runs AFTER Pass 0 has extracted
+ * Party-only redaction phase (SP-1.9). Runs AFTER Pass 0 has extracted
  * the party names. Thin wrapper around `replaceParties` kept on the
  * public index for symmetry with `redactPatterns`.
  */
-export function redactParties(text: string, parties: string[]): RedactionResult {
+export function redactParties(text: string, parties: LabeledParty[]): RedactionResult {
   const result = replaceParties(text, parties);
   return { scrubbed: result.scrubbed, tokenMap: result.partyMap };
 }
@@ -63,7 +65,7 @@ export function redactParties(text: string, parties: string[]): RedactionResult 
  * impossible — but ordering the phases explicitly keeps the invariant
  * obvious.
  */
-export function redact(text: string, parties: string[]): RedactionResult {
+export function redact(text: string, parties: LabeledParty[]): RedactionResult {
   const patternPhase = redactPatterns(text);
   const partyPhase = redactParties(patternPhase.scrubbed, parties);
   const tokenMap = new Map<string, string>();
@@ -73,45 +75,46 @@ export function redact(text: string, parties: string[]): RedactionResult {
 }
 
 /**
- * Re-redact `raw` using only the tokens present in `activeTokens`.
+ * Re-redact `raw` using only the tokens in `activeTokens`.
  *
- * Callsite: the user confirms the RedactionPreview with a subset of
- * tokens disabled. We need to rebuild a scrubbed string that preserves
- * the still-active tokens and exposes the disabled ones as their
- * original values.
+ * With SP-1.9 labels, we can no longer distinguish party tokens from
+ * pattern tokens by label alone (a user could pick `EMAIL` as a role —
+ * unlikely but legal). The caller is responsible for supplying BOTH
+ * the original full tokenMap (to know what was once tokenized) and the
+ * subset still active. We rebuild by:
  *
- * Strategy:
- *   1. Re-redact from raw using every party name still present in
- *      `activeTokens`. Parties the user disabled never enter the map,
- *      so they appear in the scrubbed text as their original names
- *      already.
- *   2. Patterns always run unconditionally, so every email/phone/etc.
- *      gets tokenized. Those disabled by the user are then rehydrated
- *      back to their originals via the `disabled` map.
+ *   1. Running `redactPatterns` unconditionally against `raw` — every
+ *      email/phone/etc. gets tokenized.
+ *   2. Identifying the party tokens as (fullMap \ patternMap). For each
+ *      still-active party token, we already know its original name, so
+ *      we build a `LabeledParty[]` from the active subset and call
+ *      `redactParties` on the patterns-scrubbed text.
+ *   3. Whatever remains tokenized but is in the disabled set gets
+ *      rehydrated back to originals.
  *
- * Idempotent — two calls with the same `activeTokens` return
- * byte-identical output because `redact` is deterministic on the same
- * input.
+ * Callers must pass `fullMap` so step 2 can distinguish pattern tokens
+ * from party tokens. The old signature took only `activeTokens`; this
+ * is a breaking change.
  */
 export function rebuildScrubbed(
   raw: string,
+  fullMap: Map<string, string>,
   activeTokens: Map<string, string>,
 ): string {
-  // Extract parties by label order (A, B, C, ...) — NOT by Map iteration
-  // order. `redact` assigns `⟦PARTY_X⟧` from the position in the parties
-  // array; if the caller's activeTokens Map happens to yield `⟦PARTY_B⟧`
-  // before `⟦PARTY_A⟧`, iteration-order extraction would swap the labels
-  // vs. the original tokenMap and break rehydrate.
-  const partyEntries: { label: string; original: string }[] = [];
-  for (const [token, original] of activeTokens) {
-    const m = token.match(/^\u27E6PARTY_([A-H])\u27E7$/);
-    if (m) partyEntries.push({ label: m[1], original });
-  }
-  partyEntries.sort((a, b) => a.label.localeCompare(b.label));
-  const parties = partyEntries.map((e) => e.original);
-  const { scrubbed, tokenMap: fullMap } = redact(raw, parties);
-  const disabled = new Map<string, string>();
+  const patternPhase = redactPatterns(raw);
+  const patternTokens = new Set(patternPhase.tokenMap.keys());
+
+  const partyEntries: LabeledParty[] = [];
   for (const [token, original] of fullMap) {
+    if (patternTokens.has(token)) continue;
+    if (!activeTokens.has(token)) continue;
+    const m = token.match(/^\u27E6(.+)\u27E7$/);
+    if (m) partyEntries.push({ name: original, label: m[1] });
+  }
+  const { scrubbed } = redactParties(patternPhase.scrubbed, partyEntries);
+
+  const disabled = new Map<string, string>();
+  for (const [token, original] of patternPhase.tokenMap) {
     if (!activeTokens.has(token)) disabled.set(token, original);
   }
   return rehydrate(scrubbed, disabled);

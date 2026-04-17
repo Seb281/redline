@@ -32,11 +32,13 @@ interface StreamingReportViewProps {
    */
   onRolePicked: (role: string | null) => void;
   /**
-   * Callback fired when the user confirms the redaction preview. Receives
-   * the subset of tokens they chose to keep masked — disabled entries
-   * reappear as their original values in the payload sent to Pass 1/2.
+   * Callback fired when the user confirms the redaction preview.
+   * SP-1.9: receives the set of tokens to leave visible (disabled) —
+   * the hook re-derives the active map from labels + raw text.
    */
-  onRedactionConfirmed: (activeTokens: Map<string, string>) => void;
+  onRedactionConfirmed: (disabledTokens: Set<string>) => void;
+  /** Callback fired when the user edits a party label in the RedactionPreview. */
+  onEditPartyLabel: (index: number, rawLabel: string) => void;
   /** Retry the last failed step (overview or analysis). */
   onRetry?: () => void;
   /** How many retries have been attempted so far. */
@@ -50,6 +52,7 @@ export function StreamingReportView({
   onReset,
   onRolePicked,
   onRedactionConfirmed,
+  onEditPartyLabel,
   onRetry,
   retryCount,
 }: StreamingReportViewProps) {
@@ -85,15 +88,20 @@ export function StreamingReportView({
       />
 
       {/* Contract overview — appears as soon as Pass 0 finishes */}
-      {overview && <ContractOverview overview={overview} />}
+      {overview && (
+        <ContractOverview overview={overview} labels={state.editableLabels} />
+      )}
 
       {/* Redaction preview — shown between Pass 0 and role pick so the user
           can audit/toggle every PII token before the text hits Pass 1/2. */}
       {status === "awaiting_redaction" && rawText && tokenMap && (
         <RedactionPreview
           raw={rawText}
-          scrubbed={rebuildScrubbed(rawText, tokenMap)}
+          scrubbed={rebuildScrubbed(rawText, tokenMap, tokenMap)}
           tokenMap={tokenMap}
+          parties={state.overview!.parties}
+          editableLabels={state.editableLabels}
+          onEditLabel={onEditPartyLabel}
           onConfirm={onRedactionConfirmed}
           onCancel={onReset}
         />
@@ -102,7 +110,11 @@ export function StreamingReportView({
       {/* Role picker — shown between redaction and Pass 1 so the user can
           declare which party they are before risk analysis runs. */}
       {status === "awaiting_role" && overview && (
-        <RolePicker parties={overview.parties} onPick={onRolePicked} />
+        <RolePicker
+          parties={overview.parties}
+          labels={state.editableLabels}
+          onPick={onRolePicked}
+        />
       )}
 
       {/* Risk summary — placeholder until complete */}

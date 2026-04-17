@@ -1,14 +1,15 @@
 /**
- * Party-name redaction.
+ * Party-name redaction (SP-1.9).
  *
- * Given the parties extracted by Pass 0, replaces literal occurrences in
- * the contract text with role-label tokens (`⟦PARTY_A⟧`, `⟦PARTY_B⟧`, ...)
- * before sending to Pass 1 / Pass 2 / chat.
+ * Given the parties extracted by Pass 0 AND the pre-computed role-label
+ * tokens for each (from heuristicLabels + user edits + normalizeLabel +
+ * disambiguateLabels), replaces literal occurrences in the contract
+ * text with `⟦LABEL⟧` tokens before sending to Pass 1 / Pass 2 / chat.
  *
  * Handles:
  *   - case-insensitive matching ("ACME Corp" == "acme corp")
  *   - whitespace normalization (collapse runs)
- *   - possessives ("ACME Corp's" → "⟦PARTY_A⟧'s"), including curly `’`,
+ *   - possessives ("ACME Corp's" → "⟦PROVIDER⟧'s"), including curly `'`,
  *     preserved verbatim so round-trip restores the original character
  *   - overlapping / duplicate party entries: longest match at each span
  *     wins; subsequent overlapping matches are dropped to avoid splice
@@ -16,7 +17,9 @@
  *
  * Does NOT handle (intentionally — leak risk acknowledged in spec):
  *   - synonyms / abbreviations not present in the parties list
- *   - "the Company" / "the Tenant" defined-term shorthand (out of scope for SP-1)
+ *   - defined-term shorthand ("the Company", "the Tenant") when it does
+ *     not appear as the label itself — out of scope for SP-1.9, tracked
+ *     as a follow-up
  */
 
 export interface PartyMatch {
@@ -25,11 +28,15 @@ export interface PartyMatch {
   length: number;
   partyIndex: number;
   possessive: boolean;
-  /** Verbatim possessive suffix from the source text ("'s", "’s", "s'", ""). */
+  /** Verbatim possessive suffix from the source text ("'s", "\u2019s", "s'", ""). */
   suffix: string;
 }
 
-const PARTY_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+/** Input shape for replaceParties: party name + its pre-computed token label. */
+export interface LabeledParty {
+  name: string;
+  label: string;
+}
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -44,11 +51,11 @@ function nameRegex(name: string): RegExp {
   );
 }
 
-export function findPartyMatches(text: string, parties: string[]): PartyMatch[] {
+export function findPartyMatches(text: string, parties: LabeledParty[]): PartyMatch[] {
   const raw: PartyMatch[] = [];
-  parties.forEach((name, partyIndex) => {
-    if (!name || !name.trim()) return;
-    const re = nameRegex(name);
+  parties.forEach((p, partyIndex) => {
+    if (!p.name || !p.name.trim()) return;
+    const re = nameRegex(p.name);
     for (const m of text.matchAll(re)) {
       const suffix = m[2] ?? "";
       raw.push({
@@ -92,27 +99,29 @@ export interface PartiesReplacement {
   partyMap: Map<string, string>;
 }
 
-export function replaceParties(text: string, parties: string[]): PartiesReplacement {
-  const cleanedParties = parties.filter((p) => p && p.trim());
-  const matches = findPartyMatches(text, cleanedParties);
-  // Only seed partyMap for parties that actually matched. A supplied name
-  // with zero occurrences (or one fully consumed by the pattern phase
-  // upstream, e.g. a party name that looks like an email) must not create
-  // a phantom ⟦PARTY_X⟧ entry — the UI uses partyMap as the source of
-  // truth for which tokens exist.
+/**
+ * Replace each party name occurrence with its role-label token.
+ * Skips parties with empty labels (caller's decision — UI blocks this,
+ * but the core must not corrupt the scrubbed string with `⟦⟧`).
+ */
+export function replaceParties(text: string, parties: LabeledParty[]): PartiesReplacement {
+  const cleaned: LabeledParty[] = parties.filter(
+    (p) => p && p.name && p.name.trim() && p.label && p.label.length > 0,
+  );
+  const matches = findPartyMatches(text, cleaned);
   const matchedIndexes = new Set(matches.map((m) => m.partyIndex));
   const partyMap = new Map<string, string>();
-  cleanedParties.forEach((name, i) => {
-    if (i < PARTY_LABELS.length && matchedIndexes.has(i)) {
-      partyMap.set(`\u27E6PARTY_${PARTY_LABELS[i]}\u27E7`, name);
+  cleaned.forEach((p, i) => {
+    if (matchedIndexes.has(i)) {
+      partyMap.set(`\u27E6${p.label}\u27E7`, p.name);
     }
   });
 
   let scrubbed = text;
   for (let i = matches.length - 1; i >= 0; i--) {
     const m = matches[i];
-    if (m.partyIndex >= PARTY_LABELS.length) continue;
-    const token = `\u27E6PARTY_${PARTY_LABELS[m.partyIndex]}\u27E7`;
+    const p = cleaned[m.partyIndex];
+    const token = `\u27E6${p.label}\u27E7`;
     const replacement = token + m.suffix;
     scrubbed = scrubbed.slice(0, m.index) + replacement + scrubbed.slice(m.index + m.length);
   }

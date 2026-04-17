@@ -12,7 +12,10 @@ def _sample_request_body() -> dict:
     return {
         "overview": {
             "contract_type": "Consulting Agreement",
-            "parties": ["Company", "Consultant"],
+            "parties": [
+                {"name": "Company", "role_label": "Provider"},
+                {"name": "Consultant", "role_label": "Consultant"},
+            ],
             "effective_date": None,
             "duration": None,
             "total_value": None,

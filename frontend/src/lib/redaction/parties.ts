@@ -54,7 +54,7 @@ function nameRegex(name: string): RegExp {
 export function findPartyMatches(text: string, parties: LabeledParty[]): PartyMatch[] {
   const raw: PartyMatch[] = [];
   parties.forEach((p, partyIndex) => {
-    if (!p.name || !p.name.trim()) return;
+    if (typeof p?.name !== "string" || !p.name.trim()) return;
     const re = nameRegex(p.name);
     for (const m of text.matchAll(re)) {
       const suffix = m[2] ?? "";
@@ -106,7 +106,12 @@ export interface PartiesReplacement {
  */
 export function replaceParties(text: string, parties: LabeledParty[]): PartiesReplacement {
   const cleaned: LabeledParty[] = parties.filter(
-    (p) => p && p.name && p.name.trim() && p.label && p.label.length > 0,
+    (p) =>
+      p &&
+      typeof p.name === "string" &&
+      p.name.trim() &&
+      typeof p.label === "string" &&
+      p.label.length > 0,
   );
   const matches = findPartyMatches(text, cleaned);
   const matchedIndexes = new Set(matches.map((m) => m.partyIndex));

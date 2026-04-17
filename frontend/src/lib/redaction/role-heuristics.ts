@@ -12,7 +12,7 @@ const MAX_LABEL_LEN = 20;
 
 /** Canonicalize a label string. Returns "" if nothing usable remains. */
 export function normalizeLabel(raw: string): string {
-  if (!raw) return "";
+  if (typeof raw !== "string" || !raw) return "";
   const ascii = raw
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "");
@@ -55,7 +55,7 @@ const POSITIONAL = ["PARTY_A", "PARTY_B", "PARTY_C", "PARTY_D", "PARTY_E", "PART
  * cannot guess a third role (joint ventures are rare and ambiguous).
  */
 export function heuristicLabels(contractType: string, n: number): string[] {
-  const lower = (contractType || "").toLowerCase();
+  const lower = (typeof contractType === "string" ? contractType : "").toLowerCase();
   const match = HEURISTICS.find((row) =>
     row.keywords.some((kw) => lower.includes(kw)),
   );

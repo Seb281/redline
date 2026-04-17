@@ -88,7 +88,9 @@ export function StreamingReportView({
       />
 
       {/* Contract overview — appears as soon as Pass 0 finishes */}
-      {overview && <ContractOverview overview={overview} />}
+      {overview && (
+        <ContractOverview overview={overview} labels={state.editableLabels} />
+      )}
 
       {/* Redaction preview — shown between Pass 0 and role pick so the user
           can audit/toggle every PII token before the text hits Pass 1/2. */}

@@ -38,7 +38,8 @@ async def upload_contract(request: Request, file: UploadFile) -> UploadResponse:
         raise HTTPException(status_code=422, detail="File exceeds 10MB limit.")
 
     if extension == "pdf":
-        text, page_count = parse_pdf(content)
+        result = parse_pdf(content)
+        text, page_count = result.text, result.page_count
     else:
         text, page_count = parse_docx(content)
 

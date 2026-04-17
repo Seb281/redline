@@ -45,8 +45,17 @@ def test_upload_unsupported_file_type():
     assert "Unsupported file type" in response.json()["detail"]
 
 
-def test_upload_empty_pdf_returns_error(empty_pdf_bytes: bytes):
-    """Uploading a PDF with no extractable text returns 422."""
+def test_upload_empty_pdf_returns_error(empty_pdf_bytes: bytes, monkeypatch):
+    """Uploading a PDF with no extractable text returns 422.
+
+    Under SP-1.5 an empty page is sparse and routes to OCR. We stub OCR
+    to return empty strings so we're testing the upload router's
+    <50-char rejection rather than depending on tesseract+poppler.
+    """
+    from app.services import parser
+
+    monkeypatch.setattr(parser.ocr, "ocr_pages", lambda _b, indices: {i: "" for i in indices})
+
     response = client.post(
         "/api/upload",
         files={"file": ("empty.pdf", empty_pdf_bytes, "application/pdf")},

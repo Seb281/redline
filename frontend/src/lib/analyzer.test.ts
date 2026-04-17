@@ -3,10 +3,13 @@ import {
   analyzedClauseSchema,
   buildRiskBreakdown,
   capInventory,
+  contractOverviewSchema,
   formatInventoryPrompt,
   buildExtractionPrompt,
   buildAnalysisSystemPrompt,
   buildProvenance,
+  OVERVIEW_SYSTEM_PROMPT,
+  reconcileJurisdiction,
   shouldRetryPass2,
   INVENTORY_CAP_CEILING,
   INVENTORY_CAP_BYTES_PER_ITEM,
@@ -374,5 +377,104 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
       },
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("contractOverviewSchema — jurisdiction_evidence (SP-1.7)", () => {
+  const base = {
+    contract_type: "x",
+    parties: [],
+    effective_date: null,
+    duration: null,
+    total_value: null,
+    governing_jurisdiction: null,
+    key_terms: [],
+    clause_inventory: [],
+  };
+
+  it("accepts source_type stated with source_text", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...base,
+      governing_jurisdiction: "Netherlands",
+      jurisdiction_evidence: {
+        source_type: "stated",
+        source_text: "§14 Governing Law",
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts source_type unknown with null source_text", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...base,
+      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects missing jurisdiction_evidence", () => {
+    const r = contractOverviewSchema.safeParse(base);
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("OVERVIEW_SYSTEM_PROMPT includes jurisdiction_evidence instructions", () => {
+  it("mentions jurisdiction_evidence and its three source_type values", () => {
+    expect(OVERVIEW_SYSTEM_PROMPT).toContain("jurisdiction_evidence");
+    expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="stated"');
+    expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="inferred"');
+    expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="unknown"');
+  });
+});
+
+describe("reconcileJurisdiction (SP-1.7)", () => {
+  const base = {
+    contract_type: "x",
+    parties: [],
+    effective_date: null,
+    duration: null,
+    total_value: null,
+    key_terms: [],
+    clause_inventory: [],
+  };
+
+  it("passes through consistent stated pair", () => {
+    const out = reconcileJurisdiction({
+      ...base,
+      governing_jurisdiction: "Netherlands",
+      jurisdiction_evidence: { source_type: "stated", source_text: "§14" },
+    });
+    expect(out.governing_jurisdiction).toBe("Netherlands");
+    expect(out.jurisdiction_evidence.source_type).toBe("stated");
+  });
+
+  it("passes through consistent unknown pair", () => {
+    const out = reconcileJurisdiction({
+      ...base,
+      governing_jurisdiction: null,
+      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+    });
+    expect(out.jurisdiction_evidence.source_type).toBe("unknown");
+  });
+
+  it("downgrades to unknown when governing_jurisdiction is null but source_type is stated", () => {
+    const out = reconcileJurisdiction({
+      ...base,
+      governing_jurisdiction: null,
+      jurisdiction_evidence: { source_type: "stated", source_text: "§14" },
+    });
+    expect(out.jurisdiction_evidence.source_type).toBe("unknown");
+    expect(out.jurisdiction_evidence.source_text).toBeNull();
+    expect(out.governing_jurisdiction).toBeNull();
+  });
+
+  it("nulls governing_jurisdiction when source_type is unknown but value was set", () => {
+    const out = reconcileJurisdiction({
+      ...base,
+      governing_jurisdiction: "Germany",
+      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+    });
+    expect(out.jurisdiction_evidence.source_type).toBe("unknown");
+    expect(out.governing_jurisdiction).toBeNull();
   });
 });

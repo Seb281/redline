@@ -72,6 +72,15 @@ export const contractOverviewSchema = z.object({
   duration: z.string().nullable().describe("Contract duration if stated, e.g. '12 months'"),
   total_value: z.string().nullable().describe("Total contract value if stated, e.g. '$120,000'"),
   governing_jurisdiction: z.string().nullable().describe("Governing law jurisdiction if stated"),
+  jurisdiction_evidence: z
+    .object({
+      source_type: z.enum(["stated", "inferred", "unknown"]),
+      source_text: z.string().nullable(),
+    })
+    .describe(
+      "SP-1.7 — how the model determined governing_jurisdiction. " +
+        "unknown ⇔ governing_jurisdiction is null.",
+    ),
   key_terms: z
     .array(z.string())
     .describe("3-5 most important terms, one sentence each, plain English"),
@@ -375,7 +384,20 @@ Clause inventory — critical rules:
   over-segmenting — consolidate sub-items into their parent clause.
 - Give each clause a short descriptive title (3-6 words).
 - Include the section reference (e.g. "Section 3.1") when identifiable.
-- Order clauses as they appear in the document.`;
+- Order clauses as they appear in the document.
+
+Jurisdiction evidence:
+After identifying governing_jurisdiction, emit jurisdiction_evidence:
+- Set source_type="stated" when the contract has an explicit governing-law \
+  clause. Set source_text to the verbatim phrase or clause reference \
+  (e.g., "§14 Governing Law: Netherlands").
+- Set source_type="inferred" when no explicit clause but the country is \
+  derivable from party addresses, official language, currency, or \
+  registered office. Set source_text to a one-line reason (e.g., \
+  "Inferred from party addresses in Amsterdam and Utrecht").
+- Set source_type="unknown" when neither is possible. Set source_text to \
+  null AND set governing_jurisdiction to null.
+The two fields must agree: unknown ⇔ null; stated/inferred ⇔ non-null.`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -407,6 +429,37 @@ export function buildExtractionPrompt(
 ): string {
   const inventoryList = formatInventoryPrompt(inventory);
   return `Extract the exact text of each of the following ${inventory.length} clauses from the contract below.\n\nClause inventory:\n${inventoryList}\n\nContract text:\n\n${text}`;
+}
+
+/**
+ * SP-1.7 — Enforce the contract-level invariant that
+ * governing_jurisdiction and jurisdiction_evidence.source_type agree.
+ *
+ * When the LLM returns a mismatched pair, downgrade to unknown rather
+ * than propagating inconsistent state to Pass 2. The orchestrator calls
+ * this on every Pass 0 result before threading the evidence downstream.
+ */
+export function reconcileJurisdiction<
+  T extends {
+    governing_jurisdiction: string | null;
+    jurisdiction_evidence: {
+      source_type: "stated" | "inferred" | "unknown";
+      source_text: string | null;
+    };
+  },
+>(overview: T): T {
+  const { governing_jurisdiction, jurisdiction_evidence } = overview;
+  const isUnknown = jurisdiction_evidence.source_type === "unknown";
+  if (isUnknown && governing_jurisdiction !== null) {
+    return { ...overview, governing_jurisdiction: null };
+  }
+  if (!isUnknown && governing_jurisdiction === null) {
+    return {
+      ...overview,
+      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+    };
+  }
+  return overview;
 }
 
 /**

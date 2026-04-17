@@ -120,6 +120,13 @@ export interface AnalysisProvenance {
   prompt_template_version: string;
   /** ISO timestamp of when the analysis was assembled. */
   timestamp: string;
+  /**
+   * Where the PII token map lives during analysis. "client" as of
+   * SP-1.6 (moved out of /api/analyze/stream). "server" is the legacy
+   * SP-1 behavior and still the chat-route default. Optional so
+   * pre-SP-1.6 saved analyses deserialize unchanged.
+   */
+  redaction_location?: "client" | "server";
 }
 
 /** Full response from POST /api/analyze. */

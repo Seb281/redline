@@ -14,10 +14,12 @@ import { AnalysisFooter } from "@/components/AnalysisFooter";
 import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ContractOverview } from "@/components/ContractOverview";
+import { RedactionPreview } from "@/components/RedactionPreview";
 import { RiskChart } from "@/components/RiskChart";
 import { RolePicker } from "@/components/RolePicker";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
+import { rebuildScrubbed } from "@/lib/redaction";
 
 interface StreamingReportViewProps {
   state: StreamingAnalysisState;
@@ -29,6 +31,12 @@ interface StreamingReportViewProps {
    * means "skip — use default weaker-party framing".
    */
   onRolePicked: (role: string | null) => void;
+  /**
+   * Callback fired when the user confirms the redaction preview. Receives
+   * the subset of tokens they chose to keep masked — disabled entries
+   * reappear as their original values in the payload sent to Pass 1/2.
+   */
+  onRedactionConfirmed: (activeTokens: Map<string, string>) => void;
   /** Retry the last failed step (overview or analysis). */
   onRetry?: () => void;
   /** How many retries have been attempted so far. */
@@ -41,10 +49,11 @@ export function StreamingReportView({
   upload,
   onReset,
   onRolePicked,
+  onRedactionConfirmed,
   onRetry,
   retryCount,
 }: StreamingReportViewProps) {
-  const { overview, clauses, clauseCount, summary, provenance, status, error } = state;
+  const { overview, clauses, clauseCount, summary, provenance, status, error, rawText, tokenMap } = state;
 
   // Nothing yet — show initial loading state with stepper.
   if (!overview && (status === "analyzing_overview" || status === "analyzing")) {
@@ -78,7 +87,19 @@ export function StreamingReportView({
       {/* Contract overview — appears as soon as Pass 0 finishes */}
       {overview && <ContractOverview overview={overview} />}
 
-      {/* Role picker — shown between Pass 0 and Pass 1 so the user can
+      {/* Redaction preview — shown between Pass 0 and role pick so the user
+          can audit/toggle every PII token before the text hits Pass 1/2. */}
+      {status === "awaiting_redaction" && rawText && tokenMap && (
+        <RedactionPreview
+          raw={rawText}
+          scrubbed={rebuildScrubbed(rawText, tokenMap)}
+          tokenMap={tokenMap}
+          onConfirm={onRedactionConfirmed}
+          onCancel={onReset}
+        />
+      )}
+
+      {/* Role picker — shown between redaction and Pass 1 so the user can
           declare which party they are before risk analysis runs. */}
       {status === "awaiting_role" && overview && (
         <RolePicker parties={overview.parties} onPick={onRolePicked} />

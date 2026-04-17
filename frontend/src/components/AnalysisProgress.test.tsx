@@ -71,7 +71,7 @@ describe("AnalysisProgress", () => {
     expect(screen.getByText("Analysis complete")).toBeTruthy();
   });
 
-  it("renders all five step labels", () => {
+  it("renders all six step labels", () => {
     render(
       <AnalysisProgress
         status="analyzing"
@@ -82,8 +82,21 @@ describe("AnalysisProgress", () => {
 
     expect(screen.getByText("Upload")).toBeTruthy();
     expect(screen.getByText("Overview")).toBeTruthy();
+    expect(screen.getByText("Redact")).toBeTruthy();
     expect(screen.getByText("Role")).toBeTruthy();
     expect(screen.getByText("Analysis")).toBeTruthy();
     expect(screen.getByText("Complete")).toBeTruthy();
+  });
+
+  it("shows redaction subtitle when awaiting_redaction", () => {
+    render(
+      <AnalysisProgress
+        status="awaiting_redaction"
+        analyzedCount={0}
+        totalCount={null}
+      />,
+    );
+
+    expect(screen.getByText("Review what will be masked")).toBeTruthy();
   });
 });

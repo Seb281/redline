@@ -156,6 +156,16 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
               value={provenance.prompt_template_version}
             />
             <MetaField label="Recorded at" value={provenance.timestamp} />
+            <MetaField
+              label="Redaction"
+              value={
+                provenance.redaction_location === "client"
+                  ? "Analysis: client-side · Chat: API-boundary"
+                  : provenance.redaction_location === "server"
+                    ? "API boundary (server-side)"
+                    : "\u2014"
+              }
+            />
           </div>
 
           <div className="flex flex-col gap-3">

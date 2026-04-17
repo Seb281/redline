@@ -23,11 +23,14 @@ import type {
   AnalysisMode,
 } from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
+import { redactPatterns, redactParties, rebuildScrubbed } from "@/lib/redaction";
+import { rehydrateClause } from "@/lib/redaction/rehydrate-clause";
 
 export interface StreamingAnalysisState {
   status:
     | "idle"
     | "analyzing_overview"
+    | "awaiting_redaction"
     | "awaiting_role"
     | "analyzing"
     | "complete"
@@ -43,6 +46,19 @@ export interface StreamingAnalysisState {
    * renders once the machine identifiers are known.
    */
   provenance: AnalysisProvenance | null;
+  /**
+   * Full token map (pattern + party phases merged) assembled after
+   * Pass 0 completes. Populated when the hook enters `awaiting_redaction`
+   * and again after `confirmRedaction` (trimmed to the user's active
+   * subset). Null before Pass 0 finishes or after `reset`.
+   */
+  tokenMap: Map<string, string> | null;
+  /**
+   * Raw contract text held across the redaction-preview gap so the
+   * analysis phase can rebuild a scrubbed version from raw when the
+   * user has toggled some tokens off in the preview.
+   */
+  rawText: string | null;
   error: string | null;
 }
 
@@ -53,6 +69,8 @@ const INITIAL_STATE: StreamingAnalysisState = {
   clauseCount: null,
   summary: null,
   provenance: null,
+  tokenMap: null,
+  rawText: null,
   error: null,
 };
 
@@ -68,6 +86,11 @@ export function useStreamingAnalysis() {
   // Mirrored here so runAnalysis can read the overview without depending
   // on stale closure state from the last render.
   const overviewRef = useRef<ContractOverview | null>(null);
+  // Synchronous mirrors updated at the call site (not via useEffect), so
+  // runAnalysis can fire immediately after runOverview/confirmRedaction
+  // without waiting for React to flush a render.
+  const rawTextRef = useRef<string | null>(null);
+  const tokenMapRef = useRef<Map<string, string> | null>(null);
 
   /** Cancel any in-flight fetch (overview or stream). */
   const abort = useCallback(() => {
@@ -79,20 +102,37 @@ export function useStreamingAnalysis() {
   const reset = useCallback(() => {
     abort();
     overviewRef.current = null;
+    rawTextRef.current = null;
+    tokenMapRef.current = null;
     setState(INITIAL_STATE);
   }, [abort]);
 
   /**
-   * Fetch the contract overview. Transitions the hook through
-   * `analyzing_overview` → `awaiting_role` on success. On error the
-   * status becomes `error` and the overview stays null.
+   * Fetch the contract overview. In SP-1.6 this is a three-step flow:
+   *   1. Mask PII patterns (email/phone/IBAN/VAT/national ID) locally
+   *      so the server's Pass 0 call never sees raw values.
+   *   2. POST the pattern-masked text to `/api/analyze/overview`.
+   *   3. Take the parties returned by Pass 0 and mask them too, merging
+   *      both token maps into one and transitioning to
+   *      `awaiting_redaction` so the UI can show the preview.
+   *
+   * Zero-detection short-circuit: if neither patterns nor parties produced
+   * any tokens, the preview has nothing to show, so skip straight to
+   * `awaiting_role`.
    */
   const runOverview = useCallback(
-    async (text: string): Promise<ContractOverview | null> => {
+    async (
+      text: string,
+    ): Promise<{
+      overview: ContractOverview;
+      tokenMap: Map<string, string>;
+    } | null> => {
       abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
+      rawTextRef.current = text;
+      tokenMapRef.current = null;
       setState({
         status: "analyzing_overview",
         overview: null,
@@ -100,14 +140,20 @@ export function useStreamingAnalysis() {
         clauseCount: null,
         summary: null,
         provenance: null,
+        tokenMap: null,
+        rawText: text,
         error: null,
       });
+
+      // Phase 1 — mask patterns BEFORE Pass 0 so the server never sees
+      // raw emails/phones/IBANs/VAT/national IDs during overview extraction.
+      const patternPhase = redactPatterns(text);
 
       try {
         const response = await fetch("/api/analyze/overview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text: patternPhase.scrubbed }),
           signal: controller.signal,
         });
 
@@ -123,12 +169,35 @@ export function useStreamingAnalysis() {
 
         const body = (await response.json()) as { overview: ContractOverview };
         overviewRef.current = body.overview;
+
+        // Phase 2 — mask the party names Pass 0 just told us about.
+        const partyPhase = redactParties(patternPhase.scrubbed, body.overview.parties);
+        const fullMap = new Map<string, string>();
+        for (const [k, v] of patternPhase.tokenMap) fullMap.set(k, v);
+        for (const [k, v] of partyPhase.tokenMap) fullMap.set(k, v);
+
+        // No detections → no preview to show; fall through to role select.
+        const nextStatus = fullMap.size === 0 ? "awaiting_role" : "awaiting_redaction";
+
+        // Trust signal — visible in devtools so users can verify what's
+        // about to be masked without reading source code.
+        if (typeof console !== "undefined") {
+          const byKind: Record<string, number> = {};
+          for (const token of fullMap.keys()) {
+            const kind = token.slice(1, -1).split("_")[0];
+            byKind[kind] = (byKind[kind] ?? 0) + 1;
+          }
+          console.info("[redline] redaction map", { total: fullMap.size, byKind });
+        }
+
+        tokenMapRef.current = fullMap;
         setState((prev) => ({
           ...prev,
-          status: "awaiting_role",
+          status: nextStatus,
           overview: body.overview,
+          tokenMap: fullMap,
         }));
-        return body.overview;
+        return { overview: body.overview, tokenMap: fullMap };
       } catch (err) {
         if ((err as Error).name === "AbortError") return null;
         setState((prev) => ({
@@ -143,6 +212,22 @@ export function useStreamingAnalysis() {
   );
 
   /**
+   * Called when the user confirms the RedactionPreview screen. Replaces
+   * the hook's tokenMap with `activeTokens` (the subset the user chose
+   * to keep redacted) and transitions to `awaiting_role`. Actual scrubbed
+   * text for Pass 1/2 is rebuilt at `runAnalysis` time from `rawText` +
+   * the trimmed map.
+   */
+  const confirmRedaction = useCallback((activeTokens: Map<string, string>) => {
+    tokenMapRef.current = activeTokens;
+    setState((prev) => ({
+      ...prev,
+      status: "awaiting_role",
+      tokenMap: activeTokens,
+    }));
+  }, []);
+
+  /**
    * Kick off the extraction + analysis stream. Expects {@link runOverview}
    * to have already populated `state.overview` (or caller to be OK with
    * no overview, e.g. retrying from an error state).
@@ -153,11 +238,15 @@ export function useStreamingAnalysis() {
    */
   const runAnalysis = useCallback(
     async (
-      text: string,
+      _text: string,
       mode: AnalysisMode,
       withCitations: boolean,
       userRole: string | null,
     ): Promise<AnalyzeResponse | null> => {
+      // The `_text` argument is kept for API stability but no longer used —
+      // SP-1.6 moved scrubbing to the client, so the hook rebuilds the
+      // scrubbed payload from its own `rawText` + `tokenMap` refs. Passing
+      // arbitrary text here would bypass the preview and defeat redaction.
       abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -171,6 +260,22 @@ export function useStreamingAnalysis() {
       // Pulled from the ref so we don't have to depend on stale closure
       // state to fold it back into the final AnalyzeResponse below.
       const capturedOverview = overviewRef.current;
+      const rawText = rawTextRef.current;
+      const activeTokens = tokenMapRef.current ?? new Map<string, string>();
+
+      if (!rawText) {
+        setState((prev) => ({
+          ...prev,
+          status: "error",
+          error: "Missing raw text — cannot run analysis",
+        }));
+        return null;
+      }
+
+      // Rebuild a scrubbed copy of the raw text using the user's chosen
+      // active tokens. Tokens the user toggled off reappear as their
+      // real values; tokens they kept active stay as `⟦KIND_N⟧`.
+      const scrubbedForAnalysis = rebuildScrubbed(rawText, activeTokens);
 
       setState((prev) => ({
         ...prev,
@@ -188,23 +293,17 @@ export function useStreamingAnalysis() {
         // Governing jurisdiction from Pass 0 — forwarded to the stream
         // endpoint so jurisdiction-aware analysis rules can be applied.
         const jurisdiction = overviewRef.current?.governing_jurisdiction ?? null;
-        // Parties from Pass 0 — the stream route uses them to scrub
-        // party names out of extraction + analysis inputs. Overview
-        // itself ran on raw text (that's how we got the names), so
-        // sending them here is safe.
-        const parties = overviewRef.current?.parties ?? [];
 
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text,
+            text: scrubbedForAnalysis,
             mode,
             with_citations: withCitations,
             user_role: userRole,
             clause_inventory: clauseInventory,
             jurisdiction,
-            parties,
           }),
           signal: controller.signal,
         });
@@ -239,10 +338,20 @@ export function useStreamingAnalysis() {
               case "extraction-complete":
                 setState((prev) => ({ ...prev, clauseCount: event.data.clauseCount }));
                 break;
-              case "clause":
-                finalClauses.push(event.data);
-                setState((prev) => ({ ...prev, clauses: [...prev.clauses, event.data] }));
+              case "clause": {
+                // Server emits clauses with `⟦KIND_N⟧` tokens still in
+                // every user-facing string field. Rehydrate against the
+                // user's active subset — disabled tokens stay verbatim
+                // (their real values are already woven into the
+                // `scrubbedForAnalysis` text the server was given) so
+                // the UI displays real names/emails where the user
+                // wanted them and keeps `⟦…⟧` tokens where they opted
+                // to stay redacted.
+                const rehydrated = rehydrateClause(event.data, activeTokens);
+                finalClauses.push(rehydrated);
+                setState((prev) => ({ ...prev, clauses: [...prev.clauses, rehydrated] }));
                 break;
+              }
               case "complete": {
                 // Split provenance off the event payload before storing
                 // the summary — `AnalysisSummary` has no provenance field
@@ -287,5 +396,5 @@ export function useStreamingAnalysis() {
     [abort],
   );
 
-  return { ...state, runOverview, runAnalysis, abort, reset };
+  return { ...state, runOverview, runAnalysis, confirmRedaction, abort, reset };
 }

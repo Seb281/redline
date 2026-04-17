@@ -27,20 +27,94 @@ export interface RedactionResult {
   tokenMap: Map<string, string>;
 }
 
-export function redact(text: string, parties: string[]): RedactionResult {
+/**
+ * Pattern-only redaction phase (SP-1.6). Runs BEFORE Pass 0 so the
+ * server never sees raw emails, phones, IBANs, VAT numbers, national
+ * IDs during overview extraction. Party names remain visible — that's
+ * how Pass 0 discovers them — and are masked later by `redactParties`.
+ */
+export function redactPatterns(text: string): RedactionResult {
   const tokenMap = new Map<string, string>();
-
-  const partyResult = replaceParties(text, parties);
-  for (const [token, original] of partyResult.partyMap) {
-    tokenMap.set(token, original);
-  }
-  let working = partyResult.scrubbed;
-
+  let working = text;
   for (const pattern of Object.values(PATTERNS)) {
     working = applyPattern(working, pattern, tokenMap);
   }
-
   return { scrubbed: working, tokenMap };
+}
+
+/**
+ * Party-only redaction phase (SP-1.6). Runs AFTER Pass 0 has extracted
+ * the party names. Thin wrapper around `replaceParties` kept on the
+ * public index for symmetry with `redactPatterns`.
+ */
+export function redactParties(text: string, parties: string[]): RedactionResult {
+  const result = replaceParties(text, parties);
+  return { scrubbed: result.scrubbed, tokenMap: result.partyMap };
+}
+
+/**
+ * Thin wrapper composing the two phases — kept so callers outside the
+ * streaming flow (chat route, Markdown export, tests) keep their
+ * existing single-call API.
+ *
+ * Order: patterns first so parties never overlap with already-tokenized
+ * spans. Party names are natural-language strings and patterns match
+ * email/phone/IBAN/VAT formats, so collisions are structurally
+ * impossible — but ordering the phases explicitly keeps the invariant
+ * obvious.
+ */
+export function redact(text: string, parties: string[]): RedactionResult {
+  const patternPhase = redactPatterns(text);
+  const partyPhase = redactParties(patternPhase.scrubbed, parties);
+  const tokenMap = new Map<string, string>();
+  for (const [k, v] of patternPhase.tokenMap) tokenMap.set(k, v);
+  for (const [k, v] of partyPhase.tokenMap) tokenMap.set(k, v);
+  return { scrubbed: partyPhase.scrubbed, tokenMap };
+}
+
+/**
+ * Re-redact `raw` using only the tokens present in `activeTokens`.
+ *
+ * Callsite: the user confirms the RedactionPreview with a subset of
+ * tokens disabled. We need to rebuild a scrubbed string that preserves
+ * the still-active tokens and exposes the disabled ones as their
+ * original values.
+ *
+ * Strategy:
+ *   1. Re-redact from raw using every party name still present in
+ *      `activeTokens`. Parties the user disabled never enter the map,
+ *      so they appear in the scrubbed text as their original names
+ *      already.
+ *   2. Patterns always run unconditionally, so every email/phone/etc.
+ *      gets tokenized. Those disabled by the user are then rehydrated
+ *      back to their originals via the `disabled` map.
+ *
+ * Idempotent — two calls with the same `activeTokens` return
+ * byte-identical output because `redact` is deterministic on the same
+ * input.
+ */
+export function rebuildScrubbed(
+  raw: string,
+  activeTokens: Map<string, string>,
+): string {
+  // Extract parties by label order (A, B, C, ...) — NOT by Map iteration
+  // order. `redact` assigns `⟦PARTY_X⟧` from the position in the parties
+  // array; if the caller's activeTokens Map happens to yield `⟦PARTY_B⟧`
+  // before `⟦PARTY_A⟧`, iteration-order extraction would swap the labels
+  // vs. the original tokenMap and break rehydrate.
+  const partyEntries: { label: string; original: string }[] = [];
+  for (const [token, original] of activeTokens) {
+    const m = token.match(/^\u27E6PARTY_([A-H])\u27E7$/);
+    if (m) partyEntries.push({ label: m[1], original });
+  }
+  partyEntries.sort((a, b) => a.label.localeCompare(b.label));
+  const parties = partyEntries.map((e) => e.original);
+  const { scrubbed, tokenMap: fullMap } = redact(raw, parties);
+  const disabled = new Map<string, string>();
+  for (const [token, original] of fullMap) {
+    if (!activeTokens.has(token)) disabled.set(token, original);
+  }
+  return rehydrate(scrubbed, disabled);
 }
 
 /**

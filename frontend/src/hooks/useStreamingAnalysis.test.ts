@@ -195,6 +195,107 @@ describe("useStreamingAnalysis", () => {
     expect(result.current.overview).toBeNull();
   });
 
+  it("parks in awaiting_redaction with populated tokenMap when PII is detected", async () => {
+    // Raw text includes a party name returned by Pass 0 ("ACME Corp") and
+    // an email pattern. After the two redaction phases merge, the hook
+    // should pause on the preview screen with both tokens in its map.
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "NDA",
+          parties: ["ACME Corp"],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: "Netherlands",
+          key_terms: [],
+          clause_inventory: [{ title: "Confidentiality", section_ref: null }],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview(
+        "ACME Corp, email dpo@acme.eu, agrees to terms.",
+      );
+    });
+
+    expect(result.current.status).toBe("awaiting_redaction");
+    expect(result.current.tokenMap).not.toBeNull();
+    expect(result.current.tokenMap!.size).toBeGreaterThanOrEqual(2);
+    expect(result.current.rawText).toBe(
+      "ACME Corp, email dpo@acme.eu, agrees to terms.",
+    );
+  });
+
+  it("skips preview when no tokens detected (goes straight to awaiting_role)", async () => {
+    // Parties don't appear in text, no patterns present — fullMap is
+    // empty, so the preview has nothing to show and the hook jumps
+    // straight to role select.
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "Note",
+          parties: [],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview("Short plain text with nothing to redact.");
+    });
+
+    expect(result.current.status).toBe("awaiting_role");
+    expect(result.current.tokenMap).not.toBeNull();
+    expect(result.current.tokenMap!.size).toBe(0);
+  });
+
+  it("confirmRedaction transitions to awaiting_role with the user's active subset", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "NDA",
+          parties: ["ACME Corp"],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview("ACME Corp signed dpo@acme.eu");
+    });
+
+    expect(result.current.status).toBe("awaiting_redaction");
+
+    // Simulate user disabling everything except the party token.
+    const partyOnly = new Map<string, string>();
+    for (const [k, v] of result.current.tokenMap!) {
+      if (k.startsWith("\u27E6PARTY_")) partyOnly.set(k, v);
+    }
+
+    act(() => {
+      result.current.confirmRedaction(partyOnly);
+    });
+
+    expect(result.current.status).toBe("awaiting_role");
+    expect(result.current.tokenMap!.size).toBe(1);
+    expect(result.current.tokenMap!.has("\u27E6PARTY_A\u27E7")).toBe(true);
+  });
+
   it("reset clears state back to idle", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       mockJsonResponse({ overview: fakeOverview }),

@@ -18,7 +18,7 @@ import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvi
 import { EU_COUNTRY_CODES } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
-import { STATUTE_CODES, STATUTE_LABELS } from "@/lib/applicable-law";
+import { STATUTE_CODES, STATUTE_LABELS, filterStatutes } from "@/lib/applicable-law";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -267,16 +267,37 @@ Citations (disabled for this run):
 - The \`citations\` field is still required by the schema — just leave it empty.`;
 
   const jurisdictionSection = (() => {
-    if (!jurisdictionEvidence || jurisdictionEvidence.source_type === "unknown") {
+    const country = jurisdictionEvidence?.country ?? null;
+    const unknown =
+      !jurisdictionEvidence ||
+      jurisdictionEvidence.source_type === "unknown" ||
+      country === null;
+
+    if (unknown) {
       return `\
 Applicable law (jurisdiction unknown):
 Jurisdiction is unknown. Emit applicable_law: null for EVERY clause. No \
 exceptions. Do not speculate.`;
     }
 
-    const whitelist = STATUTE_CODES.map(
-      (code) => `- ${code}: ${STATUTE_LABELS[code]}`,
-    ).join("\n");
+    const applicable = filterStatutes(country);
+
+    if (applicable.length === 0) {
+      // Shouldn't happen for EU-27 countries (EU statutes always apply),
+      // but guard defensively so the prompt stays well-formed.
+      return `\
+Applicable law (${jurisdiction ?? "the stated jurisdiction"}):
+No applicable statutes in the whitelist for this jurisdiction. Emit \
+applicable_law: null for EVERY clause.`;
+    }
+
+    const whitelist = applicable
+      .map((s) => `- ${s.code}: ${s.label}`)
+      .join("\n");
+
+    const applicabilityLines = applicable
+      .map((s) => `- ${s.code}: ${s.applicability}`)
+      .join("\n");
 
     const juris = jurisdiction ?? "the stated jurisdiction";
     return `\
@@ -288,14 +309,7 @@ Whitelist (code — canonical label):
 ${whitelist}
 
 Applicability guidance:
-- DE_BGB_276: liability exclusion covering gross negligence or intentional misconduct.
-- DE_ARBNERFG: broad IP-assignment clause conflicting with employee invention rights.
-- DE_KARENZENTSCHAEDIGUNG: German non-compete lacking paid Karenzentschädigung compensation.
-- NL_BW_7_650: Dutch non-compete lacking written form or clear scope.
-- NL_BW_7_653: Dutch non-compete of questionable validity (scope, duration, compensation).
-- FR_CODE_TRAVAIL_NONCOMPETE: French non-compete without contrepartie financière.
-- EU_GDPR: data-protection clause waiving data subject rights or conflicting with Regulation 2016/679.
-- EU_DIR_93_13_EEC: markedly one-sided clause (consumer, sometimes B2B per national implementation).
+${applicabilityLines}
 
 Emission rules:
 - When a whitelist statute applies: set applicable_law.source_type="statute_cited"; \

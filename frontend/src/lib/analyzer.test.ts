@@ -485,6 +485,7 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
     const prompt = buildAnalysisSystemPrompt(true, null, "Germany", {
       source_type: "stated",
       source_text: "§20 Governing Law",
+      country: "DE",
     });
     expect(prompt).toContain("DE_BGB_276");
     expect(prompt).toContain("EU_GDPR");
@@ -497,6 +498,7 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
     const prompt = buildAnalysisSystemPrompt(true, null, "Netherlands", {
       source_type: "stated",
       source_text: "§14",
+      country: "NL",
     });
     expect(prompt).not.toContain("jurisdiction_note");
   });
@@ -505,6 +507,53 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
 describe("PROMPT_TEMPLATE_VERSION", () => {
   it("is bumped to 1.1 for SP-1.7", () => {
     expect(PROMPT_TEMPLATE_VERSION).toBe("1.1");
+  });
+});
+
+describe("buildAnalysisSystemPrompt — SP-2 country dispatch", () => {
+  it("DE jurisdiction prompt contains DE statutes + EU, no PL/ES/IT", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Germany", {
+      source_type: "stated",
+      source_text: "Governed by German law",
+      country: "DE",
+    });
+    expect(prompt).toContain("DE_BGB_276");
+    expect(prompt).toContain("EU_GDPR");
+    expect(prompt).not.toContain("NL_BW_7_650");
+    expect(prompt).not.toContain("FR_CODE_TRAVAIL_NONCOMPETE");
+  });
+
+  it("BE jurisdiction prompt contains EU only", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Belgium", {
+      source_type: "stated",
+      source_text: "Governed by Belgian law",
+      country: "BE",
+    });
+    expect(prompt).toContain("EU_GDPR");
+    expect(prompt).toContain("EU_DIR_93_13_EEC");
+    expect(prompt).not.toContain("DE_BGB_276");
+    expect(prompt).not.toContain("NL_BW_7_650");
+    expect(prompt).not.toContain("FR_CODE_TRAVAIL_NONCOMPETE");
+  });
+
+  it("null country (non-EU) renders the unknown-jurisdiction variant", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Switzerland", {
+      source_type: "stated",
+      source_text: "Governed by Swiss law",
+      country: null,
+    });
+    expect(prompt).toContain("Emit applicable_law: null for EVERY clause");
+    expect(prompt).not.toContain("DE_BGB_276");
+    expect(prompt).not.toContain("EU_GDPR");
+  });
+
+  it("source_type=unknown renders the unknown-jurisdiction variant", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, null, {
+      source_type: "unknown",
+      source_text: null,
+      country: null,
+    });
+    expect(prompt).toContain("Emit applicable_law: null for EVERY clause");
   });
 });
 

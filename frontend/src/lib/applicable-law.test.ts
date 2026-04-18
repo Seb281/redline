@@ -105,3 +105,58 @@ describe("filterStatutes (SP-2)", () => {
     },
   );
 });
+
+describe("applicable-law catalog — SP-2 coverage", () => {
+  it.each([
+    ["DE", 5],
+    ["NL", 5],
+    ["FR", 4],
+    ["ES", 5],
+    ["IT", 5],
+    ["PL", 4],
+    ["EU", 5],
+  ] as const)("%s has exactly %d statute entries", (country, expected) => {
+    const n = STATUTES.filter((s) => s.country === country).length;
+    expect(n).toBe(expected);
+  });
+
+  it("no country exceeds 5 statute entries (YAGNI ceiling)", () => {
+    for (const country of [...SUPPORTED_COUNTRIES, "EU"] as const) {
+      const n = STATUTES.filter((s) => s.country === country).length;
+      expect(n).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it("includes all 25 SP-2 additions", () => {
+    const sp2Additions = [
+      "DE_BGB_307",
+      "DE_HGB_377",
+      "NL_BW_6_248",
+      "NL_BW_6_233",
+      "NL_BW_7_408",
+      "FR_CC_1171",
+      "FR_CCOM_L442_1",
+      "FR_CC_1231_5",
+      "ES_CC_1255",
+      "ES_CC_1256",
+      "ES_CC_1258",
+      "ES_CC_1124",
+      "ES_ET_21",
+      "IT_CC_1341",
+      "IT_CC_1229",
+      "IT_CC_2125",
+      "IT_CDC_33",
+      "IT_CC_1375",
+      "PL_KC_353_1",
+      "PL_KC_471",
+      "PL_KC_484",
+      "PL_KP_101_2",
+      "EU_DIR_86_653_EEC",
+      "EU_REG_593_2008",
+      "EU_DIR_2011_83_EU",
+    ];
+    for (const code of sp2Additions) {
+      expect(STATUTE_CODES as readonly string[]).toContain(code);
+    }
+  });
+});

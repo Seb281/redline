@@ -1,5 +1,7 @@
 """Tests for the PDF/HTML report exporter."""
 
+from tests.conftest import requires_weasyprint_native
+
 from app.schemas import (
     AnalyzedClause,
     AnalyzeResponse,
@@ -79,6 +81,7 @@ def test_render_report_html_omits_suggestion_for_low_risk():
     assert "Governing Law" in html
 
 
+@requires_weasyprint_native
 def test_generate_pdf_returns_bytes():
     """generate_pdf returns valid PDF bytes."""
     data = _make_sample_response()

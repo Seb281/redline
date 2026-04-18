@@ -11,6 +11,28 @@ from reportlab.pdfgen import canvas
 from app.schemas import AnalyzedClause, ClauseCategory, RiskLevel
 
 
+def _weasyprint_native_libs_available() -> bool:
+    """Return True when WeasyPrint can load its native deps.
+
+    cairo/pango/gobject are loaded lazily via cffi; the failure surfaces
+    as an OSError at first HTML() construction. Probe once at module
+    import so the result can back a skipif marker.
+    """
+    try:
+        from weasyprint import HTML
+
+        HTML(string="<p>probe</p>")
+        return True
+    except Exception:
+        return False
+
+
+requires_weasyprint_native = pytest.mark.skipif(
+    not _weasyprint_native_libs_available(),
+    reason="WeasyPrint native libs (cairo/pango/gobject) not available",
+)
+
+
 SAMPLE_CONTRACT_TEXT = (
     "CONSULTING AGREEMENT\n\n"
     "1. NON-COMPETE\n"

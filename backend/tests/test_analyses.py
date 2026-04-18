@@ -1,11 +1,7 @@
 """Tests for analyses CRUD endpoints — save, list, get, delete."""
 
-import sys
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
-
-# Stub weasyprint before any app imports so tests run without native libs
-sys.modules.setdefault("weasyprint", MagicMock())
 
 from fastapi.testclient import TestClient
 

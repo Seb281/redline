@@ -1,15 +1,7 @@
 """Tests for auth endpoints — login, verify, logout, current user."""
 
-import sys
 from datetime import datetime, timedelta, timezone
-from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, patch
-
-# Stub weasyprint before any app imports so tests run without native libs
-if "weasyprint" not in sys.modules:
-    _wp = ModuleType("weasyprint")
-    _wp.HTML = MagicMock()  # type: ignore[attr-defined]
-    sys.modules["weasyprint"] = _wp
 
 from fastapi.testclient import TestClient
 

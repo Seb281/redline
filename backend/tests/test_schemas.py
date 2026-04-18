@@ -456,6 +456,75 @@ class TestApplicableLaw:
             )
 
 
+class TestJurisdictionEvidenceCountry:
+    """SP-2 — country field invariants (shape only, no enum mirror)."""
+
+    def test_accepts_eu_country_code(self):
+        """EU-27 ISO-2 code round-trips intact."""
+        from app.schemas import JurisdictionEvidence
+
+        ev = JurisdictionEvidence(
+            source_type="stated",
+            source_text="Dutch law",
+            country="NL",
+        )
+        assert ev.country == "NL"
+
+    def test_accepts_null_country(self):
+        """Non-EU jurisdictions serialize country=None."""
+        from app.schemas import JurisdictionEvidence
+
+        ev = JurisdictionEvidence(
+            source_type="stated",
+            source_text="Swiss law",
+            country=None,
+        )
+        assert ev.country is None
+
+    def test_defaults_country_to_none(self):
+        """Legacy pre-SP-2 payloads that omit `country` deserialize unchanged."""
+        from app.schemas import JurisdictionEvidence
+
+        ev = JurisdictionEvidence(
+            source_type="stated",
+            source_text="Dutch law",
+        )
+        assert ev.country is None
+
+    def test_rejects_lowercase_country_code(self):
+        """ISO codes must be uppercase."""
+        from app.schemas import JurisdictionEvidence
+
+        with pytest.raises(ValidationError):
+            JurisdictionEvidence(
+                source_type="stated",
+                source_text="Dutch law",
+                country="nl",
+            )
+
+    def test_rejects_three_letter_country_code(self):
+        """Only 2-letter ISO codes are accepted (shape validation)."""
+        from app.schemas import JurisdictionEvidence
+
+        with pytest.raises(ValidationError):
+            JurisdictionEvidence(
+                source_type="stated",
+                source_text="Dutch law",
+                country="NLD",
+            )
+
+    def test_rejects_unknown_with_nonnull_country(self):
+        """Invariant: source_type=unknown requires country=None."""
+        from app.schemas import JurisdictionEvidence
+
+        with pytest.raises(ValidationError):
+            JurisdictionEvidence(
+                source_type="unknown",
+                source_text=None,
+                country="NL",
+            )
+
+
 class TestAnalyzedClauseSP17:
     """AnalyzedClause carries the new applicable_law field."""
 

@@ -88,17 +88,33 @@ class Party(BaseModel):
 
 
 class JurisdictionEvidence(BaseModel):
-    """SP-1.7 — How Pass 0 determined ``governing_jurisdiction``.
+    """SP-1.7 / SP-2 — How Pass 0 determined ``governing_jurisdiction``.
 
-    ``source_type`` is ``"unknown"`` iff the parent
-    ``ContractOverview.governing_jurisdiction`` is null. The frontend
-    enforces that invariant client-side via ``reconcileJurisdiction`` in
-    ``analyzer.ts`` — the backend mirror only validates shape so legacy
-    rows round-trip unchanged.
+    SP-2 adds ``country`` — an ISO 3166-1 alpha-2 code. The backend
+    validates *shape only* (regex, not enum): the frontend Zod schema
+    in ``src/lib/analyzer.ts`` is the single source of truth for the
+    EU-27 whitelist. This keeps the statute catalog a single-file
+    concern and avoids sync machinery between TypeScript and Python.
+
+    Invariants:
+      - ``source_type == "unknown"`` ⇒ ``country is None``
+      - ``source_type == "unknown"`` ⇔ parent
+        ``ContractOverview.governing_jurisdiction is None`` (enforced
+        client-side via ``reconcileJurisdiction``).
     """
 
     source_type: Literal["stated", "inferred", "unknown"]
     source_text: str | None = None
+    country: str | None = Field(default=None, pattern=r"^[A-Z]{2}$")
+
+    @model_validator(mode="after")
+    def _unknown_requires_null_country(self) -> "JurisdictionEvidence":
+        """Reject source_type=unknown paired with a non-null country."""
+        if self.source_type == "unknown" and self.country is not None:
+            raise ValueError(
+                "source_type=unknown requires country=None",
+            )
+        return self
 
 
 class ApplicableLawCitation(BaseModel):

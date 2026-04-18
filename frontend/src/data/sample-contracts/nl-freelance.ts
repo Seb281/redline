@@ -9,6 +9,17 @@
  * to demonstrate jurisdiction-aware analysis — e.g. the aggressive non-compete
  * triggers a note about Dutch compensation requirements, the 45-day payment
  * term raises EU Late Payment Directive concerns, and GDPR replaces CCPA.
+ *
+ * SP-2 statute coverage (natural triggers in existing clauses):
+ *   - NL_BW_7_650, NL_BW_7_653 → §6.1 aggressive non-compete (no compensation)
+ *   - NL_BW_6_248 (good-faith override) → §2 waiver of statutory late-interest;
+ *     §7 one-way indemnity; §8 asymmetric LOL
+ *   - NL_BW_6_233 (onerous standard terms) → §4 overbroad IP assignment
+ *     (incl. pre-existing IP, after-hours work); §8 asymmetric LOL
+ *   - NL_BW_7_408 (opdracht termination) → §3 60-day notice restricts the
+ *     principal's statutory right to terminate at will
+ *   - EU_GDPR → §9 (processor clauses)
+ *   - EU_DIR_93_13_EEC → §7 one-way indemnity, §8 asymmetric LOL
  */
 
 import type { UploadResponse } from "@/types";

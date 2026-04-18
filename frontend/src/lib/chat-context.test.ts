@@ -1,15 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { buildChatContext } from "./chat-context";
-import type { AnalyzeResponse } from "@/types";
+import { formatClauseContext } from "@/app/api/chat/route";
+import { STATUTE_LABELS } from "@/lib/applicable-law";
+import type { AnalyzeResponse, AnalyzedClause } from "@/types";
 
 const mockAnalysis: AnalyzeResponse = {
   overview: {
     contract_type: "Service Agreement",
-    parties: ["Alice Corp", "Bob LLC"],
+    parties: [
+      { name: "Alice Corp", role_label: null },
+      { name: "Bob LLC", role_label: null },
+    ],
     effective_date: "2025-01-01",
     duration: "12 months",
     total_value: null,
     governing_jurisdiction: "the Netherlands",
+    jurisdiction_evidence: null,
     key_terms: ["Monthly payment of €5,000"],
     clause_inventory: [],
   },
@@ -29,7 +35,11 @@ const mockAnalysis: AnalyzeResponse = {
       negotiation_suggestion: "Reduce to 6 months.",
       is_unusual: true,
       unusual_explanation: "18 months is unusual.",
-      jurisdiction_note: "Likely unenforceable under Dutch law.",
+      applicable_law: {
+        observation: "Likely unenforceable under Dutch law.",
+        source_type: "statute_cited",
+        citations: [{ code: "NL_BW_7_653" }],
+      },
       citations: [],
     },
     {
@@ -42,7 +52,7 @@ const mockAnalysis: AnalyzeResponse = {
       negotiation_suggestion: "Request 30 days.",
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
       citations: [],
     },
     {
@@ -55,7 +65,7 @@ const mockAnalysis: AnalyzeResponse = {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
       citations: [],
     },
     {
@@ -68,10 +78,24 @@ const mockAnalysis: AnalyzeResponse = {
       negotiation_suggestion: null,
       is_unusual: false,
       unusual_explanation: null,
-      jurisdiction_note: null,
+      applicable_law: null,
       citations: [],
     },
   ],
+  provenance: {
+    provider: "test",
+    model: "test",
+    snapshot: "test",
+    region: "test",
+    reasoning_effort_per_pass: {
+      overview: "low",
+      extraction: "medium",
+      risk: "high",
+      think_hard: "high",
+    },
+    prompt_template_version: "1.1",
+    timestamp: "2026-04-17T00:00:00.000Z",
+  },
 };
 
 describe("buildChatContext", () => {
@@ -101,5 +125,51 @@ describe("buildChatContext", () => {
   it("returns all clauses when fewer than 5 total", () => {
     const ctx = buildChatContext("summarize", mockAnalysis);
     expect(ctx.relevantClauses.length).toBe(4);
+  });
+});
+
+describe("formatClauseContext (SP-1.7)", () => {
+  const baseClause: AnalyzedClause = {
+    clause_text: "t",
+    category: "other",
+    title: "Sample",
+    plain_english: "p",
+    risk_level: "low",
+    risk_explanation: "r",
+    negotiation_suggestion: null,
+    is_unusual: false,
+    unusual_explanation: null,
+    applicable_law: null,
+  };
+
+  it("formats applicable_law with label from STATUTE_LABELS", () => {
+    const out = formatClauseContext({
+      ...baseClause,
+      applicable_law: {
+        observation: "Void under German law",
+        source_type: "statute_cited",
+        citations: [{ code: "DE_BGB_276" }],
+      },
+    });
+    expect(out).toContain("Applicable law: Void under German law");
+    expect(out).toContain(STATUTE_LABELS.DE_BGB_276);
+  });
+
+  it("formats applicable_law general_principle with no citation parenthetical", () => {
+    const out = formatClauseContext({
+      ...baseClause,
+      applicable_law: {
+        observation: "General EU principle",
+        source_type: "general_principle",
+        citations: [],
+      },
+    });
+    expect(out).toContain("Applicable law: General EU principle");
+    expect(out).not.toMatch(/Applicable law: [^\n]*\(/);
+  });
+
+  it("omits Applicable law line when applicable_law is null", () => {
+    const out = formatClauseContext(baseClause);
+    expect(out).not.toContain("Applicable law:");
   });
 });

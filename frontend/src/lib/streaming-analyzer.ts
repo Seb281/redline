@@ -18,6 +18,7 @@ import type {
   AnalysisSummary,
   AnalysisMode,
   AnalysisProvenance,
+  JurisdictionEvidence,
 } from "@/types";
 import { getProvider, type LLMProvider } from "@/lib/llm/provider";
 import {
@@ -32,6 +33,7 @@ import {
   buildExtractionPrompt,
   buildProvenance,
   buildRiskBreakdown,
+  reconcileJurisdiction,
   shouldRetryPass2,
 } from "@/lib/analyzer";
 import { logPass } from "@/lib/llm/debug-log";
@@ -86,7 +88,10 @@ export async function generateOverview(
     raw.clause_inventory,
     text.length,
   );
-  const overview: ContractOverview = { ...raw, clause_inventory: cappedInventory };
+  const overview: ContractOverview = reconcileJurisdiction({
+    ...raw,
+    clause_inventory: cappedInventory,
+  });
   logPass("overview", {
     ms: Date.now() - start,
     partyCount: overview.parties.length,
@@ -120,9 +125,15 @@ export function streamExtractAndAnalyze(
   clauseInventory: { title: string; section_ref: string | null }[],
   userRole?: string | null,
   jurisdiction?: string | null,
+  jurisdictionEvidence?: JurisdictionEvidence | null,
   provider: LLMProvider = getProvider(),
 ): ReadableStream<Uint8Array> {
-  const analysisSystemPrompt = buildAnalysisSystemPrompt(withCitations, userRole, jurisdiction);
+  const analysisSystemPrompt = buildAnalysisSystemPrompt(
+    withCitations,
+    userRole,
+    jurisdiction,
+    jurisdictionEvidence ?? null,
+  );
   // SP-1.6: redaction moved to the client. `text` arrives already
   // scrubbed — ⟦PARTY_A⟧, ⟦EMAIL_1⟧, … tokens in place of real PII.
   // The server never sees the tokenMap, never rehydrates. Streamed

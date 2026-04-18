@@ -14,9 +14,10 @@
 
 import { generateObject } from "ai";
 import { z } from "zod";
-import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode } from "@/types";
+import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvidence } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
+import { STATUTE_CODES, STATUTE_LABELS } from "@/lib/applicable-law";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -71,6 +72,15 @@ export const contractOverviewSchema = z.object({
   duration: z.string().nullable().describe("Contract duration if stated, e.g. '12 months'"),
   total_value: z.string().nullable().describe("Total contract value if stated, e.g. '$120,000'"),
   governing_jurisdiction: z.string().nullable().describe("Governing law jurisdiction if stated"),
+  jurisdiction_evidence: z
+    .object({
+      source_type: z.enum(["stated", "inferred", "unknown"]),
+      source_text: z.string().nullable(),
+    })
+    .describe(
+      "SP-1.7 — how the model determined governing_jurisdiction. " +
+        "unknown ⇔ governing_jurisdiction is null.",
+    ),
   key_terms: z
     .array(z.string())
     .describe("3-5 most important terms, one sentence each, plain English"),
@@ -117,12 +127,35 @@ export const analyzedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("What is atypical and why it matters. Null if not unusual."),
-  jurisdiction_note: z
-    .string()
+  applicable_law: z
+    .object({
+      observation: z.string().min(1),
+      source_type: z.enum(["statute_cited", "general_principle"]),
+      citations: z.array(
+        z.object({
+          code: z.enum(STATUTE_CODES),
+        }),
+      ),
+    })
     .nullable()
+    .superRefine((val, ctx) => {
+      if (val === null) return;
+      if (val.source_type === "statute_cited" && val.citations.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "statute_cited requires at least one citation",
+        });
+      }
+      if (val.source_type === "general_principle" && val.citations.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "general_principle requires citations to be empty",
+        });
+      }
+    })
     .describe(
-      "One-line note about jurisdiction-specific concerns. " +
-      "Null if governing law is unknown or clause has no jurisdiction-specific issue.",
+      "Structured legal grounding for this clause, or null when no canonical " +
+        "statute applies and there is no general principle worth flagging.",
     ),
   // Required (not optional) because OpenAI's strict structured-output mode
   // forces every property into `required`. Emit an empty array when no
@@ -201,6 +234,7 @@ export function buildAnalysisSystemPrompt(
   withCitations: boolean,
   userRole?: string | null,
   jurisdiction?: string | null,
+  jurisdictionEvidence?: JurisdictionEvidence | null,
 ): string {
   const citationsSection = withCitations
     ? `\
@@ -220,35 +254,47 @@ Citations (disabled for this run):
 - Do NOT insert any [^N] markers in \`plain_english\`.
 - The \`citations\` field is still required by the schema — just leave it empty.`;
 
-  const jurisdictionSection = jurisdiction
-    ? `\
-Jurisdiction-Aware Analysis (${jurisdiction}):
-This contract is governed by ${jurisdiction}. Apply jurisdiction-specific rules:
+  const jurisdictionSection = (() => {
+    if (!jurisdictionEvidence || jurisdictionEvidence.source_type === "unknown") {
+      return `\
+Applicable law (jurisdiction unknown):
+Jurisdiction is unknown. Emit applicable_law: null for EVERY clause. No \
+exceptions. Do not speculate.`;
+    }
 
-EU Member State rules (apply when jurisdiction is in the EU/EEA):
-- Non-competes: Many EU states restrict or void non-competes without compensation. \
-Netherlands: requires written form + compensation. Germany: max 2 years, requires \
-Karenzentschädigung (compensation during restriction). France: requires contrepartie \
-financière. Overly broad scope/duration often void.
-- Data protection: GDPR supersedes conflicting contractual terms. Clauses limiting \
-data subject rights are void regardless of contract.
-- Unfair terms: EU Directive 93/13/EEC can void one-sided clauses in B2C and \
-sometimes B2B (varies by national implementation).
-- Limitation of liability: Exclusion of gross negligence/intentional misconduct \
-void in most EU jurisdictions (German BGB §276 makes this explicit).
-- IP assignment: Overly broad IP clauses (pre-existing IP, work outside scope) may \
-conflict with employee invention laws (German ArbNErfG, Dutch patent law).
-- Confidentiality: Perpetual obligations often unenforceable; 5+ years unusual in \
-EU commercial practice.
+    const whitelist = STATUTE_CODES.map(
+      (code) => `- ${code}: ${STATUTE_LABELS[code]}`,
+    ).join("\n");
 
-For each clause, set \`jurisdiction_note\` to a one-line observation about how \
-${jurisdiction} law specifically affects this clause (e.g., "Likely unenforceable \
-under Dutch law — no compensation offered for post-contractual restriction"). \
-Set to null if the clause has no jurisdiction-specific concern.`
-    : `\
-Jurisdiction note:
-- The governing jurisdiction is not stated or not recognized. Set \
-\`jurisdiction_note\` to null for all clauses.`;
+    const juris = jurisdiction ?? "the stated jurisdiction";
+    return `\
+Applicable law (${juris}):
+For each clause, emit applicable_law: null UNLESS a canonical statute from \
+the list below applies to that specific clause.
+
+Whitelist (code — canonical label):
+${whitelist}
+
+Applicability guidance:
+- DE_BGB_276: liability exclusion covering gross negligence or intentional misconduct.
+- DE_ARBNERFG: broad IP-assignment clause conflicting with employee invention rights.
+- DE_KARENZENTSCHAEDIGUNG: German non-compete lacking paid Karenzentschädigung compensation.
+- NL_BW_7_650: Dutch non-compete lacking written form or clear scope.
+- NL_BW_7_653: Dutch non-compete of questionable validity (scope, duration, compensation).
+- FR_CODE_TRAVAIL_NONCOMPETE: French non-compete without contrepartie financière.
+- EU_GDPR: data-protection clause waiving data subject rights or conflicting with Regulation 2016/679.
+- EU_DIR_93_13_EEC: markedly one-sided clause (consumer, sometimes B2B per national implementation).
+
+Emission rules:
+- When a whitelist statute applies: set applicable_law.source_type="statute_cited"; \
+populate citations with one or more entries where code EXACTLY matches an enum value \
+above (the human-readable label is rendered client-side from a canonical map; emit code only); \
+set observation to a one-line note explaining the concern for a non-lawyer.
+- When a jurisdiction-specific issue is real but no enum code fits: set \
+source_type="general_principle" with citations=[]; state the principle in observation. \
+Do NOT invent codes outside the list above.
+- For all other clauses (the common case): return applicable_law=null.`;
+  })();
 
   const trimmedRole = userRole?.trim();
   const perspectiveLine = trimmedRole
@@ -351,7 +397,20 @@ Clause inventory — critical rules:
   over-segmenting — consolidate sub-items into their parent clause.
 - Give each clause a short descriptive title (3-6 words).
 - Include the section reference (e.g. "Section 3.1") when identifiable.
-- Order clauses as they appear in the document.`;
+- Order clauses as they appear in the document.
+
+Jurisdiction evidence:
+After identifying governing_jurisdiction, emit jurisdiction_evidence:
+- Set source_type="stated" when the contract has an explicit governing-law \
+  clause. Set source_text to the verbatim phrase or clause reference \
+  (e.g., "§14 Governing Law: Netherlands").
+- Set source_type="inferred" when no explicit clause but the country is \
+  derivable from party addresses, official language, currency, or \
+  registered office. Set source_text to a one-line reason (e.g., \
+  "Inferred from party addresses in Amsterdam and Utrecht").
+- Set source_type="unknown" when neither is possible. Set source_text to \
+  null AND set governing_jurisdiction to null.
+The two fields must agree: unknown ⇔ null; stated/inferred ⇔ non-null.`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -386,12 +445,49 @@ export function buildExtractionPrompt(
 }
 
 /**
+ * SP-1.7 — Enforce the contract-level invariant that
+ * governing_jurisdiction and jurisdiction_evidence.source_type agree.
+ *
+ * When the LLM returns a mismatched pair, downgrade to unknown rather
+ * than propagating inconsistent state to Pass 2. The orchestrator calls
+ * this on every Pass 0 result before threading the evidence downstream.
+ */
+export function reconcileJurisdiction<
+  T extends {
+    governing_jurisdiction: string | null;
+    jurisdiction_evidence:
+      | {
+          source_type: "stated" | "inferred" | "unknown";
+          source_text: string | null;
+        }
+      | null;
+  },
+>(overview: T): T {
+  const { governing_jurisdiction, jurisdiction_evidence } = overview;
+  // Legacy rows and orchestrator call-sites that don't carry evidence
+  // (pre-SP-1.7) pass through unchanged — reconciliation only fires on
+  // a fresh Pass 0 payload.
+  if (jurisdiction_evidence === null) return overview;
+  const isUnknown = jurisdiction_evidence.source_type === "unknown";
+  if (isUnknown && governing_jurisdiction !== null) {
+    return { ...overview, governing_jurisdiction: null };
+  }
+  if (!isUnknown && governing_jurisdiction === null) {
+    return {
+      ...overview,
+      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+    };
+  }
+  return overview;
+}
+
+/**
  * Bumped whenever any pipeline prompt (overview, extraction, analysis,
  * chat) changes in a way that could materially alter model outputs.
  * Part of the AI Act provenance record — auditors use it to correlate
  * stored analyses back to the prompt contract they were produced under.
  */
-const PROMPT_TEMPLATE_VERSION = "1.0";
+export const PROMPT_TEMPLATE_VERSION = "1.1";
 
 /**
  * Sentinel `provider` value for the legacy-provenance placeholder. The
@@ -618,7 +714,10 @@ export async function analyzeContract(
     rawOverview.clause_inventory,
     text.length,
   );
-  const overview = { ...rawOverview, clause_inventory: cappedInventory };
+  const overview = reconcileJurisdiction({
+    ...rawOverview,
+    clause_inventory: cappedInventory,
+  });
   logPass("overview", {
     ms: Date.now() - pass0Start,
     partyCount: overview.parties.length,
@@ -633,6 +732,7 @@ export async function analyzeContract(
     withCitations,
     userRole,
     overview.governing_jurisdiction,
+    overview.jurisdiction_evidence,
   );
 
   // Pass 1 — extraction (medium effort)

@@ -7,6 +7,7 @@ from app.schemas import (
     AnalyzedClause,
     AnalyzeResponse,
     AnalysisSummary,
+    ApplicableLaw,
     ClauseCategory,
     ContractOverview,
     ExtractedClause,
@@ -362,3 +363,129 @@ def test_provenance_model_text_source_defaults_none():
         timestamp="2026-04-17T00:00:00Z",
     )
     assert p.text_source is None
+
+
+# --- SP-1.7 JurisdictionEvidence + ApplicableLaw regression tests ---
+
+
+class TestJurisdictionEvidence:
+    """Contract-level jurisdiction grounding — shape and defaults."""
+
+    def test_stated_with_source_text_accepted(self):
+        """Pass 0 'stated' evidence round-trips intact."""
+        o = ContractOverview(
+            contract_type="x",
+            parties=[],
+            key_terms=[],
+            governing_jurisdiction="Netherlands",
+            jurisdiction_evidence={
+                "source_type": "stated",
+                "source_text": "\u00a714 Governing Law",
+            },
+        )
+        assert o.jurisdiction_evidence is not None
+        assert o.jurisdiction_evidence.source_type == "stated"
+
+    def test_unknown_with_null_source_text_accepted(self):
+        """Pass 0 'unknown' evidence coexists with a null country."""
+        o = ContractOverview(
+            contract_type="x",
+            parties=[],
+            key_terms=[],
+            governing_jurisdiction=None,
+            jurisdiction_evidence={
+                "source_type": "unknown",
+                "source_text": None,
+            },
+        )
+        assert o.jurisdiction_evidence is not None
+        assert o.jurisdiction_evidence.source_type == "unknown"
+
+    def test_missing_jurisdiction_evidence_defaults_to_none(self):
+        """Legacy rows (pre-SP-1.7) that omit the field deserialize intact."""
+        o = ContractOverview(contract_type="x", parties=[], key_terms=[])
+        assert o.jurisdiction_evidence is None
+
+
+class TestApplicableLaw:
+    """Clause-level legal grounding — invariants + whitelist enforcement."""
+
+    def test_statute_cited_with_citations_accepted(self):
+        """statute_cited + at least one citation is valid."""
+        a = ApplicableLaw(
+            observation="void under German law",
+            source_type="statute_cited",
+            citations=[{"code": "DE_BGB_276"}],
+        )
+        assert a.citations[0].code == "DE_BGB_276"
+
+    def test_general_principle_with_empty_citations_accepted(self):
+        """general_principle + empty citations is valid."""
+        a = ApplicableLaw(
+            observation="general EU principle",
+            source_type="general_principle",
+            citations=[],
+        )
+        assert a.source_type == "general_principle"
+
+    def test_statute_cited_with_no_citations_rejected(self):
+        """statute_cited without citations violates the invariant."""
+        with pytest.raises(ValidationError):
+            ApplicableLaw(
+                observation="x",
+                source_type="statute_cited",
+                citations=[],
+            )
+
+    def test_general_principle_with_citations_rejected(self):
+        """general_principle with citations violates the invariant."""
+        with pytest.raises(ValidationError):
+            ApplicableLaw(
+                observation="x",
+                source_type="general_principle",
+                citations=[{"code": "EU_GDPR"}],
+            )
+
+    def test_off_enum_code_rejected(self):
+        """Citations must cite codes from the whitelist — freeform rejected."""
+        with pytest.raises(ValidationError):
+            ApplicableLaw(
+                observation="x",
+                source_type="statute_cited",
+                citations=[{"code": "NOT_A_STATUTE"}],
+            )
+
+
+class TestAnalyzedClauseSP17:
+    """AnalyzedClause carries the new applicable_law field."""
+
+    def test_applicable_law_null_accepted(self):
+        """Most clauses have no applicable_law — null round-trips."""
+        c = AnalyzedClause(
+            clause_text="x",
+            category="other",
+            title="t",
+            plain_english="p",
+            risk_level="low",
+            risk_explanation="r",
+            applicable_law=None,
+        )
+        assert c.applicable_law is None
+
+    def test_applicable_law_populated_accepted(self):
+        """A clause with applicable_law round-trips through validation."""
+        c = AnalyzedClause(
+            clause_text="x",
+            category="other",
+            title="t",
+            plain_english="p",
+            risk_level="low",
+            risk_explanation="r",
+            applicable_law={
+                "observation": "o",
+                "source_type": "general_principle",
+                "citations": [],
+            },
+        )
+        assert c.applicable_law is not None
+        assert c.applicable_law.observation == "o"

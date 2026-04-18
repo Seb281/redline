@@ -30,8 +30,11 @@ export function rehydrateClause(
     unusual_explanation: c.unusual_explanation
       ? rehydrate(c.unusual_explanation, tokenMap)
       : null,
-    jurisdiction_note: c.jurisdiction_note
-      ? rehydrate(c.jurisdiction_note, tokenMap)
+    applicable_law: c.applicable_law
+      ? {
+          ...c.applicable_law,
+          observation: rehydrate(c.applicable_law.observation, tokenMap),
+        }
       : null,
     citations: c.citations?.map((cit) => ({
       ...cit,

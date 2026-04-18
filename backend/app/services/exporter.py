@@ -20,6 +20,29 @@ _RISK_BORDER = {
     RiskLevel.INFORMATIONAL: "#9ca3af",
 }
 
+# SP-1.7 — canonical statute labels. Must mirror
+# frontend/src/lib/applicable-law.ts STATUTE_LABELS exactly so exported
+# PDFs and UI cards surface identical citation strings.
+_STATUTE_LABELS: dict[str, str] = {
+    "DE_BGB_276": "BGB §276 — German Civil Code",
+    "DE_ARBNERFG": "Arbeitnehmererfindungsgesetz — German Employee Invention Law",
+    "DE_KARENZENTSCHAEDIGUNG": "HGB §74 — German non-compete compensation requirement",
+    "NL_BW_7_650": "BW 7:650 — Dutch Civil Code (non-compete form)",
+    "NL_BW_7_653": "BW 7:653 — Dutch Civil Code (non-compete validity)",
+    "FR_CODE_TRAVAIL_NONCOMPETE":
+        "Code du Travail — French non-compete compensation (contrepartie financière)",
+    "EU_GDPR": "GDPR — Regulation (EU) 2016/679",
+    "EU_DIR_93_13_EEC": "Directive 93/13/EEC — EU Unfair Terms",
+}
+
+# SP-1.7 — pill palette keyed by jurisdiction_evidence.source_type.
+# Tuple shape: (background, text, border).
+_PILL_COLORS: dict[str, tuple[str, str, str]] = {
+    "stated": ("#d1fae5", "#065f46", "#a7f3d0"),
+    "inferred": ("#fef3c7", "#92400e", "#fde68a"),
+    "unknown": ("#f3f4f6", "#6b7280", "#e5e7eb"),
+}
+
 
 def render_report_html(data: AnalyzeResponse) -> str:
     """Render the analysis data as an HTML report for PDF conversion.
@@ -61,9 +84,27 @@ def render_report_html(data: AnalyzeResponse) -> str:
         overview_details.append(
             f"<span><strong>Value:</strong> {html_module.escape(data.overview.total_value)}</span>"
         )
-    if data.overview.governing_jurisdiction:
+    # SP-1.7 — render jurisdiction as a pill showing provenance
+    # (stated / inferred / unknown). Em-dash stands in when
+    # governing_jurisdiction is null (unknown is the only source_type
+    # permitted to pair with a null country).
+    if data.overview.jurisdiction_evidence is not None:
+        jev = data.overview.jurisdiction_evidence
+        country = (
+            html_module.escape(data.overview.governing_jurisdiction)
+            if data.overview.governing_jurisdiction
+            else "—"
+        )
+        bg, txt, br = _PILL_COLORS[jev.source_type]
+        pill_html = (
+            f'<span style="display:inline-block;padding:2px 8px;border-radius:4px;'
+            f'font-size:11px;font-weight:600;background:{bg};color:{txt};'
+            f'border:1px solid {br};margin-left:6px;" '
+            f'title="{html_module.escape(jev.source_text or "")}">'
+            f"{jev.source_type.upper()}</span>"
+        )
         overview_details.append(
-            f"<span><strong>Jurisdiction:</strong> {html_module.escape(data.overview.governing_jurisdiction)}</span>"
+            f"<span><strong>Jurisdiction:</strong> {country}{pill_html}</span>"
         )
     details_html = " &middot; ".join(overview_details) if overview_details else ""
 
@@ -114,13 +155,27 @@ def render_report_html(data: AnalyzeResponse) -> str:
                 f"{html_module.escape(clause.unusual_explanation)}</p>"
             )
 
-        # Jurisdiction-specific note for the clause
-        jurisdiction_html = ""
-        if clause.jurisdiction_note:
-            jurisdiction_html = (
+        # SP-1.7 — structured applicable_law replaces the free-text
+        # jurisdiction_note. The observation prints as an amber block;
+        # when citations exist they resolve through _STATUTE_LABELS to
+        # match the frontend UI and markdown export verbatim.
+        applicable_law_html = ""
+        if clause.applicable_law:
+            labels_html = ""
+            if clause.applicable_law.citations:
+                labels = "; ".join(
+                    html_module.escape(_STATUTE_LABELS[c.code])
+                    for c in clause.applicable_law.citations
+                )
+                labels_html = (
+                    f'<p style="margin-top:4px;color:#6b7280;font-size:11px;'
+                    f'font-family:monospace;">Cited: {labels}</p>'
+                )
+            applicable_law_html = (
                 f'<p style="margin-top:8px;color:#d97706;">'
                 f"<strong>Jurisdiction:</strong> "
-                f"{html_module.escape(clause.jurisdiction_note)}</p>"
+                f"{html_module.escape(clause.applicable_law.observation)}"
+                f"</p>{labels_html}"
             )
 
         clauses_html += f"""
@@ -150,7 +205,7 @@ def render_report_html(data: AnalyzeResponse) -> str:
             </p>
             {suggestion_html}
             {unusual_detail_html}
-            {jurisdiction_html}
+            {applicable_law_html}
         </div>
         """
 

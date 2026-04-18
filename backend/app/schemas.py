@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class FileType(str, Enum):
@@ -87,6 +87,63 @@ class Party(BaseModel):
     role_label: str | None = None
 
 
+class JurisdictionEvidence(BaseModel):
+    """SP-1.7 — How Pass 0 determined ``governing_jurisdiction``.
+
+    ``source_type`` is ``"unknown"`` iff the parent
+    ``ContractOverview.governing_jurisdiction`` is null. The frontend
+    enforces that invariant client-side via ``reconcileJurisdiction`` in
+    ``analyzer.ts`` — the backend mirror only validates shape so legacy
+    rows round-trip unchanged.
+    """
+
+    source_type: Literal["stated", "inferred", "unknown"]
+    source_text: str | None = None
+
+
+class ApplicableLawCitation(BaseModel):
+    """SP-1.7 — A single statute reference bound to the whitelist enum.
+
+    The list of accepted codes must stay in sync with
+    ``frontend/src/lib/applicable-law.ts`` ``STATUTE_CODES``.
+    """
+
+    code: Literal[
+        "DE_BGB_276",
+        "DE_ARBNERFG",
+        "DE_KARENZENTSCHAEDIGUNG",
+        "NL_BW_7_650",
+        "NL_BW_7_653",
+        "FR_CODE_TRAVAIL_NONCOMPETE",
+        "EU_GDPR",
+        "EU_DIR_93_13_EEC",
+    ]
+
+
+class ApplicableLaw(BaseModel):
+    """SP-1.7 — Structured legal grounding for a clause.
+
+    Invariants (parity with the frontend Zod schema):
+      - ``source_type == "statute_cited"`` requires ``len(citations) >= 1``
+      - ``source_type == "general_principle"`` requires ``citations == []``
+    """
+
+    observation: str = Field(min_length=1)
+    source_type: Literal["statute_cited", "general_principle"]
+    citations: list[ApplicableLawCitation] = []
+
+    @model_validator(mode="after")
+    def _invariants(self) -> "ApplicableLaw":
+        """Reject mismatched source_type/citations combinations."""
+        if self.source_type == "statute_cited" and not self.citations:
+            raise ValueError("statute_cited requires at least one citation")
+        if self.source_type == "general_principle" and self.citations:
+            raise ValueError(
+                "general_principle requires citations to be empty",
+            )
+        return self
+
+
 class ContractOverview(BaseModel):
     """High-level contract metadata extracted in Pass 0."""
 
@@ -96,6 +153,7 @@ class ContractOverview(BaseModel):
     duration: str | None = None
     total_value: str | None = None
     governing_jurisdiction: str | None = None
+    jurisdiction_evidence: JurisdictionEvidence | None = None
     key_terms: list[str]
     clause_inventory: list[ClauseInventoryItem] = []
 
@@ -112,7 +170,7 @@ class AnalyzedClause(BaseModel):
     negotiation_suggestion: str | None = None
     is_unusual: bool = False
     unusual_explanation: str | None = None
-    jurisdiction_note: str | None = None
+    applicable_law: ApplicableLaw | None = None
 
 
 class RiskBreakdown(BaseModel):

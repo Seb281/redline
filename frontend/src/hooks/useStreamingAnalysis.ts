@@ -379,6 +379,10 @@ export function useStreamingAnalysis() {
         // Governing jurisdiction from Pass 0 — forwarded to the stream
         // endpoint so jurisdiction-aware analysis rules can be applied.
         const jurisdiction = overviewRef.current?.governing_jurisdiction ?? null;
+        // SP-1.7 — evidence object controls the Pass 2 prompt dispatch
+        // (whitelist vs applicable_law=null for every clause).
+        const jurisdictionEvidence =
+          overviewRef.current?.jurisdiction_evidence ?? null;
 
         const response = await fetch("/api/analyze/stream", {
           method: "POST",
@@ -390,6 +394,7 @@ export function useStreamingAnalysis() {
             user_role: userRole,
             clause_inventory: clauseInventory,
             jurisdiction,
+            jurisdiction_evidence: jurisdictionEvidence,
           }),
           signal: controller.signal,
         });

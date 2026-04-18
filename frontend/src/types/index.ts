@@ -1,5 +1,47 @@
+import type { StatuteCode } from "@/lib/applicable-law";
+
 /** Supported document file types. */
 export type FileType = "pdf" | "docx";
+
+/**
+ * SP-1.7 — How the model determined governing_jurisdiction at the
+ * contract level.
+ *
+ * - "stated": explicit governing-law clause found; source_text is
+ *   the verbatim phrase or clause reference.
+ * - "inferred": no clause, but country derivable from party
+ *   addresses / language / currency; source_text is the one-line
+ *   reason.
+ * - "unknown": neither possible; source_text is null AND the
+ *   parent governing_jurisdiction is null.
+ */
+export interface JurisdictionEvidence {
+  source_type: "stated" | "inferred" | "unknown";
+  source_text: string | null;
+}
+
+/**
+ * SP-1.7 — A single statutory citation anchored to the
+ * {@link STATUTE_CODES} whitelist. The human label is rendered
+ * client-side from {@link STATUTE_LABELS}, not round-tripped
+ * through the model.
+ */
+export interface ApplicableLawCitation {
+  code: StatuteCode;
+}
+
+/**
+ * SP-1.7 — Structured legal grounding emitted by Pass 2.
+ *
+ * Invariants (enforced by Zod / Pydantic):
+ *   - source_type "statute_cited" ⇔ citations.length >= 1
+ *   - source_type "general_principle" ⇔ citations.length === 0
+ */
+export interface ApplicableLaw {
+  observation: string;
+  source_type: "statute_cited" | "general_principle";
+  citations: ApplicableLawCitation[];
+}
 
 /** Analysis depth mode — controls model choice and strategy. */
 export type AnalysisMode = "fast" | "deep";
@@ -49,6 +91,13 @@ export interface ContractOverview {
   duration: string | null;
   total_value: string | null;
   governing_jurisdiction: string | null;
+  /**
+   * SP-1.7 — Structured signal for how the model determined
+   * governing_jurisdiction. `null` only on legacy saved rows that
+   * predate SP-1.7; fresh Pass 0 output always populates one of the
+   * three source types.
+   */
+  jurisdiction_evidence: JurisdictionEvidence | null;
   key_terms: string[];
   clause_inventory: ClauseInventoryItem[];
 }
@@ -83,8 +132,13 @@ export interface AnalyzedClause {
   negotiation_suggestion: string | null;
   is_unusual: boolean;
   unusual_explanation: string | null;
-  /** Jurisdiction-specific note when governing law triggers EU-specific rules. */
-  jurisdiction_note: string | null;
+  /**
+   * SP-1.7 — Structured legal grounding for this clause. `null` when
+   * no canonical statute from the whitelist applies and there is no
+   * jurisdiction-specific general principle worth flagging (the common
+   * case for most clauses).
+   */
+  applicable_law: ApplicableLaw | null;
   /**
    * Optional verbatim citations for claims in `plain_english`.
    * Each entry maps to an inline `[^id]` marker in the narrative.

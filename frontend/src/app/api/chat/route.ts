@@ -11,9 +11,36 @@ import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/pro
 import { buildChatContext } from "@/lib/chat-context";
 import { redact } from "@/lib/redaction";
 import { heuristicLabels, normalizeLabel, disambiguateLabels } from "@/lib/redaction/role-heuristics";
-import type { AnalyzeResponse } from "@/types";
+import { STATUTE_LABELS } from "@/lib/applicable-law";
+import type { AnalyzeResponse, AnalyzedClause } from "@/types";
 
 const MAX_MESSAGES = 10;
+
+/**
+ * SP-1.7 — Per-clause context line for RAG prompt.
+ *
+ * Exported so unit tests can assert the `applicable_law` formatting
+ * without standing up the full streaming route. When `applicable_law`
+ * is set, appends a one-line "Applicable law: …" footer with the
+ * canonical statute labels pulled from {@link STATUTE_LABELS}.
+ */
+export function formatClauseContext(c: AnalyzedClause): string {
+  const applicableLawLine = c.applicable_law
+    ? `\nApplicable law: ${c.applicable_law.observation}` +
+      (c.applicable_law.citations.length > 0
+        ? ` (${c.applicable_law.citations
+            .map((cit) => STATUTE_LABELS[cit.code])
+            .join("; ")})`
+        : "")
+    : "";
+  return (
+    `\n--- ${c.title} [${c.risk_level.toUpperCase()} RISK | ${c.category}] ---\n` +
+    `Plain English: ${c.plain_english}\n` +
+    `Risk: ${c.risk_explanation}` +
+    (c.negotiation_suggestion ? `\nSuggestion: ${c.negotiation_suggestion}` : "") +
+    applicableLawLine
+  );
+}
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -64,14 +91,7 @@ export async function POST(request: Request) {
       ? `TOP RISKS:\n${ctx.summary.top_risks.map((r) => `- ${r}`).join("\n")}`
       : null,
     `\nRELEVANT CLAUSES (${ctx.relevantClauses.length} of ${analysis.clauses.length} total):`,
-    ...ctx.relevantClauses.map(
-      (c) =>
-        `\n--- ${c.title} [${c.risk_level.toUpperCase()} RISK | ${c.category}] ---\n` +
-        `Plain English: ${c.plain_english}\n` +
-        `Risk: ${c.risk_explanation}` +
-        (c.negotiation_suggestion ? `\nSuggestion: ${c.negotiation_suggestion}` : "") +
-        (c.jurisdiction_note ? `\nJurisdiction: ${c.jurisdiction_note}` : ""),
-    ),
+    ...ctx.relevantClauses.map(formatClauseContext),
   ]
     .filter(Boolean)
     .join("\n");

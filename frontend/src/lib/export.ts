@@ -3,6 +3,7 @@
 import type { AnalyzeResponse } from "@/types";
 import { exportPdf } from "@/lib/api";
 import { parseExplanation } from "@/lib/citations";
+import { STATUTE_LABELS } from "@/lib/applicable-law";
 
 /** Generate a Markdown report string from analysis data. */
 export function generateMarkdown(data: AnalyzeResponse): string {
@@ -99,8 +100,17 @@ export function generateMarkdown(data: AnalyzeResponse): string {
     if (clause.negotiation_suggestion) {
       lines.push(`**Suggestion:** ${clause.negotiation_suggestion}`, "");
     }
-    if (clause.jurisdiction_note) {
-      lines.push(`**Jurisdiction:** ${clause.jurisdiction_note}`, "");
+    if (clause.applicable_law) {
+      lines.push(
+        `**Jurisdiction:** ${clause.applicable_law.observation}`,
+        "",
+      );
+      if (clause.applicable_law.citations.length > 0) {
+        const labels = clause.applicable_law.citations
+          .map((c) => STATUTE_LABELS[c.code])
+          .join("; ");
+        lines.push(`Cited: ${labels}`, "");
+      }
     }
     lines.push("<details><summary>Original clause text</summary>", "");
     lines.push(clause.clause_text, "");

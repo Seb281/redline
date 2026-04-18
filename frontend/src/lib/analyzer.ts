@@ -15,6 +15,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvidence } from "@/types";
+import { EU_COUNTRY_CODES } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
 import { STATUTE_CODES, STATUTE_LABELS } from "@/lib/applicable-law";
@@ -76,10 +77,21 @@ export const contractOverviewSchema = z.object({
     .object({
       source_type: z.enum(["stated", "inferred", "unknown"]),
       source_text: z.string().nullable(),
+      country: z.enum(EU_COUNTRY_CODES).nullable(),
+    })
+    .superRefine((val, ctx) => {
+      if (val.source_type === "unknown" && val.country !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "source_type=unknown requires country=null",
+          path: ["country"],
+        });
+      }
     })
     .describe(
-      "SP-1.7 — how the model determined governing_jurisdiction. " +
-        "unknown ⇔ governing_jurisdiction is null.",
+      "SP-1.7 / SP-2 — how the model determined governing_jurisdiction. " +
+        "unknown ⇔ governing_jurisdiction is null AND country is null. " +
+        "country is an EU-27 ISO-2 code, or null for non-EU / unknown.",
     ),
   key_terms: z
     .array(z.string())

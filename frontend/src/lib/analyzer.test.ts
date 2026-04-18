@@ -417,6 +417,20 @@ describe("OVERVIEW_SYSTEM_PROMPT includes jurisdiction_evidence instructions", (
   });
 });
 
+describe("Pass 0 overview prompt — SP-2 country instructions", () => {
+  it("lists the EU-27 ISO-2 codes the model may emit", () => {
+    for (const code of ["DE", "NL", "FR", "ES", "IT", "PL", "BE", "GR"]) {
+      expect(OVERVIEW_SYSTEM_PROMPT).toContain(code);
+    }
+  });
+
+  it("instructs country=null for non-EU / unknown jurisdictions", () => {
+    expect(OVERVIEW_SYSTEM_PROMPT).toMatch(
+      /country.*null.*non-?EU|non-?EU.*country.*null/i,
+    );
+  });
+});
+
 describe("reconcileJurisdiction (SP-1.7)", () => {
   const base = {
     contract_type: "x",

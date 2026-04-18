@@ -436,7 +436,19 @@ After identifying governing_jurisdiction, emit jurisdiction_evidence:
   "Inferred from party addresses in Amsterdam and Utrecht").
 - Set source_type="unknown" when neither is possible. Set source_text to \
   null AND set governing_jurisdiction to null.
-The two fields must agree: unknown ⇔ null; stated/inferred ⇔ non-null.`;
+The two fields must agree: unknown ⇔ null; stated/inferred ⇔ non-null.
+
+Country code (SP-2):
+- Additionally emit jurisdiction_evidence.country as an ISO 3166-1 alpha-2 \
+  uppercase code drawn from the EU-27 whitelist below when source_type is \
+  "stated" or "inferred" AND the governing jurisdiction is an EU member \
+  state. Emit null otherwise (source_type="unknown", OR a known non-EU \
+  jurisdiction such as Switzerland, the UK post-Brexit, the US, etc.).
+- EU-27 codes: DE, NL, FR, ES, IT, PL, BE, AT, SE, DK, FI, IE, PT, LU, \
+  CZ, HU, GR, RO, BG, HR, SI, SK, LT, LV, EE, CY, MT.
+- Rationale: this is a machine field used to dispatch jurisdiction-specific \
+  legal grounding. governing_jurisdiction (free text) still carries the \
+  display string.`;
 
 // ---------------------------------------------------------------------------
 // Helpers

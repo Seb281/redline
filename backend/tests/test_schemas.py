@@ -446,14 +446,14 @@ class TestApplicableLaw:
                 citations=[{"code": "EU_GDPR"}],
             )
 
-    def test_off_enum_code_rejected(self):
-        """Citations must cite codes from the whitelist — freeform rejected."""
-        with pytest.raises(ValidationError):
-            ApplicableLaw(
-                observation="x",
-                source_type="statute_cited",
-                citations=[{"code": "NOT_A_STATUTE"}],
-            )
+    def test_off_enum_code_accepted_post_sp2(self):
+        """SP-2: backend accepts freeform codes (frontend Zod is the SSoT)."""
+        a = ApplicableLaw(
+            observation="x",
+            source_type="statute_cited",
+            citations=[{"code": "NOT_A_STATUTE"}],
+        )
+        assert a.citations[0].code == "NOT_A_STATUTE"
 
 
 class TestJurisdictionEvidenceCountry:
@@ -523,6 +523,38 @@ class TestJurisdictionEvidenceCountry:
                 source_text=None,
                 country="NL",
             )
+
+
+class TestApplicableLawCitationRelaxed:
+    """SP-2 — backend accepts arbitrary statute codes (frontend enforces)."""
+
+    def test_accepts_known_sp17_code(self):
+        """Existing SP-1.7 codes still round-trip."""
+        from app.schemas import ApplicableLawCitation
+
+        c = ApplicableLawCitation(code="DE_BGB_276")
+        assert c.code == "DE_BGB_276"
+
+    def test_accepts_new_sp2_code(self):
+        """Codes added in SP-2 (e.g. Italian Civil Code 2596) round-trip."""
+        from app.schemas import ApplicableLawCitation
+
+        c = ApplicableLawCitation(code="IT_CC_2596")
+        assert c.code == "IT_CC_2596"
+
+    def test_accepts_unknown_code_roundtrip(self):
+        """Backend is a shape-only pass-through — frontend is the SSoT."""
+        from app.schemas import ApplicableLawCitation
+
+        c = ApplicableLawCitation(code="XX_FUTURE_STATUTE_42")
+        assert c.code == "XX_FUTURE_STATUTE_42"
+
+    def test_rejects_empty_code(self):
+        """Shape validation: code must not be empty."""
+        from app.schemas import ApplicableLawCitation
+
+        with pytest.raises(ValidationError):
+            ApplicableLawCitation(code="")
 
 
 class TestAnalyzedClauseSP17:

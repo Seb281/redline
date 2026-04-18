@@ -118,22 +118,18 @@ class JurisdictionEvidence(BaseModel):
 
 
 class ApplicableLawCitation(BaseModel):
-    """SP-1.7 — A single statute reference bound to the whitelist enum.
+    """SP-1.7 / SP-2 — A single statute reference.
 
-    The list of accepted codes must stay in sync with
-    ``frontend/src/lib/applicable-law.ts`` ``STATUTE_CODES``.
+    SP-2 relaxes ``code`` from a ``Literal[...]`` enum to an open
+    ``str``: the frontend Zod schema in ``src/lib/applicable-law.ts`` is
+    the single source of truth for the catalog. Backend is a shape-only
+    pass-through for JSONB round-trip — Pass 2 runs client-side behind
+    Zod, saved analyses come from the frontend pipeline, and endpoints
+    are authenticated + owner-scoped. See the SP-2 design doc for the
+    threat-model justification.
     """
 
-    code: Literal[
-        "DE_BGB_276",
-        "DE_ARBNERFG",
-        "DE_KARENZENTSCHAEDIGUNG",
-        "NL_BW_7_650",
-        "NL_BW_7_653",
-        "FR_CODE_TRAVAIL_NONCOMPETE",
-        "EU_GDPR",
-        "EU_DIR_93_13_EEC",
-    ]
+    code: str = Field(min_length=1)
 
 
 class ApplicableLaw(BaseModel):

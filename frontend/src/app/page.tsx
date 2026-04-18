@@ -312,7 +312,7 @@ export default function Home() {
             </div>
           </div>
           <p className="mt-2 text-center text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-            {mode === "fast" ? "Quick scan with GPT-4.1 Nano" : "Thorough per-clause analysis with GPT-4.1"}
+            {mode === "fast" ? "Quick batched scan — Mistral Small (EU)" : "Thorough per-clause analysis — Mistral Small (EU)"}
           </p>
 
           {/* Demo CTA */}

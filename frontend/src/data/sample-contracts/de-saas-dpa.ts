@@ -3,9 +3,10 @@
  * addendum.
  *
  * Designed to exercise:
- *   - Auto-renewal with long notice period (high risk)
+ *   - Auto-renewal with 9-month notice (BGB §307 AGB fairness — onerous standard term)
  *   - Liability cap that may conflict with BGB §276 (gross negligence carve-out)
- *   - SLA credits insufficient to cover real damages
+ *   - SLA credits insufficient to cover real damages (BGB §307 significant disadvantage)
+ *   - Onboarding hardware delivery with 48h defect-notice window (HGB §377)
  *   - GDPR Auftragsverarbeitungsvertrag (AVV) compliant clauses
  *   - Subprocessor approval mechanism
  *   - International data transfer to USA via Standard Contractual Clauses
@@ -86,14 +87,25 @@ Monaten vor dem schadensbegründenden Ereignis gezahlten Vergütung begrenzt.
 (3) Die Haftung für entgangenen Gewinn, mittelbare Schäden und Folgeschäden ist \
 ausgeschlossen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt.
 
-§ 6 GEHEIMHALTUNG
+§ 6 ONBOARDING-HARDWARE UND RÜGEPFLICHT
+
+(1) Im Rahmen der Vertragsanbahnung liefert der Anbieter dem Kunden zwei (2) \
+Hardware-Security-Module (HSM) sowie einen Satz gedruckter Admin-Handbücher zur \
+Erstinstallation ("Onboarding-Pack").
+
+(2) Der Kunde hat das Onboarding-Pack unverzüglich nach Erhalt zu untersuchen und \
+offen erkennbare Mängel innerhalb von achtundvierzig (48) Stunden schriftlich \
+gegenüber dem Anbieter anzuzeigen. Unterbleibt die rechtzeitige Anzeige, gilt die \
+Ware als genehmigt und der Kunde verliert sämtliche Gewährleistungsrechte.
+
+§ 7 GEHEIMHALTUNG
 
 Beide Parteien verpflichten sich, alle im Rahmen dieses Vertrages bekannt gewordenen \
 vertraulichen Informationen der jeweils anderen Partei geheim zu halten und nur für \
 Zwecke dieses Vertrages zu verwenden. Diese Pflicht besteht für die Dauer von fünf \
 (5) Jahren über das Vertragsende hinaus fort.
 
-§ 7 GERICHTSSTAND UND ANWENDBARES RECHT
+§ 8 GERICHTSSTAND UND ANWENDBARES RECHT
 
 (1) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss \
 des UN-Kaufrechts (CISG).

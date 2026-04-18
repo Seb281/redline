@@ -116,37 +116,6 @@ export default function Home() {
     [streaming],
   );
 
-  /**
-   * Same as {@link startAnalysis} but skips the role picker entirely and
-   * uses a preset role. Used by demo mode so the sample contract
-   * presents a smooth end-to-end walkthrough instead of asking the user
-   * to pick a party on a contract they haven't read.
-   */
-  const startAnalysisWithPresetRole = useCallback(
-    async (
-      upload: UploadResponse,
-      contractText: string,
-      analysisMode: AnalysisMode,
-      withCitations: boolean,
-      presetRole: string,
-    ) => {
-      setState({ view: "analyzing", upload, contractText });
-      const result = await streaming.runOverview(contractText);
-      if (!result) return;
-      // Demo mode skips the RedactionPreview entirely — auto-confirm
-      // with empty disabled set so all tokens stay masked (full redaction).
-      streaming.confirmRedaction(new Set<string>());
-      await runAnalysisAndFinish(
-        upload,
-        contractText,
-        analysisMode,
-        withCitations,
-        presetRole,
-      );
-    },
-    [streaming, runAnalysisAndFinish],
-  );
-
   /** Upload file, then kick off streaming analysis. */
   const handleFileSelected = useCallback(
     async (file: File, withCitations: boolean) => {
@@ -167,20 +136,20 @@ export default function Home() {
 
   /**
    * Run the live LLM pipeline on one of the three EU sample contracts.
-   * Each sample has a preset role that matches the snapshot-harness
-   * expectations so the demo shows a coherent per-party risk view.
+   * Uses the same flow as a real upload — redaction preview and role
+   * picker both fire — so the demo exercises the full UX.
    */
   const handleDemo = useCallback(
     (sample: "nl" | "fr" | "de") => {
       setError(null);
       const presets = {
-        nl: { upload: SAMPLE_UPLOAD_RESPONSE, text: SAMPLE_CONTRACT_TEXT, role: "Contractor" },
-        fr: { upload: FR_EMPLOYMENT_UPLOAD, text: FR_EMPLOYMENT_TEXT, role: "Salarié" },
-        de: { upload: DE_SAAS_DPA_UPLOAD, text: DE_SAAS_DPA_TEXT, role: "Kunde" },
+        nl: { upload: SAMPLE_UPLOAD_RESPONSE, text: SAMPLE_CONTRACT_TEXT },
+        fr: { upload: FR_EMPLOYMENT_UPLOAD, text: FR_EMPLOYMENT_TEXT },
+        de: { upload: DE_SAAS_DPA_UPLOAD, text: DE_SAAS_DPA_TEXT },
       }[sample];
-      startAnalysisWithPresetRole(presets.upload, presets.text, "fast", true, presets.role);
+      startAnalysis(presets.upload, presets.text, mode, true);
     },
-    [startAnalysisWithPresetRole],
+    [startAnalysis, mode],
   );
 
   /**

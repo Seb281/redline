@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p className="mb-9 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-        Last updated: 12 April 2026
+        Last updated: 18 April 2026
       </p>
 
       {/* 1. Identity & Contact */}
@@ -84,9 +84,25 @@ export default function PrivacyPage() {
       <Section title="Third-party processors">
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            <strong>OpenAI</strong> (GPT-4.1-nano) — Contract text is sent to
-            OpenAI&apos;s API for clause extraction and risk analysis. OpenAI
-            processes this data under their{" "}
+            <strong>Mistral AI</strong> (<code>mistral-small-latest</code>) —
+            Contract text is sent to Mistral La Plateforme for clause
+            extraction and risk analysis. Mistral is a French company; the La
+            Plateforme API is hosted in the European Union (Paris region).
+            Mistral processes this data under their{" "}
+            <ExtLink href="https://legal.mistral.ai/terms/data-processing-addendum">
+              Data Processing Addendum
+            </ExtLink>{" "}
+            and{" "}
+            <ExtLink href="https://legal.mistral.ai/terms/privacy-policy">
+              Privacy Policy
+            </ExtLink>.
+          </li>
+          <li>
+            <strong>OpenAI</strong> (<code>gpt-4.1-nano</code>) — Kept as a
+            rollback target, activated only when the operator sets{" "}
+            <code>LLM_PROVIDER=openai</code>. In the default configuration,
+            no contract text is sent to OpenAI. When the rollback is active,
+            OpenAI processes the data under their{" "}
             <ExtLink href="https://openai.com/policies/data-processing-addendum">
               Data Processing Addendum
             </ExtLink>{" "}
@@ -126,10 +142,17 @@ export default function PrivacyPage() {
       {/* 6. International data transfers */}
       <Section title="International data transfers">
         <p>
-          OpenAI processes data in the United States under their Data Processing
+          In the default configuration, contract text is processed by Mistral
+          La Plateforme within the European Union (Paris). No transfer outside
+          the EU/EEA occurs for the AI analysis step.
+        </p>
+        <p className="mt-3">
+          If the operator has activated the OpenAI rollback, contract text is
+          processed in the United States under OpenAI&apos;s Data Processing
           Addendum, which includes Standard Contractual Clauses (SCCs) as the
-          transfer mechanism. Vercel and Railway may process data outside the EU
-          under their respective data processing agreements.
+          transfer mechanism. Vercel and Railway may process operational
+          metadata outside the EU under their respective data processing
+          agreements.
         </p>
       </Section>
 

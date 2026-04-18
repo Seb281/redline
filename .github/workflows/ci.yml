@@ -44,7 +44,8 @@ jobs:
             libcairo2 \
             tesseract-ocr \
             tesseract-ocr-eng \
-            poppler-utils
+            poppler-utils \
+            fonts-dejavu-core
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

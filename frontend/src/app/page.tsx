@@ -8,6 +8,8 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
 import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
+import { DE_SAAS_DPA_TEXT, DE_SAAS_DPA_UPLOAD } from "@/data/sample-contracts/de-saas-dpa";
+import { FR_EMPLOYMENT_TEXT, FR_EMPLOYMENT_UPLOAD } from "@/data/sample-contracts/fr-employment";
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contracts/nl-freelance";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
 import { saveAnalysis, uploadContract, warmBackend } from "@/lib/api";
@@ -163,19 +165,23 @@ export default function Home() {
     [startAnalysis, mode],
   );
 
-  /** Run the live LLM pipeline on a sample contract (demo mode). */
-  const handleDemo = useCallback(() => {
-    setError(null);
-    // Demo skips the role picker — "Contractor" is the correct side for
-    // the sample freelance agreement.
-    startAnalysisWithPresetRole(
-      SAMPLE_UPLOAD_RESPONSE,
-      SAMPLE_CONTRACT_TEXT,
-      "fast",
-      true,
-      "Contractor",
-    );
-  }, [startAnalysisWithPresetRole]);
+  /**
+   * Run the live LLM pipeline on one of the three EU sample contracts.
+   * Each sample has a preset role that matches the snapshot-harness
+   * expectations so the demo shows a coherent per-party risk view.
+   */
+  const handleDemo = useCallback(
+    (sample: "nl" | "fr" | "de") => {
+      setError(null);
+      const presets = {
+        nl: { upload: SAMPLE_UPLOAD_RESPONSE, text: SAMPLE_CONTRACT_TEXT, role: "Contractor" },
+        fr: { upload: FR_EMPLOYMENT_UPLOAD, text: FR_EMPLOYMENT_TEXT, role: "Salarié" },
+        de: { upload: DE_SAAS_DPA_UPLOAD, text: DE_SAAS_DPA_TEXT, role: "Kunde" },
+      }[sample];
+      startAnalysisWithPresetRole(presets.upload, presets.text, "fast", true, presets.role);
+    },
+    [startAnalysisWithPresetRole],
+  );
 
   /**
    * Called when the user confirms the RedactionPreview. Forwards the
@@ -315,16 +321,30 @@ export default function Home() {
             {mode === "fast" ? "Quick batched scan — Mistral Small (EU)" : "Thorough per-clause analysis — Mistral Small (EU)"}
           </p>
 
-          {/* Demo CTA */}
+          {/* Demo CTA — 3 EU sample contracts */}
           <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={handleDemo}
-              disabled={isUploading}
-              className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              or try a demo with a sample contract
-            </button>
+            <p className="mb-2 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+              or try a demo with a sample EU contract
+            </p>
+            <div className="inline-flex flex-wrap justify-center gap-2">
+              {(
+                [
+                  { id: "nl", label: "NL · Freelance" },
+                  { id: "fr", label: "FR · Employment" },
+                  { id: "de", label: "DE · SaaS + DPA" },
+                ] as const
+              ).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleDemo(id)}
+                  disabled={isUploading}
+                  className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-1.5 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* How it works */}

@@ -2,6 +2,8 @@
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import requires_weasyprint_native
+
 from app.main import app
 
 client = TestClient(app)
@@ -43,6 +45,7 @@ def _sample_request_body() -> dict:
     }
 
 
+@requires_weasyprint_native
 def test_export_pdf_returns_pdf():
     """POST /api/export/pdf returns a PDF binary response."""
     response = client.post("/api/export/pdf", json=_sample_request_body())

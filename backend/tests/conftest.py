@@ -11,6 +11,28 @@ from reportlab.pdfgen import canvas
 from app.schemas import AnalyzedClause, ClauseCategory, RiskLevel
 
 
+def _weasyprint_native_libs_available() -> bool:
+    """Return True when WeasyPrint can load its native deps.
+
+    cairo/pango/gobject are loaded lazily via cffi; the failure surfaces
+    as an OSError at first HTML() construction. Probe once at module
+    import so the result can back a skipif marker.
+    """
+    try:
+        from weasyprint import HTML
+
+        HTML(string="<p>probe</p>")
+        return True
+    except Exception:
+        return False
+
+
+requires_weasyprint_native = pytest.mark.skipif(
+    not _weasyprint_native_libs_available(),
+    reason="WeasyPrint native libs (cairo/pango/gobject) not available",
+)
+
+
 SAMPLE_CONTRACT_TEXT = (
     "CONSULTING AGREEMENT\n\n"
     "1. NON-COMPETE\n"
@@ -86,23 +108,38 @@ def _load_font(size: int = 48) -> ImageFont.ImageFont:
 
 
 def _raster_pdf_page(draw_text: str) -> Image.Image:
-    """Return a single PIL image representing one rendered PDF page."""
+    """Return a single PIL image representing one rendered PDF page.
+
+    Handles newlines in ``draw_text`` via ``multiline_text`` so fixtures
+    can render enough content to clear the backend's 50-char post-OCR
+    scan-quality threshold.
+    """
     img = Image.new("RGB", (1200, 1600), "white")
     draw = ImageDraw.Draw(img)
     font = _load_font(48)
-    draw.text((100, 100), draw_text, fill="black", font=font)
+    if "\n" in draw_text:
+        draw.multiline_text((100, 100), draw_text, fill="black", font=font, spacing=12)
+    else:
+        draw.text((100, 100), draw_text, fill="black", font=font)
     return img
 
 
 @pytest.fixture
 def scan_short_pdf_bytes() -> bytes:
-    """Single-page raster PDF containing 'LEASE AGREEMENT' as an image.
+    """Single-page raster PDF with multi-line lease-agreement text.
 
-    pdfplumber extracts no text; Tesseract must see the pixels.
-    Used by OCR tests (live + mocked via conftest coupling) and parser
-    tests.
+    pdfplumber extracts no text; Tesseract must see the pixels. The
+    rendered text is deliberately long enough (>50 chars post-OCR) to
+    clear the backend's scan-quality guard — a single "LEASE AGREEMENT"
+    line trips the 50-char threshold and the upload endpoint returns
+    422 even when OCR succeeds.
     """
-    img = _raster_pdf_page("LEASE AGREEMENT")
+    text = (
+        "LEASE AGREEMENT\n"
+        "THIS AGREEMENT IS MADE BETWEEN\n"
+        "THE LANDLORD AND THE TENANT"
+    )
+    img = _raster_pdf_page(text)
     buffer = BytesIO()
     img.save(buffer, format="PDF", resolution=200.0)
     return buffer.getvalue()

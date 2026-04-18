@@ -2,8 +2,6 @@
 
 import html as html_module
 
-from weasyprint import HTML
-
 from app.schemas import AnalyzeResponse, RiskLevel
 
 _RISK_COLORS = {
@@ -316,6 +314,13 @@ def render_report_html(data: AnalyzeResponse) -> str:
 
 
 def generate_pdf(data: AnalyzeResponse) -> bytes:
-    """Generate a styled PDF report from the analysis response."""
+    """Generate a styled PDF report from the analysis response.
+
+    WeasyPrint is imported lazily so the exporter module (and transitively
+    ``app.main``) can be imported without the native cairo/pango/gobject
+    libs present — only callers that actually generate PDFs pay that cost.
+    """
+    from weasyprint import HTML  # lazy: requires native libs at call time
+
     html_content = render_report_html(data)
     return HTML(string=html_content).write_pdf()

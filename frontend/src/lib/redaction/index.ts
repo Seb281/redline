@@ -30,6 +30,64 @@ export interface RedactionResult {
 }
 
 /**
+ * One raw pattern hit in a text, preserving the character offsets into
+ * the original string (no substitution, no token map). Consumed by the
+ * SP-3 PDF redaction pipeline, which needs offsets (not tokens) to
+ * intersect with pdfjs span coordinates.
+ *
+ * `kind` is the same prefix used by `⟦KIND_N⟧` tokens elsewhere
+ * (EMAIL/PHONE/IBAN/VAT/FR_SSN/DE_TAX_ID).
+ */
+export interface PatternMatch {
+  kind: string;
+  start: number;
+  end: number;
+  value: string;
+}
+
+/**
+ * Returns every pattern hit in `text` as a character range.
+ *
+ * Unlike `redactPatterns`, this does not substitute tokens and does not
+ * build a token map — it preserves the offsets into the input string so
+ * downstream consumers can map them onto another coordinate system
+ * (e.g. pdfjs glyph spans for layout-preserving PDF redaction).
+ *
+ * Ordering invariant: results are sorted by `start` ascending so the
+ * caller can linear-scan without re-sorting. Overlaps between kinds are
+ * resolved leftmost-wins then longest — the same precedence
+ * `redactPatterns` would produce if the kinds were applied in iteration
+ * order. We apply the same de-dup across kinds too so e.g. a VAT that
+ * superficially looks like an IBAN fragment doesn't produce two
+ * overlapping rectangles on the output PDF.
+ */
+export function collectPatternMatches(text: string): PatternMatch[] {
+  const raw: PatternMatch[] = [];
+  for (const pattern of Object.values(PATTERNS) as Pattern[]) {
+    for (const m of text.matchAll(pattern.regex)) {
+      const value = m[0];
+      if (pattern.validate && !pattern.validate(value)) continue;
+      const start = m.index ?? 0;
+      raw.push({ kind: pattern.kind, start, end: start + value.length, value });
+    }
+  }
+  // Leftmost wins, break ties by longest then by original kind order
+  // (Object.values keeps insertion order, which matches PATTERNS declaration).
+  const sorted = raw.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.end - b.start - (a.end - a.start);
+  });
+  const kept: PatternMatch[] = [];
+  let lastEnd = -1;
+  for (const hit of sorted) {
+    if (hit.start < lastEnd) continue;
+    kept.push(hit);
+    lastEnd = hit.end;
+  }
+  return kept;
+}
+
+/**
  * Pattern-only redaction phase (SP-1.6). Runs BEFORE Pass 0 so the
  * server never sees raw emails, phones, IBANs, VAT numbers, national
  * IDs during overview extraction. Party names remain visible — that's

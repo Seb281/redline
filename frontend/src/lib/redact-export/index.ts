@@ -20,3 +20,7 @@ export type {
 } from "./types";
 export { SENSITIVE_KINDS } from "./types";
 export { registerPdfWorker } from "./pdf-worker";
+export { extractPdf } from "./pdf-extract";
+export { findMatches } from "./span-matcher";
+export { buildRedactedPdf } from "./pdf-overlay";
+export { quickTokenize, smartTokenize } from "./tokenize-for-pdf";

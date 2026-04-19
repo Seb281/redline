@@ -18,7 +18,7 @@ import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvi
 import { EU_COUNTRY_CODES } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
-import { STATUTE_CODES, STATUTE_LABELS, filterStatutes } from "@/lib/applicable-law";
+import { STATUTE_CODES, filterStatutes } from "@/lib/applicable-law";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output

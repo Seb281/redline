@@ -14,21 +14,19 @@
  *   awaiting_preview → RedactPreviewPanel
  *   redacting     → inline spinner
  *   complete      → RedactDownloadCard
- *   error         → error banner + "Start over"
+ *   error         → error banner + retry/start-over actions
  */
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRedactExport } from "@/hooks/useRedactExport";
 import { RedactFileUpload } from "@/components/RedactFileUpload";
 import { RedactPreviewPanel } from "@/components/RedactPreviewPanel";
 import { RedactDownloadCard } from "@/components/RedactDownloadCard";
-import type { RedactMode } from "@/lib/redact-export/types";
 
 /** Main /redact page UI — drives the redact-export state machine. */
 export function RedactExportFlow() {
-  const [mode, setMode] = useState<RedactMode>("quick");
   const hook = useRedactExport();
 
   // Register the pdfjs web worker inside an effect so pdfjs module-level
@@ -42,15 +40,17 @@ export function RedactExportFlow() {
   }, []);
 
   const handleFileSelected = (file: File) => {
-    hook.start(file, mode);
-  };
-
-  const handleModeChange = (m: RedactMode) => {
-    setMode(m);
+    hook.start(file);
   };
 
   const isProcessing =
     hook.status === "extracting" || hook.status === "running_overview";
+
+  // Overview-stage errors keep the extracted PDF cached, so the retry
+  // button re-runs Pass 0 without forcing a re-upload. Any other error
+  // stage needs a full reset via "Start over".
+  const canRetryOverview =
+    hook.status === "error" && hook.error?.stage === "overview";
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
@@ -64,17 +64,16 @@ export function RedactExportFlow() {
         </h1>
         <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
           Upload a native PDF. Names, emails, and identifiers are replaced with
-          labelled boxes. Your file never leaves your device in Quick mode.
+          labelled boxes. Your file stays in the browser — only scrubbed text
+          (no PII) is sent to Mistral (EU) for role labels.
         </p>
       </div>
 
-      {/* Upload + mode toggle */}
+      {/* Upload zone */}
       {(hook.status === "idle" ||
         hook.status === "extracting" ||
         hook.status === "running_overview") && (
         <RedactFileUpload
-          mode={mode}
-          onModeChange={handleModeChange}
           onFileSelected={handleFileSelected}
           isProcessing={isProcessing}
           error={hook.status === "idle" ? (hook.error?.message ?? null) : null}
@@ -108,24 +107,37 @@ export function RedactExportFlow() {
           filename={hook.result.filename}
           matchesByKind={hook.result.matchesByKind}
           skipped={hook.result.skipped}
-          smartFallbackNotice={hook.smartFallbackNotice}
           onStartOver={() => hook.reset()}
         />
       )}
 
-      {/* Hard-error banner (extract / build failures) */}
+      {/* Hard-error banner (extract / overview / build failures) */}
       {hook.status === "error" && hook.error && (
-        <div className="rounded border border-[var(--risk-high-border,#ef4444)] bg-[var(--risk-high-bg,#fef2f2)] px-5 py-4">
+        <div
+          role="alert"
+          className="rounded border border-[var(--risk-high-border,#ef4444)] bg-[var(--risk-high-bg,#fef2f2)] px-5 py-4"
+        >
           <p className="text-[15px] font-semibold text-[var(--risk-high,#dc2626)] font-[var(--font-body)]">
             {hook.error.message}
           </p>
-          <button
-            type="button"
-            onClick={() => hook.reset()}
-            className="mt-3 rounded border border-[var(--border-primary)] px-4 py-2 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
-          >
-            Start over
-          </button>
+          <div className="mt-3 flex items-center gap-3">
+            {canRetryOverview && (
+              <button
+                type="button"
+                onClick={() => hook.retryOverview()}
+                className="rounded border border-[var(--accent)] bg-[var(--accent)] px-4 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
+              >
+                Retry
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => hook.reset()}
+              className="rounded border border-[var(--border-primary)] px-4 py-2 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
+            >
+              Start over
+            </button>
+          </div>
         </div>
       )}
 

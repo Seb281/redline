@@ -11,15 +11,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { RedactMode } from "@/lib/redact-export/types";
-import { RedactModeToggle } from "@/components/RedactModeToggle";
 
 const PDF_MIME = "application/pdf";
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
 interface RedactFileUploadProps {
-  mode: RedactMode;
-  onModeChange: (mode: RedactMode) => void;
   /** Fires with the validated PDF File. Hook takes it from here. */
   onFileSelected: (file: File) => void;
   /** True while the hook is in extracting / running_overview state. */
@@ -28,10 +24,8 @@ interface RedactFileUploadProps {
   error: string | null;
 }
 
-/** Drag-and-drop PDF-only upload zone with mode toggle. */
+/** Drag-and-drop PDF-only upload zone. */
 export function RedactFileUpload({
-  mode,
-  onModeChange,
   onFileSelected,
   isProcessing,
   error,
@@ -159,15 +153,6 @@ export function RedactFileUpload({
           accept={PDF_MIME}
           onChange={handleChange}
           className="hidden"
-        />
-      </div>
-
-      {/* Mode toggle below dropzone */}
-      <div className="mt-5">
-        <RedactModeToggle
-          mode={mode}
-          onChange={onModeChange}
-          disabled={isProcessing}
         />
       </div>
 

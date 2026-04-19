@@ -9,9 +9,6 @@
  * load-bearing invariant of the whole pipeline.
  */
 
-/** User-visible mode toggle. Quick = pattern-only, zero LLM. Smart = Pass 0 for role labels. */
-export type RedactMode = "quick" | "smart";
-
 /**
  * One text run emitted by pdfjs, carrying both the string and the glyph box.
  * Multiple spans may belong to the same line; a single token may straddle

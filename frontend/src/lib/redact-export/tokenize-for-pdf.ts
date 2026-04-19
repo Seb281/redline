@@ -1,13 +1,17 @@
 /**
- * Token extraction tailored to the SP-3 PDF redaction pipeline.
+ * Token extraction for the SP-3 PDF redaction pipeline.
  *
- * Two modes map directly onto the UI toggle:
- *  - Quick: pattern-only, zero LLM. The PDF never leaves the browser.
- *  - Smart: pattern pass + Pass 0 for party role labels. Only the
- *    pattern-scrubbed (PII-free) text leaves the browser.
+ * Single entry point: `tokenizeForPdf(fullText, apiBaseUrl)` runs the
+ * pattern scrubber, then calls Pass 0 for party role labels, and merges
+ * the two into `TokenRange[]` indexed into `fullText`. Only the
+ * pattern-scrubbed text is sent to the server — raw PII never leaves
+ * the browser.
  *
- * Both return `TokenRange[]` indexed into `fullText` — the same
- * coordinate system the span-matcher expects.
+ * Pass 0 failure is a hard error (`SmartOverviewError`) — the hook
+ * keeps the extracted PDF in memory so the user can retry without
+ * re-uploading. There is no pattern-only fallback: the product promise
+ * of `/redact` is semantic role labels, so a silent degrade would
+ * contradict the user's expectation.
  */
 
 import { collectPatternMatches, redactPatterns } from "@/lib/redaction";
@@ -86,14 +90,13 @@ function renderLabel(kind: TokenKind, n: number): string {
 }
 
 /**
- * Pattern-only tokenization. Used by Quick mode and as the first pass
- * inside `smartTokenize` (so Smart never double-counts the same email
- * as a person name).
- *
- * Output is sorted by `start` ascending so the span-matcher can
- * linear-scan without re-sorting.
+ * Internal: pattern-only pass over `fullText`. Emits one `TokenRange`
+ * per hit, sorted by `start` ascending so the span-matcher can
+ * linear-scan without re-sorting. Exported only to the tests because
+ * the public surface of this module is `tokenizeForPdf` — patterns
+ * alone are not a user-facing product.
  */
-export function quickTokenize(fullText: string): TokenRange[] {
+export function collectPatternRanges(fullText: string): TokenRange[] {
   const hits = collectPatternMatches(fullText);
   const counters: Record<string, number> = {};
   const out: TokenRange[] = [];
@@ -112,13 +115,13 @@ export function quickTokenize(fullText: string): TokenRange[] {
 }
 
 /**
- * Smart mode: quickTokenize + party role labels from Pass 0.
+ * Tokenize `fullText` for redaction: pattern pass + party role labels
+ * from Pass 0.
  *
  * Only the pattern-scrubbed text is sent to the server — the real PII
  * never leaves the browser. If the overview call fails (network,
  * non-2xx, unexpected shape), throws with `.name === "SmartOverviewError"`
- * so the hook can fall back to Quick with a warning flag instead of
- * hard-failing.
+ * so the hook can surface a retry-in-place recoverable error.
  *
  * Merge rule: party ranges win over pattern ranges when they overlap.
  * Party ranges carry a semantic role label (e.g. "[Provider]") which
@@ -131,17 +134,20 @@ export function quickTokenize(fullText: string): TokenRange[] {
  * differs from the PDF text would leave the name visible in the
  * output with no SkippedMatch emitted and no download-gating banner.
  */
-export async function smartTokenize(
+export async function tokenizeForPdf(
   fullText: string,
-  apiBaseUrl: string,
 ): Promise<{ ranges: TokenRange[]; skipped: SkippedMatch[] }> {
-  const patternRanges = quickTokenize(fullText);
+  const patternRanges = collectPatternRanges(fullText);
   const { scrubbed } = redactPatterns(fullText);
 
   let parties: Array<{ name: string; role_label?: string | null }>;
   try {
-    const url = `${apiBaseUrl}/api/analyze/overview`;
-    const res = await fetch(url, {
+    // `/api/analyze/overview` is a Next.js App Router route served from the
+    // same origin as this client bundle — always reachable via a relative
+    // URL. Do NOT prefix with NEXT_PUBLIC_API_URL: that env var points at
+    // the FastAPI backend (Railway), which has no such route and answers
+    // 404. This was the bug that broke Smart mode in production.
+    const res = await fetch("/api/analyze/overview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: scrubbed }),
@@ -171,14 +177,14 @@ export async function smartTokenize(
   const partyRanges: TokenRange[] = [];
   const skipped: SkippedMatch[] = [];
 
-  // Reuse `findPartyMatches` so Smart-mode casing / whitespace /
-  // possessive handling matches the SP-1.9 redaction pipeline exactly.
-  // The ad-hoc regex used previously was case-sensitive and produced
+  // Reuse `findPartyMatches` so casing / whitespace / possessive
+  // handling matches the SP-1.9 redaction pipeline exactly. The
+  // ad-hoc regex used previously was case-sensitive and produced
   // zero matches for `"Acme BV"` vs `"ACME BV"`, leaving the name
   // visible with no SkippedMatch — the silent failure this fix closes.
   for (const party of parties) {
     // Skip unlabelled parties — the point of Smart mode is the role
-    // label; an unlabelled hit is no better than the quick pattern
+    // label; an unlabelled hit is no better than the pattern
     // fallback would have been.
     if (!party.role_label || !party.role_label.trim()) continue;
     const kind = classifyPartyKind(party.name);

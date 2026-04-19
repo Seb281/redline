@@ -1,15 +1,21 @@
 /**
  * End-to-end integration on the in-memory single-page fixture:
  *
- *   buildSinglePagePdf → extractPdf → quickTokenize → findMatches
+ *   buildSinglePagePdf → extractPdf → collectPatternRanges → findMatches
  *     → buildRedactedPdf → re-extract and verify labels appear.
+ *
+ * Uses `collectPatternRanges` directly to keep this test offline —
+ * `tokenizeForPdf` always calls Pass 0, which we cover with stubs in
+ * the unit tests. The pipeline stages here (extract / match / overlay)
+ * don't care whether the token ranges came from patterns alone or
+ * patterns + parties.
  */
 
 import { describe, expect, it } from "vitest";
 import { extractPdf } from "./pdf-extract";
 import { findMatches } from "./span-matcher";
 import { buildRedactedPdf } from "./pdf-overlay";
-import { quickTokenize } from "./tokenize-for-pdf";
+import { collectPatternRanges } from "./tokenize-for-pdf";
 import { buildSinglePagePdf } from "@/test-fixtures/redact/build-fixtures";
 
 describe("redact-export pipeline (integration)", () => {
@@ -19,8 +25,8 @@ describe("redact-export pipeline (integration)", () => {
       emails: ["hello@acme.test"],
     });
     const extracted = await extractPdf(src);
-    const tokens = quickTokenize(extracted.fullText);
-    // Quick mode only recognises patterns: the email is in, the
+    const tokens = collectPatternRanges(extracted.fullText);
+    // Pattern pass only recognises patterns: the email is in, the
     // company name ("Acme BV") is not — that is by design.
     expect(tokens.find((t) => t.kind === "EMAIL")).toBeDefined();
 

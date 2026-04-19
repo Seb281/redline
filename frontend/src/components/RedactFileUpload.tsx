@@ -11,6 +11,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const PDF_MIME = "application/pdf";
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -30,6 +31,7 @@ export function RedactFileUpload({
   isProcessing,
   error,
 }: RedactFileUploadProps) {
+  const t = useTranslations("RedactFileUpload");
   const [isDragging, setIsDragging] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,22 +46,20 @@ export function RedactFileUpload({
       setLocalError(null);
       const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
       if (ext === ".docx") {
-        setLocalError(
-          "Only native PDFs are supported. Convert DOCX first.",
-        );
+        setLocalError(t("errorDocx"));
         return;
       }
       if (file.type !== PDF_MIME && ext !== ".pdf") {
-        setLocalError("Only PDF files are accepted here.");
+        setLocalError(t("errorInvalidFormat"));
         return;
       }
       if (file.size > MAX_SIZE) {
-        setLocalError("File too large (max 10 MB).");
+        setLocalError(t("errorTooLarge"));
         return;
       }
       onFileSelected(file);
     },
-    [onFileSelected],
+    [onFileSelected, t],
   );
 
   const handleDrop = useCallback(
@@ -119,10 +119,10 @@ export function RedactFileUpload({
         </div>
 
         <p className="mb-1.5 text-lg font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-          Drop your PDF here
+          {t("dropHere")}
         </p>
         <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          Native PDF only — up to 10 MB
+          {t("accepted")}
         </p>
 
         {isProcessing ? (
@@ -134,7 +134,7 @@ export function RedactFileUpload({
               />
             </div>
             <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-              Processing…
+              {t("processing")}
             </p>
           </div>
         ) : (
@@ -143,7 +143,7 @@ export function RedactFileUpload({
             onClick={() => inputRef.current?.click()}
             className="rounded bg-[var(--text-primary)] px-7 py-3 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
           >
-            Browse files
+            {t("browseFiles")}
           </button>
         )}
 

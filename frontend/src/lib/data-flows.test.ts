@@ -18,6 +18,7 @@ describe("DATA_FLOWS", () => {
 
   it("populates every required field on every flow", () => {
     for (const flow of DATA_FLOWS) {
+      expect(flow.translationKey).toMatch(/^[a-z][a-z0-9]*$/);
       expect(flow.provider).toBeTruthy();
       expect(flow.purpose).toBeTruthy();
       expect(flow.region).toBeTruthy();
@@ -28,6 +29,11 @@ describe("DATA_FLOWS", () => {
         expect(category.trim().length).toBeGreaterThan(0);
       }
     }
+  });
+
+  it("uses unique translation keys (the messages catalog keys by this field)", () => {
+    const keys = DATA_FLOWS.map((f) => f.translationKey);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   it("uses https URLs for every DPA link that is set", () => {

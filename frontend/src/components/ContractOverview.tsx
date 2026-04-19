@@ -13,6 +13,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ContractOverview as ContractOverviewType } from "@/types";
 import { useRehydrate } from "@/contexts/RehydrateContext";
 import { deriveLabels } from "@/lib/history/adapt-overview";
@@ -55,13 +56,14 @@ function pillClassFor(sourceType: "stated" | "inferred" | "unknown"): string {
 
 /** Renders structured contract metadata at the top of the report. */
 export function ContractOverview({ overview, labels }: ContractOverviewProps) {
+  const t = useTranslations("ContractOverview");
   const { rehydrate } = useRehydrate();
   const resolvedLabels = labels ?? deriveLabels(overview);
 
   const details: string[] = [];
-  if (overview.effective_date) details.push(`Effective: ${overview.effective_date}`);
-  if (overview.duration) details.push(`Duration: ${overview.duration}`);
-  if (overview.total_value) details.push(`Value: ${overview.total_value}`);
+  if (overview.effective_date) details.push(t("effective", { date: overview.effective_date }));
+  if (overview.duration) details.push(t("duration", { duration: overview.duration }));
+  if (overview.total_value) details.push(t("value", { value: overview.total_value }));
 
   // Role-first display; legal name disclosed only when rehydrate is on.
   const partyDisplay = overview.parties
@@ -89,20 +91,20 @@ export function ContractOverview({ overview, labels }: ContractOverviewProps) {
 
       {overview.jurisdiction_evidence && (
         <p className="mb-3.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          Jurisdiction: {overview.governing_jurisdiction ?? "—"}
+          {t("jurisdiction", { jurisdiction: overview.governing_jurisdiction ?? "—" })}
           <span
             data-testid="jurisdiction-pill"
             title={overview.jurisdiction_evidence.source_text ?? undefined}
             className={`ml-2 inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[1px] ${pillClassFor(overview.jurisdiction_evidence.source_type)}`}
           >
-            {overview.jurisdiction_evidence.source_type}
+            {t(`jurisdictionEvidence.${overview.jurisdiction_evidence.source_type}`)}
           </span>
         </p>
       )}
 
       <div>
         <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-          Key Terms
+          {t("keyTerms")}
         </p>
         <ul className="space-y-1.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
           {overview.key_terms.map((term, i) => (

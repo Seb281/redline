@@ -13,7 +13,8 @@
  */
 
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { screen, fireEvent, cleanup } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { RedactPreviewPanel } from "./RedactPreviewPanel";
 import { RedactDownloadCard } from "./RedactDownloadCard";
 import type { TokenRange, SkippedMatch } from "@/lib/redact-export/types";
@@ -308,7 +309,7 @@ describe("RedactExportFlow – state transitions", () => {
     const { useRedactExport } = await import("@/hooks/useRedactExport");
     (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
       status: "error",
-      error: { stage: "extract", message: "File corrupted", recoverable: true },
+      error: { stage: "extract", code: "EXTRACT_FAILED", detail: "File corrupted", recoverable: true },
       preview: null,
       result: null,
       start: vi.fn(),
@@ -318,7 +319,10 @@ describe("RedactExportFlow – state transitions", () => {
     });
     const { RedactExportFlow } = await import("./RedactExportFlow");
     render(<RedactExportFlow />);
-    expect(screen.getByText("File corrupted")).toBeTruthy();
+    // Translated EXTRACT_FAILED headline + " — File corrupted" detail.
+    expect(
+      screen.getByText(/Could not read PDF structure.*File corrupted/i),
+    ).toBeTruthy();
     // Retry button only shows for overview-stage errors.
     expect(screen.queryByText("Retry")).toBeNull();
     expect(screen.getByText("Start over")).toBeTruthy();
@@ -331,7 +335,7 @@ describe("RedactExportFlow – state transitions", () => {
       status: "error",
       error: {
         stage: "overview",
-        message: "AI role labels unavailable. Try again in a moment.",
+        code: "OVERVIEW_UNAVAILABLE",
         recoverable: true,
       },
       preview: null,

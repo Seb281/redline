@@ -8,6 +8,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { StreamingAnalysisState } from "@/hooks/useStreamingAnalysis";
 import type { UploadResponse } from "@/types";
 import { AnalysisFooter } from "@/components/AnalysisFooter";
@@ -56,6 +57,7 @@ export function StreamingReportView({
   onRetry,
   retryCount,
 }: StreamingReportViewProps) {
+  const t = useTranslations("StreamingReportView");
   const { overview, clauses, clauseCount, summary, provenance, status, error, rawText, tokenMap } = state;
 
   // Nothing yet — show initial loading state with stepper.
@@ -64,7 +66,7 @@ export function StreamingReportView({
       <div className="flex flex-col items-center justify-center py-24">
         {/* File info bar */}
         <div className="mb-9 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-3 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
-          {upload.filename} · {upload.page_count} {upload.page_count === 1 ? "page" : "pages"} · {upload.char_count.toLocaleString()} chars
+          {upload.filename} · {t("pages", { count: upload.page_count })} · {t("chars", { count: upload.char_count })}
         </div>
         <div className="w-full max-w-md">
           <AnalysisProgress
@@ -133,7 +135,7 @@ export function StreamingReportView({
               low: { text: "var(--risk-low)", border: "var(--risk-low-border)", bg: "var(--risk-low-bg)" },
               informational: { text: "var(--risk-info)", border: "var(--risk-info-border)", bg: "var(--risk-info-bg)" },
             }[level];
-            const label = { high: "High Risk", medium: "Medium Risk", low: "Low Risk", informational: "Info" }[level];
+            const label = { high: t("highRisk"), medium: t("mediumRisk"), low: t("lowRisk"), informational: t("info") }[level];
 
             return (
               <div
@@ -156,7 +158,7 @@ export function StreamingReportView({
         ) : (
           <div className="flex flex-col items-center justify-center" style={{ width: 90 }}>
             <div className="h-[90px] w-[90px] animate-pulse rounded-full bg-[var(--bg-tertiary)]" />
-            <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
+            <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">{t("clauses")}</p>
           </div>
         )}
       </div>
@@ -165,7 +167,7 @@ export function StreamingReportView({
       {summary && summary.top_risks.length > 0 && (
         <div className="mb-7 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-5 py-3.5 theme-transition">
           <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            Top Risks
+            {t("topRisks")}
           </p>
           <ul className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
             {summary.top_risks.map((risk, i) => (
@@ -183,8 +185,8 @@ export function StreamingReportView({
         <div className="mb-5 flex items-center justify-between rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] px-5 py-3.5 theme-transition">
           <p className="text-[15px] text-[var(--risk-high)] font-[var(--font-body)]">
             {(retryCount ?? 0) >= 2
-              ? "Analysis failed. Check your connection and try again."
-              : `Analysis error: ${error}`}
+              ? t("analysisFailed")
+              : t("analysisError", { error })}
           </p>
           {onRetry && (
             <button
@@ -192,7 +194,7 @@ export function StreamingReportView({
               onClick={onRetry}
               className="ml-4 rounded border border-[var(--risk-high-border)] px-4 py-2 text-[15px] font-medium text-[var(--risk-high)] font-[var(--font-body)] transition-colors hover:bg-[var(--risk-high-bg)]"
             >
-              Retry
+              {t("retry")}
             </button>
           )}
         </div>
@@ -239,11 +241,11 @@ export function StreamingReportView({
             onClick={onReset}
             className="rounded px-5 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
           >
-            Cancel
+            {t("cancel")}
           </button>
           {status === "analyzing" && (
             <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-              Analysis in progress...
+              {t("inProgress")}
             </span>
           )}
         </div>

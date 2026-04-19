@@ -13,18 +13,59 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { DATA_FLOWS, type DataFlow } from "@/lib/data-flows";
 
-export const metadata: Metadata = {
-  title: "Data residency — Redline",
-  description:
-    "Every third-party data flow Redline touches, where it runs, and the legal basis under GDPR.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "DataResidency" });
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+  };
+}
 
-export default function DataResidencyPage() {
+export default async function DataResidencyPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("DataResidency");
   const defaults = DATA_FLOWS.filter((f) => f.group === "default");
   const optional = DATA_FLOWS.filter((f) => f.group === "optional");
+  const fieldLabels = {
+    data: t("data"),
+    legalBasis: t("legalBasis"),
+    notes: t("notes"),
+    policies: t("policies"),
+    privacyPolicy: t("privacyPolicy"),
+    dpa: t("dpa"),
+  };
+  /**
+   * Resolve localized copy for a single flow. Falls back to the EN
+   * source on `DataFlow` when the locale omits the `flows.{key}`
+   * namespace — next-intl's `mergeMessages` already handles deep
+   * fallback, but consult the config directly as a defensive second
+   * layer so a missing key never crashes the page.
+   */
+  const localizeFlow = (flow: DataFlow) => {
+    const base = `flows.${flow.translationKey}`;
+    const categories = t.raw(`${base}.dataCategories`);
+    return {
+      purpose: t(`${base}.purpose`),
+      notes: t(`${base}.notes`),
+      dataCategories: Array.isArray(categories)
+        ? (categories as string[])
+        : flow.dataCategories,
+    };
+  };
 
   return (
     <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
@@ -32,59 +73,91 @@ export default function DataResidencyPage() {
         href="/privacy"
         className="mb-6 inline-block text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
       >
-        &larr; Back to Privacy Policy
+        {t("back")}
       </Link>
 
       <h1 className="mb-2 text-[32px] font-normal leading-tight text-[var(--text-primary)] font-[var(--font-heading)]">
-        Data residency
+        {t("title")}
       </h1>
       <p className="mb-9 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-        Every third-party service Redline touches, what data flows there,
-        and the region it runs in. In the default configuration, contract
-        analysis stays within the European Union.
+        {t("description")}
       </p>
 
       <section className="mb-10">
         <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          Default data flows
+          {t("defaultTitle")}
         </h2>
         <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          These processors are involved every time you use Redline.
+          {t("defaultDesc")}
         </p>
         <div className="space-y-4">
           {defaults.map((flow) => (
-            <DataFlowCard key={flow.provider} flow={flow} />
+            <DataFlowCard
+              key={flow.provider}
+              flow={flow}
+              labels={fieldLabels}
+              localized={localizeFlow(flow)}
+            />
           ))}
         </div>
       </section>
 
       <section className="mb-10">
         <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          Optional data flows
+          {t("optionalTitle")}
         </h2>
         <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          These processors only come into play when a specific feature —
-          saved history, magic-link sign-in, or the non-default LLM
-          rollback — is enabled by the operator.
+          {t("optionalDesc")}
         </p>
         <div className="space-y-4">
           {optional.map((flow) => (
-            <DataFlowCard key={flow.provider} flow={flow} />
+            <DataFlowCard
+              key={flow.provider}
+              flow={flow}
+              labels={fieldLabels}
+              localized={localizeFlow(flow)}
+            />
           ))}
         </div>
       </section>
 
+      <p className="mb-4 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
+        {t.rich("configNote", {
+          code: (chunks) => <code>{chunks}</code>,
+        })}
+      </p>
       <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        This page is rendered directly from the typed{" "}
-        <code>frontend/src/lib/data-flows.ts</code> config so it tracks
-        the live configuration without manual drift.
+        {t("i18nNote")}
       </p>
     </main>
   );
 }
 
+interface FieldLabels {
+  data: string;
+  legalBasis: string;
+  notes: string;
+  policies: string;
+  privacyPolicy: string;
+  dpa: string;
+}
+
+interface LocalizedFlow {
+  purpose: string;
+  notes: string;
+  dataCategories: string[];
+}
+
 /** One processor card — heading, region pill, then the audit fields. */
-function DataFlowCard({ flow }: { flow: DataFlow }) {
+function DataFlowCard({
+  flow,
+  labels,
+  localized,
+}: {
+  flow: DataFlow;
+  labels: FieldLabels;
+  localized: LocalizedFlow;
+}) {
   return (
     <article
       className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition"
@@ -100,25 +173,25 @@ function DataFlowCard({ flow }: { flow: DataFlow }) {
       </header>
 
       <p className="mb-3 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-        {flow.purpose}
+        {localized.purpose}
       </p>
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
-        <Field label="Data">
+        <Field label={labels.data}>
           <ul className="list-disc space-y-1 pl-5 marker:text-[var(--text-muted)]">
-            {flow.dataCategories.map((d) => (
+            {localized.dataCategories.map((d) => (
               <li key={d}>{d}</li>
             ))}
           </ul>
         </Field>
-        <Field label="Legal basis">{flow.legalBasis}</Field>
-        {flow.notes && <Field label="Notes">{flow.notes}</Field>}
-        <Field label="Policies">
-          <ExtLink href={flow.privacyPolicyUrl}>Privacy Policy</ExtLink>
+        <Field label={labels.legalBasis}>{flow.legalBasis}</Field>
+        {flow.notes && <Field label={labels.notes}>{localized.notes}</Field>}
+        <Field label={labels.policies}>
+          <ExtLink href={flow.privacyPolicyUrl}>{labels.privacyPolicy}</ExtLink>
           {flow.dpaUrl && (
             <>
               <span className="mx-2 text-[var(--text-muted)]">·</span>
-              <ExtLink href={flow.dpaUrl}>Data Processing Addendum</ExtLink>
+              <ExtLink href={flow.dpaUrl}>{labels.dpa}</ExtLink>
             </>
           )}
         </Field>

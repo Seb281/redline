@@ -11,7 +11,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import {
@@ -24,6 +25,7 @@ import { getRetentionStatus } from "@/lib/retention";
 import type { AnalysisListItem } from "@/types";
 
 export default function HistoryPage() {
+  const t = useTranslations("History");
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [analyses, setAnalyses] = useState<AnalysisListItem[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
@@ -37,10 +39,10 @@ export default function HistoryPage() {
     listAnalyses()
       .then(setAnalyses)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load"),
+        setError(err instanceof Error ? err.message : t("failedToLoad")),
       )
       .finally(() => setHasFetched(true));
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, t]);
 
   /** Derived loading — true while authenticated but fetch hasn't completed. */
   const isLoading = isAuthenticated && !authLoading && !hasFetched;
@@ -48,16 +50,16 @@ export default function HistoryPage() {
   /** Delete an analysis with confirmation. */
   const handleDelete = useCallback(
     async (id: string, filename: string) => {
-      if (!confirm(`Delete analysis of "${filename}"?`)) return;
+      if (!confirm(t("deleteConfirm", { filename }))) return;
 
       try {
         await deleteAnalysis(id);
         setAnalyses((prev) => prev.filter((a) => a.id !== id));
       } catch (err) {
-        alert(err instanceof Error ? err.message : "Delete failed");
+        alert(err instanceof Error ? err.message : t("deleteFailed"));
       }
     },
-    [],
+    [t],
   );
 
   /** Toggle the pin flag — optimistic local update, revert on failure. */
@@ -84,12 +86,12 @@ export default function HistoryPage() {
             a.id === item.id ? { ...a, pinned: item.pinned } : a,
           ),
         );
-        alert(err instanceof Error ? err.message : "Pin failed");
+        alert(err instanceof Error ? err.message : t("pinFailed"));
       } finally {
         setPendingId(null);
       }
     },
-    [],
+    [t],
   );
 
   /** Reset the retention clock to now + RETENTION_DAYS. */
@@ -103,11 +105,11 @@ export default function HistoryPage() {
         ),
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Extend failed");
+      alert(err instanceof Error ? err.message : t("extendFailed"));
     } finally {
       setPendingId(null);
     }
-  }, []);
+  }, [t]);
 
   // Auth loading
   if (authLoading) {
@@ -123,10 +125,10 @@ export default function HistoryPage() {
     return (
       <main className="mx-auto max-w-md px-5 py-16">
         <h1 className="mb-2 text-center text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          Your Analyses
+          {t("title")}
         </h1>
         <p className="mb-6 text-center text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          Log in to save and revisit your analyses
+          {t("loginPrompt")}
         </p>
         <LoginPrompt />
       </main>
@@ -136,11 +138,10 @@ export default function HistoryPage() {
   return (
     <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
       <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-        Your Analyses
+        {t("title")}
       </h1>
       <p className="mb-6 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        Saved analyses expire after 30 days unless pinned. Extend to reset
-        the clock.
+        {t("infoLine")}
       </p>
 
       {/* Loading */}
@@ -161,13 +162,13 @@ export default function HistoryPage() {
       {!isLoading && !error && analyses.length === 0 && (
         <div className="py-12 text-center">
           <p className="text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
-            No saved analyses yet
+            {t("empty")}
           </p>
           <Link
             href="/"
             className="mt-4 inline-block text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
           >
-            Analyze a contract
+            {t("analyzeLink")}
           </Link>
         </div>
       )}
@@ -207,7 +208,7 @@ export default function HistoryPage() {
                     <span>
                       {new Date(analysis.created_at).toLocaleDateString()}
                     </span>
-                    <span>{analysis.clause_count} clauses</span>
+                    <span>{t("clauseCount", { count: analysis.clause_count })}</span>
                     <span className="capitalize">
                       {analysis.analysis_mode}
                     </span>
@@ -250,9 +251,9 @@ export default function HistoryPage() {
                       }}
                       disabled={isPending}
                       className="rounded p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)] disabled:opacity-40"
-                      aria-label="Extend retention"
+                      aria-label={t("extendAria")}
                       data-testid="extend-button"
-                      title="Keep for another 30 days"
+                      title={t("extendKeep")}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -285,13 +286,9 @@ export default function HistoryPage() {
                         : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                     }`}
                     aria-pressed={analysis.pinned ?? false}
-                    aria-label={analysis.pinned ? "Unpin analysis" : "Pin analysis"}
+                    aria-label={analysis.pinned ? t("unpinAria") : t("pinAria")}
                     data-testid="pin-button"
-                    title={
-                      analysis.pinned
-                        ? "Unpin (resume countdown)"
-                        : "Pin (never auto-delete)"
-                    }
+                    title={analysis.pinned ? t("unpinTitle") : t("pinTitle")}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -316,7 +313,7 @@ export default function HistoryPage() {
                       handleDelete(analysis.id, analysis.filename)
                     }
                     className="rounded p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
-                    aria-label="Delete analysis"
+                    aria-label={t("deleteAria")}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

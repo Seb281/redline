@@ -3,7 +3,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ReportView } from "@/components/ReportView";
@@ -13,6 +15,8 @@ import { getRetentionStatus } from "@/lib/retention";
 import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
 
 export default function HistoryDetailPage() {
+  const t = useTranslations("HistoryDetail");
+  const tChat = useTranslations("ChatPanel");
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -36,22 +40,23 @@ export default function HistoryDetailPage() {
     getAnalysis(id)
       .then(setAnalysis)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load"),
+        setError(err instanceof Error ? err.message : t("failedToLoad")),
       )
       .finally(() => setIsLoading(false));
-  }, [id, isAuthenticated, authLoading, router]);
+  }, [id, isAuthenticated, authLoading, router, t]);
 
   const handleReset = useCallback(() => {
     router.push("/");
   }, [router]);
 
   /** Open chat with a pre-populated question about a specific clause. */
-  const handleAskAboutClause = useCallback((clause: AnalyzedClause) => {
-    setChatQuestion(
-      `What are the risks of the "${clause.title}" clause, and how could I negotiate better terms?`,
-    );
-    setChatOpen(true);
-  }, []);
+  const handleAskAboutClause = useCallback(
+    (clause: AnalyzedClause) => {
+      setChatQuestion(tChat("askClausePrompt", { title: clause.title }));
+      setChatOpen(true);
+    },
+    [tChat],
+  );
 
   /** Toggle the pin flag from the retention bar. */
   const handleTogglePin = useCallback(async () => {
@@ -69,11 +74,11 @@ export default function HistoryDetailPage() {
           },
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Pin failed");
+      alert(err instanceof Error ? err.message : t("pinFailed"));
     } finally {
       setRetentionPending(false);
     }
-  }, [analysis]);
+  }, [analysis, t]);
 
   /** Reset the retention clock from the retention bar. */
   const handleExtend = useCallback(async () => {
@@ -85,11 +90,11 @@ export default function HistoryDetailPage() {
         (prev) => prev && { ...prev, expires_at: resp.expires_at },
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Extend failed");
+      alert(err instanceof Error ? err.message : t("extendFailed"));
     } finally {
       setRetentionPending(false);
     }
-  }, [analysis]);
+  }, [analysis, t]);
 
   // Loading
   if (isLoading || authLoading) {
@@ -105,17 +110,17 @@ export default function HistoryDetailPage() {
     return (
       <main className="mx-auto max-w-md px-5 py-16 text-center">
         <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          Analysis not found
+          {t("notFound")}
         </h1>
         <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {error ?? "This analysis may have been deleted."}
+          {error ?? t("deletedFallback")}
         </p>
         <button
           type="button"
           onClick={() => router.push("/history")}
           className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
         >
-          Back to history
+          {t("backHistory")}
         </button>
       </main>
     );
@@ -145,12 +150,10 @@ export default function HistoryDetailPage() {
       >
         <span className="text-[var(--text-secondary)]">
           {retention.pinned
-            ? "Pinned — this analysis will not be auto-deleted."
+            ? t("pinnedNotice")
             : retention.expired
-              ? "This analysis has expired and will be removed on the next sweep."
-              : `Auto-deletes in ${retention.daysRemaining} day${
-                  retention.daysRemaining === 1 ? "" : "s"
-                } unless pinned.`}
+              ? t("expiredNotice")
+              : t("autoDeleteIn", { days: retention.daysRemaining })}
         </span>
         <div className="flex items-center gap-2">
           {!analysis.pinned && (
@@ -161,7 +164,7 @@ export default function HistoryDetailPage() {
               className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1 text-[12px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-40"
               data-testid="retention-extend"
             >
-              Keep 30 more days
+              {t("keepMoreDays")}
             </button>
           )}
           <button
@@ -175,7 +178,7 @@ export default function HistoryDetailPage() {
             }`}
             data-testid="retention-pin"
           >
-            {analysis.pinned ? "Unpin" : "Pin forever"}
+            {analysis.pinned ? t("unpin") : t("pinForever")}
           </button>
         </div>
       </div>

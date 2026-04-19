@@ -1,55 +1,143 @@
-/** Client-side Markdown export and PDF download trigger. */
+/**
+ * Client-side Markdown export and PDF download trigger.
+ *
+ * `generateMarkdown` stays a pure function — it does not call
+ * `useTranslations` directly (that would couple it to React) nor
+ * import `next-intl` (which would make unit tests pull in the full
+ * runtime). Instead callers resolve a `MarkdownLabels` bag via the
+ * `Export` namespace and hand it in. Tests pass the English defaults
+ * exported from this module so they keep working without an intl
+ * provider.
+ */
 
-import type { AnalyzeResponse } from "@/types";
+import type { AnalyzeResponse, RiskLevel } from "@/types";
 import { exportPdf } from "@/lib/api";
 import { parseExplanation } from "@/lib/citations";
 import { STATUTE_LABELS } from "@/lib/applicable-law";
 
+/** All heading/prose strings used by the Markdown exporter. */
+export interface MarkdownLabels {
+  title: string;
+  disclaimerLabel: string;
+  disclaimerBody: string;
+  contractOverview: string;
+  type: string;
+  parties: string;
+  effectiveDate: string;
+  duration: string;
+  value: string;
+  jurisdiction: string;
+  keyTerms: string;
+  summary: string;
+  totalClauses: string;
+  highRisk: string;
+  mediumRisk: string;
+  lowRisk: string;
+  informational: string;
+  topRisks: string;
+  unusualClauses: string;
+  atypicalDefault: string;
+  atypicalGeneric: string;
+  clauses: string;
+  riskSuffix: string;
+  atypicalBadge: string;
+  risk: string;
+  suggestion: string;
+  cited: string;
+  originalClauseText: string;
+  riskLevel: Record<RiskLevel, string>;
+}
+
+/**
+ * English defaults for `MarkdownLabels`. Kept in sync with the
+ * `Export` namespace in `messages/en.json`; unit tests import these
+ * directly so they don't need an intl provider.
+ */
+export const DEFAULT_MARKDOWN_LABELS: MarkdownLabels = {
+  title: "Redline — Contract Analysis Report",
+  disclaimerLabel: "Disclaimer",
+  disclaimerBody: "This tool provides analysis only — not legal advice.",
+  contractOverview: "Contract Overview",
+  type: "Type",
+  parties: "Parties",
+  effectiveDate: "Effective Date",
+  duration: "Duration",
+  value: "Value",
+  jurisdiction: "Jurisdiction",
+  keyTerms: "Key Terms",
+  summary: "Summary",
+  totalClauses: "Total Clauses",
+  highRisk: "High Risk",
+  mediumRisk: "Medium Risk",
+  lowRisk: "Low Risk",
+  informational: "Informational",
+  topRisks: "Top Risks",
+  unusualClauses: "Unusual Clauses",
+  atypicalDefault: "Atypical for its category.",
+  atypicalGeneric: "This clause is unusual for its category.",
+  clauses: "Clauses",
+  riskSuffix: "RISK",
+  atypicalBadge: "ATYPICAL",
+  risk: "Risk",
+  suggestion: "Suggestion",
+  cited: "Cited",
+  originalClauseText: "Original clause text",
+  riskLevel: {
+    high: "HIGH",
+    medium: "MEDIUM",
+    low: "LOW",
+    informational: "INFORMATIONAL",
+  },
+};
+
 /** Generate a Markdown report string from analysis data. */
-export function generateMarkdown(data: AnalyzeResponse): string {
+export function generateMarkdown(
+  data: AnalyzeResponse,
+  labels: MarkdownLabels = DEFAULT_MARKDOWN_LABELS,
+): string {
   const lines: string[] = [
-    "# Redline — Contract Analysis Report",
+    `# ${labels.title}`,
     "",
-    "> **Disclaimer:** This tool provides analysis only — not legal advice.",
+    `> **${labels.disclaimerLabel}:** ${labels.disclaimerBody}`,
     "",
   ];
 
   // Overview section
-  lines.push("## Contract Overview", "");
-  lines.push(`**Type:** ${data.overview.contract_type}`);
-  lines.push(`**Parties:** ${data.overview.parties.join(", ")}`);
+  lines.push(`## ${labels.contractOverview}`, "");
+  lines.push(`**${labels.type}:** ${data.overview.contract_type}`);
+  lines.push(`**${labels.parties}:** ${data.overview.parties.join(", ")}`);
   if (data.overview.effective_date) {
-    lines.push(`**Effective Date:** ${data.overview.effective_date}`);
+    lines.push(`**${labels.effectiveDate}:** ${data.overview.effective_date}`);
   }
   if (data.overview.duration) {
-    lines.push(`**Duration:** ${data.overview.duration}`);
+    lines.push(`**${labels.duration}:** ${data.overview.duration}`);
   }
   if (data.overview.total_value) {
-    lines.push(`**Value:** ${data.overview.total_value}`);
+    lines.push(`**${labels.value}:** ${data.overview.total_value}`);
   }
   if (data.overview.governing_jurisdiction) {
-    lines.push(`**Jurisdiction:** ${data.overview.governing_jurisdiction}`);
+    lines.push(`**${labels.jurisdiction}:** ${data.overview.governing_jurisdiction}`);
   }
   lines.push("");
-  lines.push("### Key Terms", "");
+  lines.push(`### ${labels.keyTerms}`, "");
   for (const term of data.overview.key_terms) {
     lines.push(`- ${term}`);
   }
   lines.push("");
 
   lines.push(
-    "## Summary",
+    `## ${labels.summary}`,
     "",
-    `- **Total Clauses:** ${data.summary.total_clauses}`,
-    `- **High Risk:** ${data.summary.risk_breakdown.high}`,
-    `- **Medium Risk:** ${data.summary.risk_breakdown.medium}`,
-    `- **Low Risk:** ${data.summary.risk_breakdown.low}`,
-    `- **Informational:** ${data.summary.risk_breakdown.informational}`,
+    `- **${labels.totalClauses}:** ${data.summary.total_clauses}`,
+    `- **${labels.highRisk}:** ${data.summary.risk_breakdown.high}`,
+    `- **${labels.mediumRisk}:** ${data.summary.risk_breakdown.medium}`,
+    `- **${labels.lowRisk}:** ${data.summary.risk_breakdown.low}`,
+    `- **${labels.informational}:** ${data.summary.risk_breakdown.informational}`,
     "",
   );
 
   if (data.summary.top_risks.length > 0) {
-    lines.push("### Top Risks", "");
+    lines.push(`### ${labels.topRisks}`, "");
     for (const risk of data.summary.top_risks) {
       lines.push(`- ${risk}`);
     }
@@ -58,22 +146,27 @@ export function generateMarkdown(data: AnalyzeResponse): string {
 
   const unusualClauses = data.clauses.filter((c) => c.is_unusual);
   if (unusualClauses.length > 0) {
-    lines.push("### Unusual Clauses", "");
+    lines.push(`### ${labels.unusualClauses}`, "");
     for (const clause of unusualClauses) {
-      lines.push(`- **${clause.title}**: ${clause.unusual_explanation ?? "Atypical for its category."}`);
+      lines.push(
+        `- **${clause.title}**: ${clause.unusual_explanation ?? labels.atypicalDefault}`,
+      );
     }
     lines.push("");
   }
 
-  lines.push("## Clauses", "");
+  lines.push(`## ${labels.clauses}`, "");
 
   for (const clause of data.clauses) {
-    const level = clause.risk_level.toUpperCase();
+    const level = labels.riskLevel[clause.risk_level];
     const category = clause.category.replace(/_/g, " ").toUpperCase();
     lines.push(`### ${clause.title}`);
-    lines.push(`**${level} RISK** · ${category}`, "");
+    lines.push(`**${level} ${labels.riskSuffix}** · ${category}`, "");
     if (clause.is_unusual) {
-      lines.push(`**ATYPICAL** — ${clause.unusual_explanation ?? "This clause is unusual for its category."}`, "");
+      lines.push(
+        `**${labels.atypicalBadge}** — ${clause.unusual_explanation ?? labels.atypicalGeneric}`,
+        "",
+      );
     }
     lines.push(clause.plain_english, "");
 
@@ -96,23 +189,23 @@ export function generateMarkdown(data: AnalyzeResponse): string {
       lines.push("");
     }
 
-    lines.push(`**Risk:** ${clause.risk_explanation}`, "");
+    lines.push(`**${labels.risk}:** ${clause.risk_explanation}`, "");
     if (clause.negotiation_suggestion) {
-      lines.push(`**Suggestion:** ${clause.negotiation_suggestion}`, "");
+      lines.push(`**${labels.suggestion}:** ${clause.negotiation_suggestion}`, "");
     }
     if (clause.applicable_law) {
       lines.push(
-        `**Jurisdiction:** ${clause.applicable_law.observation}`,
+        `**${labels.jurisdiction}:** ${clause.applicable_law.observation}`,
         "",
       );
       if (clause.applicable_law.citations.length > 0) {
-        const labels = clause.applicable_law.citations
+        const statutes = clause.applicable_law.citations
           .map((c) => STATUTE_LABELS[c.code])
           .join("; ");
-        lines.push(`Cited: ${labels}`, "");
+        lines.push(`${labels.cited}: ${statutes}`, "");
       }
     }
-    lines.push("<details><summary>Original clause text</summary>", "");
+    lines.push(`<details><summary>${labels.originalClauseText}</summary>`, "");
     lines.push(clause.clause_text, "");
     lines.push("</details>", "", "---", "");
   }
@@ -142,8 +235,11 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 /** Export analysis as Markdown and trigger download. */
-export function downloadMarkdown(data: AnalyzeResponse) {
-  const md = generateMarkdown(data);
+export function downloadMarkdown(
+  data: AnalyzeResponse,
+  labels: MarkdownLabels = DEFAULT_MARKDOWN_LABELS,
+) {
+  const md = generateMarkdown(data, labels);
   downloadString(md, "redline-report.md", "text/markdown");
 }
 

@@ -20,6 +20,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useRedactExport } from "@/hooks/useRedactExport";
 import { RedactFileUpload } from "@/components/RedactFileUpload";
 import { RedactPreviewPanel } from "@/components/RedactPreviewPanel";
@@ -27,6 +28,7 @@ import { RedactDownloadCard } from "@/components/RedactDownloadCard";
 
 /** Main /redact page UI — drives the redact-export state machine. */
 export function RedactExportFlow() {
+  const t = useTranslations("RedactExportFlow");
   const hook = useRedactExport();
 
   // Register the pdfjs web worker inside an effect so pdfjs module-level
@@ -57,15 +59,13 @@ export function RedactExportFlow() {
       {/* Page header */}
       <div className="pb-10 pt-14 text-center">
         <p className="mb-4 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-          Privacy-first redaction
+          {t("label")}
         </p>
         <h1 className="mx-auto mb-4 max-w-[540px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
-          Strip PII from your PDF — in the browser.
+          {t("heading")}
         </h1>
         <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-          Upload a native PDF. Names, emails, and identifiers are replaced with
-          labelled boxes. Your file stays in the browser — only scrubbed text
-          (no PII) is sent to Mistral (EU) for role labels.
+          {t("description")}
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export function RedactExportFlow() {
         <RedactFileUpload
           onFileSelected={handleFileSelected}
           isProcessing={isProcessing}
-          error={hook.status === "idle" ? (hook.error?.message ?? null) : null}
+          error={hook.status === "idle" && hook.error ? t(`errors.${hook.error.code}`) : null}
         />
       )}
 
@@ -95,7 +95,7 @@ export function RedactExportFlow() {
         <div className="flex flex-col items-center gap-4 py-16">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
           <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Building redacted PDF…
+            {t("building")}
           </p>
         </div>
       )}
@@ -118,7 +118,8 @@ export function RedactExportFlow() {
           className="rounded border border-[var(--risk-high-border,#ef4444)] bg-[var(--risk-high-bg,#fef2f2)] px-5 py-4"
         >
           <p className="text-[15px] font-semibold text-[var(--risk-high,#dc2626)] font-[var(--font-body)]">
-            {hook.error.message}
+            {t(`errors.${hook.error.code}`)}
+            {hook.error.detail ? ` — ${hook.error.detail}` : ""}
           </p>
           <div className="mt-3 flex items-center gap-3">
             {canRetryOverview && (
@@ -127,7 +128,7 @@ export function RedactExportFlow() {
                 onClick={() => hook.retryOverview()}
                 className="rounded border border-[var(--accent)] bg-[var(--accent)] px-4 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
               >
-                Retry
+                {t("retry")}
               </button>
             )}
             <button
@@ -135,7 +136,7 @@ export function RedactExportFlow() {
               onClick={() => hook.reset()}
               className="rounded border border-[var(--border-primary)] px-4 py-2 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
             >
-              Start over
+              {t("startOver")}
             </button>
           </div>
         </div>
@@ -145,37 +146,37 @@ export function RedactExportFlow() {
       {hook.status === "idle" && (
         <div className="mx-auto mt-14 max-w-[540px]">
           <p className="mb-4 text-center text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            How it works
+            {t("howItWorks")}
           </p>
           <div className="flex gap-4">
             <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
               <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                1. Upload
+                {t("step1")}
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                Native PDF, stays in browser
+                {t("step1Desc")}
               </p>
             </div>
             <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
               <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                2. Review
+                {t("step2")}
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                Toggle which entity types to redact
+                {t("step2Desc")}
               </p>
             </div>
             <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
               <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                3. Download
+                {t("step3")}
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                Layout-preserving PDF with labelled boxes
+                {t("step3Desc")}
               </p>
             </div>
           </div>
           <div className="mt-10 border-t border-[var(--border-primary)] pt-5 text-center">
             <p className="text-[15px] italic text-[var(--text-muted)] font-[var(--font-heading)]">
-              Built by a corporate lawyer turned developer. Not legal advice.
+              {t("footer")}
             </p>
           </div>
         </div>

@@ -18,6 +18,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { LEGACY_PROVENANCE_PROVIDER } from "@/lib/analyzer";
 import type { AnalysisProvenance, ReasoningEffortLabel } from "@/types";
 
@@ -78,10 +79,11 @@ function PassEffortRow({
 
 /** Graceful fallback for saved analyses predating transparency logging. */
 function LegacyFooter() {
+  const t = useTranslations("AnalysisFooter");
   return (
     <footer className="mt-10 border-t border-[var(--border-primary)] pt-5 pb-3 theme-transition">
       <p className="text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
-        Recorded before transparency logging was enabled
+        {t("legacyNote")}
       </p>
     </footer>
   );
@@ -89,6 +91,7 @@ function LegacyFooter() {
 
 /** Colophon footer rendered at the tail of an analysis report. */
 export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
+  const t = useTranslations("AnalysisFooter");
   const [expanded, setExpanded] = useState(false);
 
   if (provenance.provider === LEGACY_PROVENANCE_PROVIDER) {
@@ -109,7 +112,7 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           <span
             className="text-[13px] font-semibold uppercase tracking-[2px] text-[var(--text-tertiary)] font-[var(--font-body)]"
           >
-            Recorded by
+            {t("recordedBy")}
           </span>
           {/* Each identifier is its own `select-all` span so a single
               click copies JUST that value (the separator dots are
@@ -131,7 +134,7 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           onClick={() => setExpanded((v) => !v)}
           className="group inline-flex items-center gap-1 self-start text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--text-secondary)] hover:underline"
         >
-          <span>details</span>
+          <span>{t("details")}</span>
           <span
             data-glyph
             className={`inline-block transition-transform duration-150 ${expanded ? "rotate-180" : ""}`}
@@ -147,44 +150,44 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
       >
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-4">
-            <MetaField label="Provider" value={provenance.provider} />
-            <MetaField label="Model" value={provenance.model} />
-            <MetaField label="Snapshot" value={provenance.snapshot} />
-            <MetaField label="Region" value={provenance.region} />
+            <MetaField label={t("provider")} value={provenance.provider} />
+            <MetaField label={t("model")} value={provenance.model} />
+            <MetaField label={t("snapshot")} value={provenance.snapshot} />
+            <MetaField label={t("region")} value={provenance.region} />
             <MetaField
-              label="Prompt template"
+              label={t("promptTemplate")}
               value={provenance.prompt_template_version}
             />
-            <MetaField label="Recorded at" value={provenance.timestamp} />
+            <MetaField label={t("recordedAt")} value={provenance.timestamp} />
             <MetaField
-              label="Redaction"
+              label={t("redaction")}
               value={
                 provenance.redaction_location === "client"
-                  ? "Analysis: client-side · Chat: API-boundary"
+                  ? t("clientAnalysis")
                   : provenance.redaction_location === "server"
-                    ? "API boundary (server-side)"
+                    ? t("apiBoundary")
                     : "\u2014"
               }
             />
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className={LABEL_CLASS}>Pass effort</span>
+            <span className={LABEL_CLASS}>{t("passEffort")}</span>
             <div className="flex flex-col gap-2">
               <PassEffortRow
-                name="Overview"
+                name={t("passOverview")}
                 effort={provenance.reasoning_effort_per_pass.overview}
               />
               <PassEffortRow
-                name="Extraction"
+                name={t("passExtraction")}
                 effort={provenance.reasoning_effort_per_pass.extraction}
               />
               <PassEffortRow
-                name="Risk"
+                name={t("passRisk")}
                 effort={provenance.reasoning_effort_per_pass.risk}
               />
               <PassEffortRow
-                name="Think hard"
+                name={t("passThinkHard")}
                 effort={provenance.reasoning_effort_per_pass.think_hard}
               />
             </div>
@@ -192,7 +195,7 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
         </div>
 
         <p className="mt-5 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
-          This analysis was produced by a generative AI system. Logged per EU AI Act transparency requirements.
+          {t("disclosure")}
         </p>
       </div>
 
@@ -201,7 +204,7 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
           data-testid="ocr-note"
         >
-          Text extracted via on-device OCR — no third-party vision model.
+          {t("ocrNote")}
         </p>
       )}
       {provenance.text_source === "hybrid" && (
@@ -209,7 +212,7 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
           className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
           data-testid="ocr-note"
         >
-          Some pages extracted via on-device OCR — no third-party vision model.
+          {t("hybridOcrNote")}
         </p>
       )}
     </footer>

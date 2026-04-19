@@ -6,7 +6,8 @@
  * SP-1.9 Phase 6: added editable-labels block tests (Task 6.2).
  */
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { screen, fireEvent, cleanup } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { RedactionPreview } from "./RedactionPreview";
 
 const RAW = "ACME Corp emails dpo@acme.eu and pays NL91 ABNA 0417 1643 00.";

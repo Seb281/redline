@@ -3,6 +3,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface LoginPromptProps {
@@ -21,6 +22,7 @@ type LoginState = "idle" | "submitting" | "sent" | "error";
  * recheck and adjusts the UI accordingly.
  */
 export function LoginPrompt({ message }: LoginPromptProps) {
+  const t = useTranslations("LoginPrompt");
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<LoginState>("idle");
@@ -40,21 +42,24 @@ export function LoginPrompt({ message }: LoginPromptProps) {
       } catch (err) {
         setState("error");
         setError(
-          err instanceof Error ? err.message : "Failed to send login link",
+          err instanceof Error ? err.message : t("failed"),
         );
       }
     },
-    [email, login],
+    [email, login, t],
   );
 
   if (state === "sent") {
     return (
       <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-4 text-center theme-transition">
         <p className="text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-          Check your inbox
+          {t("inboxHeading")}
         </p>
         <p className="mt-1 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-          We sent a login link to <strong>{email}</strong>
+          {t.rich("inboxBody", {
+            email,
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
         <button
           type="button"
@@ -64,7 +69,7 @@ export function LoginPrompt({ message }: LoginPromptProps) {
           }}
           className="mt-3 text-sm text-[var(--accent)] font-[var(--font-body)] hover:underline"
         >
-          Use a different email
+          {t("useDifferentEmail")}
         </button>
       </div>
     );
@@ -82,7 +87,7 @@ export function LoginPrompt({ message }: LoginPromptProps) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
+          placeholder={t("emailPlaceholder")}
           required
           className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
         />
@@ -91,7 +96,7 @@ export function LoginPrompt({ message }: LoginPromptProps) {
           disabled={state === "submitting"}
           className="rounded bg-[var(--text-primary)] px-4 py-2 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80 disabled:opacity-50"
         >
-          {state === "submitting" ? "Sending..." : "Log in"}
+          {state === "submitting" ? t("sending") : t("logIn")}
         </button>
       </form>
       {error && (

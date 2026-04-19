@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { StreamingAnalysisState } from "@/hooks/useStreamingAnalysis";
 
 interface AnalysisProgressProps {
@@ -13,13 +14,13 @@ interface AnalysisProgressProps {
   totalCount: number | null;
 }
 
-const STEPS = [
-  { label: "Upload" },
-  { label: "Overview" },
-  { label: "Redact" },
-  { label: "Role" },
-  { label: "Analysis" },
-  { label: "Complete" },
+const STEP_KEYS = [
+  "stepUpload",
+  "stepOverview",
+  "stepRedact",
+  "stepRole",
+  "stepAnalysis",
+  "stepComplete",
 ] as const;
 
 /** Map streaming status to the currently active step index (0-based). */
@@ -52,6 +53,7 @@ export function AnalysisProgress({
   analyzedCount,
   totalCount,
 }: AnalysisProgressProps) {
+  const t = useTranslations("AnalysisProgress");
   const activeStep = getActiveStep(status);
   const isError = status === "error";
 
@@ -59,12 +61,12 @@ export function AnalysisProgress({
     <div className="mb-8">
       {/* Step indicators */}
       <div className="flex items-center justify-between">
-        {STEPS.map((step, i) => {
+        {STEP_KEYS.map((stepKey, i) => {
           const isComplete = !isError && activeStep > i;
           const isActive = !isError && activeStep === i;
 
           return (
-            <div key={step.label} className="flex flex-1 items-center">
+            <div key={stepKey} className="flex flex-1 items-center">
               {/* Step circle + label */}
               <div className="flex flex-col items-center">
                 <div
@@ -103,12 +105,12 @@ export function AnalysisProgress({
                         : "text-[var(--text-muted)]"
                   }`}
                 >
-                  {step.label}
+                  {t(stepKey)}
                 </span>
               </div>
 
               {/* Connector line (not after last step) */}
-              {i < STEPS.length - 1 && (
+              {i < STEP_KEYS.length - 1 && (
                 <div
                   className={`mx-2 h-[2px] flex-1 transition-colors ${
                     !isError && activeStep > i
@@ -126,17 +128,17 @@ export function AnalysisProgress({
       <div className="mt-3 text-center">
         {status === "analyzing_overview" && (
           <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Extracting contract metadata...
+            {t("extracting")}
           </p>
         )}
         {status === "awaiting_redaction" && (
           <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Review what will be masked
+            {t("reviewMasked")}
           </p>
         )}
         {status === "awaiting_role" && (
           <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Select your perspective
+            {t("selectPerspective")}
           </p>
         )}
         {status === "analyzing" && totalCount !== null && (
@@ -151,19 +153,19 @@ export function AnalysisProgress({
             </div>
             <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
               {analyzedCount < totalCount
-                ? `Analyzing clause ${analyzedCount + 1} of ${totalCount}...`
-                : `All ${totalCount} clauses analyzed`}
+                ? t("analyzingClause", { n: analyzedCount + 1, total: totalCount })
+                : t("allClausesDone", { total: totalCount })}
             </p>
           </div>
         )}
         {status === "analyzing" && totalCount === null && (
           <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
-            Extracting clauses...
+            {t("extractingClauses")}
           </p>
         )}
         {status === "complete" && (
           <p className="text-sm text-green-600 font-[var(--font-body)] dark:text-green-400">
-            Analysis complete
+            {t("complete")}
           </p>
         )}
       </div>

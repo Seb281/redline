@@ -3,6 +3,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
@@ -15,6 +16,7 @@ import { IT_EMPLOYMENT_TEXT, IT_EMPLOYMENT_UPLOAD } from "@/data/sample-contract
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contracts/nl-freelance";
 import { PL_DISTRIBUTION_TEXT, PL_DISTRIBUTION_UPLOAD } from "@/data/sample-contracts/pl-distribution";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
+import { Link } from "@/i18n/navigation";
 import { saveAnalysis, uploadContract, warmBackend } from "@/lib/api";
 import type { AnalysisMode, AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
 
@@ -36,6 +38,8 @@ interface PendingAnalysis {
 }
 
 export default function Home() {
+  const t = useTranslations("Home");
+  const tChat = useTranslations("ChatPanel");
   const [state, setState] = useState<AppState>({ view: "upload" });
   const [mode, setMode] = useState<AnalysisMode>("fast");
   const [isUploading, setIsUploading] = useState(false);
@@ -129,12 +133,12 @@ export default function Home() {
         setIsUploading(false);
         startAnalysis(uploadResult, uploadResult.extracted_text, mode, withCitations);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
+        setError(err instanceof Error ? err.message : t("genericError"));
         setState({ view: "upload" });
         setIsUploading(false);
       }
     },
-    [startAnalysis, mode],
+    [startAnalysis, mode, t],
   );
 
   /**
@@ -212,12 +216,13 @@ export default function Home() {
   }, [streaming]);
 
   /** Open chat with a pre-populated question about a specific clause. */
-  const handleAskAboutClause = useCallback((clause: AnalyzedClause) => {
-    setChatQuestion(
-      `What are the risks of the "${clause.title}" clause, and how could I negotiate better terms?`
-    );
-    setChatOpen(true);
-  }, []);
+  const handleAskAboutClause = useCallback(
+    (clause: AnalyzedClause) => {
+      setChatQuestion(tChat("askClausePrompt", { title: clause.title }));
+      setChatOpen(true);
+    },
+    [tChat],
+  );
 
   const handleOpenChat = useCallback(() => {
     setChatOpen(true);
@@ -248,13 +253,13 @@ export default function Home() {
           {/* Hero */}
           <div className="pb-10 pt-18 text-center">
             <p className="mb-4 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-              AI-Powered Contract Tools
+              {t("tagline")}
             </p>
             <h1 className="mx-auto mb-4 max-w-[560px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
-              Know what you&apos;re signing — before you sign it.
+              {t("heading")}
             </h1>
             <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-              Analyze risk or strip PII — two first-class entry points, no account required.
+              {t("subheading")}
             </p>
           </div>
 
@@ -263,37 +268,37 @@ export default function Home() {
             {/* Analyze tile — primary, active on this page */}
             <div className="rounded border-2 border-[var(--accent)] bg-[var(--accent-subtle)] p-6 theme-transition">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-                Primary
+                {t("primary")}
               </p>
               <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                Analyze contract
+                {t("analyzeContract")}
               </h2>
               <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                Multi-pass AI risk breakdown, clause by clause, in plain English.
+                {t("analyzeDesc")}
               </p>
               <p className="text-[13px] font-medium text-[var(--accent)] font-[var(--font-body)]">
-                ↓ Upload below to start
+                {t("uploadCta")}
               </p>
             </div>
 
             {/* Redact tile — links to /redact */}
-            <a
+            <Link
               href="/redact"
               className="block rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-6 no-underline transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] theme-transition"
             >
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--text-muted)] font-[var(--font-body)]">
-                Privacy
+                {t("privacy")}
               </p>
               <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                Redact &amp; export
+                {t("redactExport")}
               </h2>
               <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                PII-stripped PDF built in your browser — file never leaves your device.
+                {t("redactDesc")}
               </p>
               <p className="text-[13px] font-medium text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors group-hover:text-[var(--accent)]">
-                Go to Redact →
+                {t("goRedact")}
               </p>
-            </a>
+            </Link>
           </div>
 
           {/* Upload zone — Analyze entry point */}
@@ -315,7 +320,7 @@ export default function Home() {
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 }`}
               >
-                Fast
+                {t("fast")}
               </button>
               <button
                 type="button"
@@ -326,30 +331,30 @@ export default function Home() {
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 }`}
               >
-                Deep
+                {t("deep")}
               </button>
             </div>
           </div>
           <p className="mt-2 text-center text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-            {mode === "fast" ? "Quick batched scan — Mistral Small (EU)" : "Thorough per-clause analysis — Mistral Small (EU)"}
+            {mode === "fast" ? t("fastDesc") : t("deepDesc")}
           </p>
 
           {/* Demo CTA — 3 EU sample contracts */}
           <div className="mt-6 text-center">
             <p className="mb-2 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-              or try a demo with a sample EU contract
+              {t("demoIntro")}
             </p>
             <div className="inline-flex flex-wrap justify-center gap-2">
               {(
                 [
-                  { id: "nl", label: "NL · Freelance" },
-                  { id: "fr", label: "FR · Employment" },
-                  { id: "de", label: "DE · SaaS + DPA" },
-                  { id: "es", label: "ES · SaaS services" },
-                  { id: "it", label: "IT · Employment" },
-                  { id: "pl", label: "PL · Distribution" },
+                  { id: "nl", labelKey: "demoNl" },
+                  { id: "fr", labelKey: "demoFr" },
+                  { id: "de", labelKey: "demoDe" },
+                  { id: "es", labelKey: "demoEs" },
+                  { id: "it", labelKey: "demoIt" },
+                  { id: "pl", labelKey: "demoPl" },
                 ] as const
-              ).map(({ id, label }) => (
+              ).map(({ id, labelKey }) => (
                 <button
                   key={id}
                   type="button"
@@ -357,7 +362,7 @@ export default function Home() {
                   disabled={isUploading}
                   className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-1.5 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {label}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -366,20 +371,20 @@ export default function Home() {
           {/* How it works */}
           <div className="mx-auto mt-14 max-w-[540px]">
             <p className="mb-4 text-center text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-              How it works
+              {t("howItWorks")}
             </p>
             <div className="flex gap-4">
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">1. Upload</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">Your contract, PDF or DOCX</p>
+                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step1Title")}</p>
+                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step1Body")}</p>
               </div>
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">2. Analyze</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">AI reads every clause and assesses risk</p>
+                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step2Title")}</p>
+                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step2Body")}</p>
               </div>
               <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">3. Review</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">Plain-English risk report with export options</p>
+                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step3Title")}</p>
+                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step3Body")}</p>
               </div>
             </div>
           </div>
@@ -387,7 +392,7 @@ export default function Home() {
           {/* Built-by line */}
           <div className="mx-auto mt-12 max-w-[540px] border-t border-[var(--border-primary)] pt-5 text-center">
             <p className="text-[15px] italic text-[var(--text-muted)] font-[var(--font-heading)]">
-              Built by a corporate lawyer turned developer. Not legal advice.
+              {t("footer")}
             </p>
           </div>
         </>

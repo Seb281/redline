@@ -82,6 +82,17 @@ export default function PrivacyPage() {
 
       {/* 4. Third-party processors */}
       <Section title="Third-party processors">
+        <p className="mb-3">
+          For a per-provider breakdown — including region, data
+          categories, and legal basis — see the{" "}
+          <Link
+            href="/data-residency"
+            className="text-[var(--accent)] hover:underline"
+          >
+            data residency page
+          </Link>
+          .
+        </p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong>Mistral AI</strong> (<code>mistral-small-latest</code>) —

@@ -120,11 +120,7 @@ export function useRedactExport(): UseRedactExportApi {
   const runOverview = useCallback(async (extracted: ExtractedPdf) => {
     setStatus("running_overview");
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const { ranges, skipped } = await tokenizeForPdf(
-        extracted.fullText,
-        baseUrl,
-      );
+      const { ranges, skipped } = await tokenizeForPdf(extracted.fullText);
       smartSkippedRef.current = skipped;
       setPreview({ extracted, tokens: ranges });
       setStatus("awaiting_preview");

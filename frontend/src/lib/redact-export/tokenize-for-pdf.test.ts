@@ -53,7 +53,7 @@ describe("tokenizeForPdf", () => {
       ),
     ) as typeof fetch;
 
-    const out = await tokenizeForPdf(text, "");
+    const out = await tokenizeForPdf(text);
     const party = out.ranges.find((t) => t.label === "[Provider]");
     expect(party).toBeDefined();
     expect(party?.kind).toBe("ORG");
@@ -86,7 +86,7 @@ describe("tokenizeForPdf", () => {
       ),
     ) as typeof fetch;
 
-    const out = await tokenizeForPdf(text, "");
+    const out = await tokenizeForPdf(text);
     const party = out.ranges.find((t) => t.label === "[Provider]");
     expect(party).toBeDefined();
     expect(party?.original).toBe("Acme BV");
@@ -111,7 +111,7 @@ describe("tokenizeForPdf", () => {
       ),
     ) as typeof fetch;
 
-    const out = await tokenizeForPdf(text, "");
+    const out = await tokenizeForPdf(text);
     expect(out.ranges.find((t) => t.label === "[Counterparty]")).toBeUndefined();
     expect(out.skipped).toHaveLength(1);
     expect(out.skipped[0]).toMatchObject({
@@ -125,7 +125,7 @@ describe("tokenizeForPdf", () => {
     globalThis.fetch = vi.fn(async () =>
       new Response("down", { status: 500 }),
     ) as typeof fetch;
-    await expect(tokenizeForPdf("any", "")).rejects.toMatchObject({
+    await expect(tokenizeForPdf("any")).rejects.toMatchObject({
       name: "SmartOverviewError",
     });
   });
@@ -134,7 +134,7 @@ describe("tokenizeForPdf", () => {
     globalThis.fetch = vi.fn(async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;
-    await expect(tokenizeForPdf("any", "")).rejects.toMatchObject({
+    await expect(tokenizeForPdf("any")).rejects.toMatchObject({
       name: "SmartOverviewError",
     });
   });

@@ -136,15 +136,18 @@ export function collectPatternRanges(fullText: string): TokenRange[] {
  */
 export async function tokenizeForPdf(
   fullText: string,
-  apiBaseUrl: string,
 ): Promise<{ ranges: TokenRange[]; skipped: SkippedMatch[] }> {
   const patternRanges = collectPatternRanges(fullText);
   const { scrubbed } = redactPatterns(fullText);
 
   let parties: Array<{ name: string; role_label?: string | null }>;
   try {
-    const url = `${apiBaseUrl}/api/analyze/overview`;
-    const res = await fetch(url, {
+    // `/api/analyze/overview` is a Next.js App Router route served from the
+    // same origin as this client bundle — always reachable via a relative
+    // URL. Do NOT prefix with NEXT_PUBLIC_API_URL: that env var points at
+    // the FastAPI backend (Railway), which has no such route and answers
+    // 404. This was the bug that broke Smart mode in production.
+    const res = await fetch("/api/analyze/overview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: scrubbed }),

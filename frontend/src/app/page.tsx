@@ -246,19 +246,57 @@ export default function Home() {
       {state.view === "upload" && (
         <>
           {/* Hero */}
-          <div className="pb-12 pt-18 text-center">
+          <div className="pb-10 pt-18 text-center">
             <p className="mb-4 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-              AI-Powered Contract Analysis
+              AI-Powered Contract Tools
             </p>
-            <h1 className="mx-auto mb-4 max-w-[540px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
+            <h1 className="mx-auto mb-4 max-w-[560px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
               Know what you&apos;re signing — before you sign it.
             </h1>
             <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-              Upload a contract. Get a clause-by-clause risk breakdown written in plain English.
+              Analyze risk or strip PII — two first-class entry points, no account required.
             </p>
           </div>
 
-          {/* Upload zone */}
+          {/* Two equal entry-point tiles */}
+          <div className="mx-auto mb-10 grid max-w-[620px] grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Analyze tile — primary, active on this page */}
+            <div className="rounded border-2 border-[var(--accent)] bg-[var(--accent-subtle)] p-6 theme-transition">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+                Primary
+              </p>
+              <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+                Analyze contract
+              </h2>
+              <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
+                Multi-pass AI risk breakdown, clause by clause, in plain English.
+              </p>
+              <p className="text-[13px] font-medium text-[var(--accent)] font-[var(--font-body)]">
+                ↓ Upload below to start
+              </p>
+            </div>
+
+            {/* Redact tile — links to /redact */}
+            <a
+              href="/redact"
+              className="block rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-6 no-underline transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] theme-transition"
+            >
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--text-muted)] font-[var(--font-body)]">
+                Privacy
+              </p>
+              <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+                Redact &amp; export
+              </h2>
+              <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
+                PII-stripped PDF built in your browser — file never leaves your device.
+              </p>
+              <p className="text-[13px] font-medium text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors group-hover:text-[var(--accent)]">
+                Go to Redact →
+              </p>
+            </a>
+          </div>
+
+          {/* Upload zone — Analyze entry point */}
           <FileUpload
             onFileSelected={handleFileSelected}
             isUploading={isUploading}

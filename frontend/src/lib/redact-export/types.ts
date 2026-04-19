@@ -75,8 +75,14 @@ export type TokenKind =
   | "EMAIL"
   | "PHONE"
   | "IBAN"
+  | "VAT"
   | "ADDRESS"
   | "POSTCODE"
+  | "ID_NUMBER"
+  | "DOB"
+  | "BANK"
+  | "COMPANY_REG"
+  | "URL"
   | "DATE"
   | "MONEY"
   | "OTHER";
@@ -107,12 +113,26 @@ export interface SkippedMatch {
   original: string;
 }
 
-/** Kinds that escalate the skipped-match banner to red + require user confirmation. */
+/** Kinds that escalate the skipped-match banner to red + require user confirmation.
+ *
+ * Heuristic: leaving one of these visible in a shared PDF would expose a
+ * natural person, reveal a direct contact channel, or leak a bank /
+ * identity / registration number. POSTCODE, VAT (public register),
+ * DATE, and MONEY are intentionally non-sensitive — a stray postal code
+ * or contract total does not, on its own, identify a person.
+ */
 export const SENSITIVE_KINDS: ReadonlySet<TokenKind> = new Set([
   "PERSON",
   "ORG",
   "EMAIL",
+  "PHONE",
   "IBAN",
+  "ADDRESS",
+  "ID_NUMBER",
+  "DOB",
+  "BANK",
+  "COMPANY_REG",
+  "URL",
 ]);
 
 /** State-machine phases for the `/redact` flow hook. */

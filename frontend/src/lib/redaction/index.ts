@@ -21,8 +21,10 @@
 
 import { PATTERNS, type Pattern } from "./patterns";
 import { replaceParties, type LabeledParty } from "./parties";
+import { resolveEntities, type PiiEntityInput } from "./entities";
 
 export type { LabeledParty };
+export type { PiiEntityInput };
 
 export interface RedactionResult {
   scrubbed: string;
@@ -113,21 +115,95 @@ export function redactParties(text: string, parties: LabeledParty[]): RedactionR
 }
 
 /**
- * Thin wrapper composing the two phases — kept so callers outside the
- * streaming flow (chat route, Markdown export, tests) keep their
+ * LLM-sourced PII redaction phase (SP-3.5). Runs AFTER `redactPatterns`
+ * so the deterministic regex catalog always wins — entities only fill
+ * the gaps the regexes cannot express cleanly across 27 member states
+ * (unprefixed phones, postal addresses, national IDs, DOBs, etc.).
+ *
+ * Counters are allocated against `existingMap` so kinds that already
+ * appeared in the pattern phase (e.g. `⟦PHONE_1⟧`) continue numbering
+ * from the next free index — no collision possible.
+ */
+export function redactEntities(
+  text: string,
+  entities: PiiEntityInput[],
+  existingMap?: Map<string, string>,
+): RedactionResult {
+  const tokenMap = new Map<string, string>();
+  if (!entities || entities.length === 0) {
+    return { scrubbed: text, tokenMap };
+  }
+
+  const taken = new Set<string>(existingMap?.keys() ?? []);
+
+  const raw = resolveEntities(text, entities);
+  const sorted = [...raw].sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.end - b.start - (a.end - a.start);
+  });
+  const deduped: typeof sorted = [];
+  let lastEnd = -1;
+  for (const m of sorted) {
+    if (m.start < lastEnd) continue;
+    deduped.push(m);
+    lastEnd = m.end;
+  }
+
+  const counters = new Map<string, number>();
+  const seen = new Map<string, string>();
+  const replacements: { start: number; end: number; token: string }[] = [];
+  for (const m of deduped) {
+    let token = seen.get(m.value);
+    if (!token) {
+      let n = (counters.get(m.kind) ?? 0) + 1;
+      while (taken.has(makeToken(m.kind, n))) n++;
+      counters.set(m.kind, n);
+      token = makeToken(m.kind, n);
+      taken.add(token);
+      tokenMap.set(token, m.value);
+      seen.set(m.value, token);
+    }
+    replacements.push({ start: m.start, end: m.end, token });
+  }
+
+  let out = text;
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, token } = replacements[i];
+    out = out.slice(0, start) + token + out.slice(end);
+  }
+  return { scrubbed: out, tokenMap };
+}
+
+/**
+ * Thin wrapper composing the redaction phases — kept so callers outside
+ * the streaming flow (chat route, Markdown export, tests) keep their
  * existing single-call API.
  *
- * Order: patterns first so parties never overlap with already-tokenized
- * spans. Party names are natural-language strings and patterns match
- * email/phone/IBAN/VAT formats, so collisions are structurally
- * impossible — but ordering the phases explicitly keeps the invariant
- * obvious.
+ * Order: patterns → entities → parties. Patterns are the trust anchor
+ * (checksum-validated, no hallucinations). Entities layer semantic PII
+ * from Pass 0 on top of what the regexes cannot catch. Parties run last
+ * so their natural-language names never straddle an already-tokenized
+ * span. The three kind spaces are structurally disjoint so collisions
+ * between them are avoided at the counter layer (see `redactEntities`).
+ *
+ * `entities` defaults to `[]` for backwards compatibility — every pre-
+ * SP-3.5 caller works unchanged.
  */
-export function redact(text: string, parties: LabeledParty[]): RedactionResult {
+export function redact(
+  text: string,
+  parties: LabeledParty[],
+  entities: PiiEntityInput[] = [],
+): RedactionResult {
   const patternPhase = redactPatterns(text);
-  const partyPhase = redactParties(patternPhase.scrubbed, parties);
+  const entityPhase = redactEntities(
+    patternPhase.scrubbed,
+    entities,
+    patternPhase.tokenMap,
+  );
+  const partyPhase = redactParties(entityPhase.scrubbed, parties);
   const tokenMap = new Map<string, string>();
   for (const [k, v] of patternPhase.tokenMap) tokenMap.set(k, v);
+  for (const [k, v] of entityPhase.tokenMap) tokenMap.set(k, v);
   for (const [k, v] of partyPhase.tokenMap) tokenMap.set(k, v);
   return { scrubbed: partyPhase.scrubbed, tokenMap };
 }
@@ -158,21 +234,34 @@ export function rebuildScrubbed(
   raw: string,
   fullMap: Map<string, string>,
   activeTokens: Map<string, string>,
+  entities: PiiEntityInput[] = [],
 ): string {
   const patternPhase = redactPatterns(raw);
+  const entityPhase = redactEntities(
+    patternPhase.scrubbed,
+    entities,
+    patternPhase.tokenMap,
+  );
   const patternTokens = new Set(patternPhase.tokenMap.keys());
+  const entityTokens = new Set(entityPhase.tokenMap.keys());
 
+  // Anything in fullMap that isn't a pattern or entity token is a party
+  // token — reconstruct it from the encoded label.
   const partyEntries: LabeledParty[] = [];
   for (const [token, original] of fullMap) {
     if (patternTokens.has(token)) continue;
+    if (entityTokens.has(token)) continue;
     if (!activeTokens.has(token)) continue;
     const m = token.match(/^\u27E6(.+)\u27E7$/);
     if (m) partyEntries.push({ name: original, label: m[1] });
   }
-  const { scrubbed } = redactParties(patternPhase.scrubbed, partyEntries);
+  const { scrubbed } = redactParties(entityPhase.scrubbed, partyEntries);
 
   const disabled = new Map<string, string>();
   for (const [token, original] of patternPhase.tokenMap) {
+    if (!activeTokens.has(token)) disabled.set(token, original);
+  }
+  for (const [token, original] of entityPhase.tokenMap) {
     if (!activeTokens.has(token)) disabled.set(token, original);
   }
   return rehydrate(scrubbed, disabled);

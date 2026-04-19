@@ -105,6 +105,40 @@ export interface Party {
   role_label: string | null;
 }
 
+/**
+ * SP-3.5 — Semantic PII entity kinds emitted by Pass 0. Mirror of the
+ * Zod `piiEntityKindEnum` in `lib/analyzer.ts`. New kinds must be added
+ * in both places (and in `backend/app/schemas.py`).
+ */
+export type PiiEntityKind =
+  | "PERSON"
+  | "ADDRESS"
+  | "POSTCODE"
+  | "PHONE"
+  | "EMAIL"
+  | "IBAN"
+  | "VAT"
+  | "ID_NUMBER"
+  | "DOB"
+  | "BANK"
+  | "COMPANY_REG"
+  | "URL"
+  | "OTHER";
+
+/**
+ * SP-3.5 — One semantic PII span flagged by Pass 0. The regex pattern
+ * catalog still runs first (deterministic, cheap, checksum-validated);
+ * these entries fill the gap for formats no regex can express safely
+ * across 27 member states — unprefixed phones, postal addresses,
+ * national ID numbers, dates of birth, bank BICs, etc. `text` is a
+ * verbatim substring the redaction pipeline resolves back to char
+ * offsets via exact-match.
+ */
+export interface PiiEntity {
+  kind: PiiEntityKind;
+  text: string;
+}
+
 /** High-level contract metadata extracted in Pass 0. */
 export interface ContractOverview {
   contract_type: string;
@@ -122,6 +156,12 @@ export interface ContractOverview {
   jurisdiction_evidence: JurisdictionEvidence | null;
   key_terms: string[];
   clause_inventory: ClauseInventoryItem[];
+  /**
+   * SP-3.5 — Semantic PII spans beyond the regex catalog. Optional so
+   * pre-SP-3.5 saved analyses deserialise unchanged; fresh Pass 0
+   * output always emits at least `[]`.
+   */
+  pii_entities?: PiiEntity[];
 }
 
 /** Risk assessment level for a clause. */

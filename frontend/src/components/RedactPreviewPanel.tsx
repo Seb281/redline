@@ -41,10 +41,22 @@ function kindLabel(kind: TokenKind): string {
       return "Phone numbers";
     case "IBAN":
       return "IBANs";
+    case "VAT":
+      return "VAT numbers";
     case "ADDRESS":
       return "Addresses";
     case "POSTCODE":
       return "Postcodes";
+    case "ID_NUMBER":
+      return "ID numbers";
+    case "DOB":
+      return "Dates of birth";
+    case "BANK":
+      return "Bank details";
+    case "COMPANY_REG":
+      return "Company registrations";
+    case "URL":
+      return "URLs";
     case "DATE":
       return "Dates";
     case "MONEY":

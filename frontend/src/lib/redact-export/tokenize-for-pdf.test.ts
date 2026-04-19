@@ -138,4 +138,89 @@ describe("tokenizeForPdf", () => {
       name: "SmartOverviewError",
     });
   });
+
+  it("redacts unprefixed phone numbers via the LLM entity layer", async () => {
+    // "644805783" slips past the PHONE regex (which requires a +prefix).
+    // Pass 0 emits it as a PHONE entity and tokenizeForPdf must pick
+    // it up as a sensitive TokenRange so the overlay paints over it.
+    const text = "Support line 644805783 is open 9-18.";
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          overview: {
+            parties: [],
+            pii_entities: [{ kind: "PHONE", text: "644805783" }],
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const out = await tokenizeForPdf(text);
+    const phone = out.ranges.find((r) => r.kind === "PHONE");
+    expect(phone).toBeDefined();
+    expect(phone?.original).toBe("644805783");
+    expect(phone?.label).toBe("[Phone 1]");
+  });
+
+  it("maps ADDRESS entities to the TokenKind of the same name", async () => {
+    const text = "Registered office at Hauptstraße 12, 10115 Berlin.";
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          overview: {
+            parties: [],
+            pii_entities: [
+              { kind: "ADDRESS", text: "Hauptstraße 12, 10115 Berlin" },
+            ],
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const out = await tokenizeForPdf(text);
+    const address = out.ranges.find((r) => r.kind === "ADDRESS");
+    expect(address).toBeDefined();
+    expect(address?.original).toBe("Hauptstraße 12, 10115 Berlin");
+  });
+
+  it("drops entity matches that overlap a pattern hit", async () => {
+    // Both the regex and the LLM flag the email — only the pattern
+    // range should survive, so the tokenMap has exactly one email
+    // entry and the overlay paints one rectangle, not two overlapping.
+    const text = "Contact dpo@example.eu for support.";
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          overview: {
+            parties: [],
+            pii_entities: [{ kind: "EMAIL", text: "dpo@example.eu" }],
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const out = await tokenizeForPdf(text);
+    const emails = out.ranges.filter((r) => r.kind === "EMAIL");
+    expect(emails).toHaveLength(1);
+    // Pattern ranges carry labels of the form "[Email 1]" while entity
+    // ranges also start numbering from 1 for their own kind — checking
+    // the count is the unambiguous assertion here.
+  });
+
+  it("tolerates overviews that omit pii_entities (legacy shape)", async () => {
+    const text = "Classic Pass 0 response without pii_entities.";
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ overview: { parties: [] } }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const out = await tokenizeForPdf(text);
+    expect(out.ranges).toEqual([]);
+    expect(out.skipped).toEqual([]);
+  });
 });

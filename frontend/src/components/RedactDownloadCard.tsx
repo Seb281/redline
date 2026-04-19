@@ -36,6 +36,12 @@ const KIND_ORDER: TokenKind[] = [
   "PHONE",
   "ADDRESS",
   "POSTCODE",
+  "ID_NUMBER",
+  "DOB",
+  "BANK",
+  "COMPANY_REG",
+  "VAT",
+  "URL",
   "DATE",
   "MONEY",
   "OTHER",
@@ -53,10 +59,22 @@ function kindLabel(kind: TokenKind): string {
       return "IBANs";
     case "PHONE":
       return "Phone numbers";
+    case "VAT":
+      return "VAT numbers";
     case "ADDRESS":
       return "Addresses";
     case "POSTCODE":
       return "Postcodes";
+    case "ID_NUMBER":
+      return "ID numbers";
+    case "DOB":
+      return "Dates of birth";
+    case "BANK":
+      return "Bank details";
+    case "COMPANY_REG":
+      return "Company registrations";
+    case "URL":
+      return "URLs";
     case "DATE":
       return "Dates";
     case "MONEY":

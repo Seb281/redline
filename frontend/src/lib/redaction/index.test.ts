@@ -231,3 +231,74 @@ describe("redact — composed with semantic labels", () => {
     expect(tokenMap.size).toBe(3);
   });
 });
+
+describe("redact — SP-3.5 entity layer", () => {
+  it("masks unprefixed phone numbers the pattern regex misses", () => {
+    // "+44 ..." style is caught by patterns, but a local number like
+    // "644805783" slips through — that is exactly what the LLM entity
+    // layer exists to cover.
+    const text = "Call 644805783 to reach us.";
+    const { scrubbed, tokenMap } = redact(text, [], [
+      { kind: "PHONE", text: "644805783" },
+    ]);
+    expect(scrubbed).not.toContain("644805783");
+    expect(scrubbed).toContain("\u27E6PHONE_1\u27E7");
+    expect(tokenMap.get("\u27E6PHONE_1\u27E7")).toBe("644805783");
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+
+  it("leaves pattern hits untouched when entities duplicate them", () => {
+    // Regex catches "+49 30 12345678" (international prefix). If the
+    // LLM also flags it, we keep the pattern token and skip the entity
+    // so the token map has exactly one entry for the phone.
+    const text = "International: +49 30 12345678 reaches the office.";
+    const { scrubbed, tokenMap } = redact(text, [], [
+      { kind: "PHONE", text: "+49 30 12345678" },
+    ]);
+    const phoneTokens = [...tokenMap.keys()].filter((k) => k.startsWith("\u27E6PHONE_"));
+    expect(phoneTokens).toHaveLength(1);
+    expect(scrubbed).toContain(phoneTokens[0]);
+  });
+
+  it("numbers entity tokens after pattern counters for the same kind", () => {
+    // Pattern catches the prefixed phone as ⟦PHONE_1⟧. The entity layer
+    // must allocate the next free index (⟦PHONE_2⟧) rather than reuse
+    // _1 and collide the two values in the token map.
+    const text = "Primary +49 30 12345678. Mobile 644805783.";
+    const { tokenMap } = redact(text, [], [
+      { kind: "PHONE", text: "644805783" },
+    ]);
+    expect(tokenMap.get("\u27E6PHONE_1\u27E7")).toBe("+49 30 12345678");
+    expect(tokenMap.get("\u27E6PHONE_2\u27E7")).toBe("644805783");
+  });
+
+  it("round-trips addresses flagged by the LLM", () => {
+    const text = "Registered at Hauptstraße 12, 10115 Berlin.";
+    const { scrubbed, tokenMap } = redact(text, [], [
+      { kind: "ADDRESS", text: "Hauptstraße 12, 10115 Berlin" },
+    ]);
+    expect(scrubbed).toContain("\u27E6ADDRESS_1\u27E7");
+    expect(rehydrate(scrubbed, tokenMap)).toBe(text);
+  });
+});
+
+describe("rebuildScrubbed — carries entity set across toggles", () => {
+  it("re-masks entity tokens when they are kept active", () => {
+    const raw = "Call 644805783 daily.";
+    const entities = [{ kind: "PHONE", text: "644805783" }];
+    const { tokenMap } = redact(raw, [], entities);
+    const out = rebuildScrubbed(raw, tokenMap, tokenMap, entities);
+    expect(out).toContain("\u27E6PHONE_1\u27E7");
+    expect(out).not.toContain("644805783");
+  });
+
+  it("reveals entity tokens the user toggled off", () => {
+    const raw = "Call 644805783 daily.";
+    const entities = [{ kind: "PHONE", text: "644805783" }];
+    const { tokenMap } = redact(raw, [], entities);
+    const active = new Map<string, string>(); // everything disabled
+    const out = rebuildScrubbed(raw, tokenMap, active, entities);
+    expect(out).toContain("644805783");
+    expect(out).not.toContain("\u27E6PHONE_1\u27E7");
+  });
+});

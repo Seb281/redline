@@ -63,10 +63,28 @@ function kindLabel(kind: string): string {
       return "IBANs";
     case "VAT":
       return "VATs";
-    case "FR":
+    case "FR_SSN":
       return "French SSN";
-    case "DE":
+    case "DE_TAX_ID":
       return "German tax ID";
+    case "PERSON":
+      return "People";
+    case "ADDRESS":
+      return "Addresses";
+    case "POSTCODE":
+      return "Postal codes";
+    case "ID_NUMBER":
+      return "ID numbers";
+    case "DOB":
+      return "Dates of birth";
+    case "BANK":
+      return "Bank details";
+    case "COMPANY_REG":
+      return "Company registrations";
+    case "URL":
+      return "URLs";
+    case "OTHER":
+      return "Other";
     default:
       return kind;
   }
@@ -74,11 +92,15 @@ function kindLabel(kind: string): string {
 
 /**
  * Pull the `KIND` prefix from a token like `⟦EMAIL_1⟧` or `⟦PARTY_A⟧`.
- * PARTY_A → "PARTY", EMAIL_1 → "EMAIL", FR_SSN_1 → "FR".
+ * Strips only the trailing `_N` counter (or `_A` letter suffix for party
+ * tokens), so compound kinds like `FR_SSN`, `ID_NUMBER`, `COMPANY_REG`
+ * survive intact. Falls back to the whole inner string when no counter
+ * suffix is present.
  */
 function tokenKind(token: string): string {
   const inner = token.slice(1, -1);
-  return inner.split("_")[0];
+  const match = inner.match(/^(.*)_[A-Z0-9]+$/);
+  return match ? match[1] : inner;
 }
 
 function groupByKind(tokenMap: Map<string, string>): KindGroup[] {

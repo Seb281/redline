@@ -113,7 +113,7 @@ export const DATA_FLOWS: DataFlow[] = [
     privacyPolicyUrl: "https://neon.com/privacy-policy",
     dpaUrl: "https://neon.com/dpa",
     notes:
-      "Only used when the backend DATABASE_URL env var is set. In the zero-backend-state configuration Redline runs without Neon and no personal data is persisted.",
+      "Only used when the backend DATABASE_URL env var is set. In the zero-backend-state configuration Redline runs without Neon and no personal data is persisted. Saved analyses are auto-deleted after 30 days (SP-5 retention) unless the user pins them.",
   },
   {
     provider: "Resend",

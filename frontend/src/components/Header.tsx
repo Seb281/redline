@@ -25,6 +25,14 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-3">
+          {/* Redact link — standalone PII-stripping flow, no account needed */}
+          <Link
+            href="/redact"
+            className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
+          >
+            Redact
+          </Link>
+
           {/* History link — always visible, page handles auth state */}
           <Link
             href="/history"

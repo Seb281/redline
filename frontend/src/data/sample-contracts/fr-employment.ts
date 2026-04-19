@@ -9,6 +9,15 @@
  *   - GDPR data-processing notice
  *   - inventions clause (Code de la propriété intellectuelle compliance)
  *   - severance and notice periods per Convention collective Syntec
+ *   - SP-2 clause de dédit-formation with excessive 3-year lock-in (Art. 1231-5
+ *     judicial revision of penalty clauses)
+ *
+ * SP-2 statute coverage:
+ *   - FR_CODE_TRAVAIL_NONCOMPETE → article 6 (no contrepartie)
+ *   - FR_CC_1171 (adhesion-contract imbalance) → mobility §5, non-compete §6
+ *   - FR_CC_1231_5 (penalty-clause revision) → article 12 dédit-formation
+ *   - FR_CCOM_L442_1 is B2B-only — not triggered in an employment sample
+ *   - EU_GDPR → article 9
  *
  * Snapshot harness assertions (Phase 7): must surface "non_compete" as high
  * risk, detect "FR" / "France" as jurisdiction, identify both parties.
@@ -113,7 +122,18 @@ Convention collective Syntec pour le statut Cadre. En cas de licenciement non mo
 par une faute grave ou lourde, le Salarié percevra une indemnité de licenciement \
 calculée selon les dispositions légales et conventionnelles.
 
-ARTICLE 11 — DROIT APPLICABLE ET JURIDICTION COMPÉTENTE
+ARTICLE 11 — CLAUSE DE DÉDIT-FORMATION
+
+La Société s'engage à financer, dans les six (6) premiers mois d'exécution du \
+contrat, une formation spécialisée d'un coût global de vingt mille euros \
+(20 000 €). En contrepartie, le Salarié s'engage à rester au service de la \
+Société pendant une durée de trois (3) années à compter de la fin de la \
+formation. En cas de démission ou de rupture du contrat à son initiative avant \
+l'expiration de ce délai, le Salarié devra rembourser à la Société l'intégralité \
+du coût de la formation, majorée d'une indemnité forfaitaire égale à trente (30) \
+% de ce montant au titre de préjudice subi par la Société.
+
+ARTICLE 12 — DROIT APPLICABLE ET JURIDICTION COMPÉTENTE
 
 Le présent contrat est soumis au droit français. Tout litige relatif à sa formation, \
 son exécution ou sa rupture sera de la compétence du Conseil de Prud'hommes de Paris.

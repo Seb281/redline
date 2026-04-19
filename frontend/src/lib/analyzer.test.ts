@@ -320,7 +320,7 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
     expect(r.success).toBe(true);
   });
 
-  it("rejects statute_cited with empty citations (invariant)", () => {
+  it("normalizes statute_cited with empty citations to general_principle (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -329,10 +329,12 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("general_principle");
+    expect(r.data?.applicable_law?.citations).toEqual([]);
   });
 
-  it("rejects general_principle with non-empty citations (invariant)", () => {
+  it("normalizes general_principle with valid citations to statute_cited (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -341,10 +343,12 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [{ code: "EU_GDPR" }],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("statute_cited");
+    expect(r.data?.applicable_law?.citations).toEqual([{ code: "EU_GDPR" }]);
   });
 
-  it("rejects off-enum citation codes", () => {
+  it("drops off-catalog citation codes and downgrades source_type (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -353,7 +357,30 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [{ code: "NOT_A_REAL_STATUTE" }],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.citations).toEqual([]);
+    expect(r.data?.applicable_law?.source_type).toBe("general_principle");
+  });
+
+  it("keeps valid citations and drops unknown ones (SP-2 mixed case)", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "mixed",
+        source_type: "statute_cited",
+        citations: [
+          { code: "DE_BGB_276" },
+          { code: "NOT_A_REAL_STATUTE" },
+          { code: "EU_GDPR" },
+        ],
+      },
+    });
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("statute_cited");
+    expect(r.data?.applicable_law?.citations).toEqual([
+      { code: "DE_BGB_276" },
+      { code: "EU_GDPR" },
+    ]);
   });
 
   it("rejects empty observation", () => {
@@ -388,6 +415,7 @@ describe("contractOverviewSchema — jurisdiction_evidence (SP-1.7)", () => {
       jurisdiction_evidence: {
         source_type: "stated",
         source_text: "§14 Governing Law",
+        country: "NL",
       },
     });
     expect(r.success).toBe(true);
@@ -396,7 +424,7 @@ describe("contractOverviewSchema — jurisdiction_evidence (SP-1.7)", () => {
   it("accepts source_type unknown with null source_text", () => {
     const r = contractOverviewSchema.safeParse({
       ...base,
-      jurisdiction_evidence: { source_type: "unknown", source_text: null },
+      jurisdiction_evidence: { source_type: "unknown", source_text: null, country: null },
     });
     expect(r.success).toBe(true);
   });
@@ -413,6 +441,20 @@ describe("OVERVIEW_SYSTEM_PROMPT includes jurisdiction_evidence instructions", (
     expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="stated"');
     expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="inferred"');
     expect(OVERVIEW_SYSTEM_PROMPT).toContain('source_type="unknown"');
+  });
+});
+
+describe("Pass 0 overview prompt — SP-2 country instructions", () => {
+  it("lists the EU-27 ISO-2 codes the model may emit", () => {
+    for (const code of ["DE", "NL", "FR", "ES", "IT", "PL", "BE", "GR"]) {
+      expect(OVERVIEW_SYSTEM_PROMPT).toContain(code);
+    }
+  });
+
+  it("instructs country=null for non-EU / unknown jurisdictions", () => {
+    expect(OVERVIEW_SYSTEM_PROMPT).toMatch(
+      /country.*null.*non-?EU|non-?EU.*country.*null/i,
+    );
   });
 });
 
@@ -484,6 +526,7 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
     const prompt = buildAnalysisSystemPrompt(true, null, "Germany", {
       source_type: "stated",
       source_text: "§20 Governing Law",
+      country: "DE",
     });
     expect(prompt).toContain("DE_BGB_276");
     expect(prompt).toContain("EU_GDPR");
@@ -496,6 +539,7 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
     const prompt = buildAnalysisSystemPrompt(true, null, "Netherlands", {
       source_type: "stated",
       source_text: "§14",
+      country: "NL",
     });
     expect(prompt).not.toContain("jurisdiction_note");
   });
@@ -504,5 +548,127 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
 describe("PROMPT_TEMPLATE_VERSION", () => {
   it("is bumped to 1.1 for SP-1.7", () => {
     expect(PROMPT_TEMPLATE_VERSION).toBe("1.1");
+  });
+});
+
+describe("buildAnalysisSystemPrompt — SP-2 country dispatch", () => {
+  it("DE jurisdiction prompt contains DE statutes + EU, no PL/ES/IT", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Germany", {
+      source_type: "stated",
+      source_text: "Governed by German law",
+      country: "DE",
+    });
+    expect(prompt).toContain("DE_BGB_276");
+    expect(prompt).toContain("EU_GDPR");
+    expect(prompt).not.toContain("NL_BW_7_650");
+    expect(prompt).not.toContain("FR_CODE_TRAVAIL_NONCOMPETE");
+  });
+
+  it("BE jurisdiction prompt contains EU only", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Belgium", {
+      source_type: "stated",
+      source_text: "Governed by Belgian law",
+      country: "BE",
+    });
+    expect(prompt).toContain("EU_GDPR");
+    expect(prompt).toContain("EU_DIR_93_13_EEC");
+    expect(prompt).not.toContain("DE_BGB_276");
+    expect(prompt).not.toContain("NL_BW_7_650");
+    expect(prompt).not.toContain("FR_CODE_TRAVAIL_NONCOMPETE");
+  });
+
+  it("null country (non-EU) renders the unknown-jurisdiction variant", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, "Switzerland", {
+      source_type: "stated",
+      source_text: "Governed by Swiss law",
+      country: null,
+    });
+    expect(prompt).toContain("Emit applicable_law: null for EVERY clause");
+    expect(prompt).not.toContain("DE_BGB_276");
+    expect(prompt).not.toContain("EU_GDPR");
+  });
+
+  it("source_type=unknown renders the unknown-jurisdiction variant", () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, null, {
+      source_type: "unknown",
+      source_text: null,
+      country: null,
+    });
+    expect(prompt).toContain("Emit applicable_law: null for EVERY clause");
+  });
+});
+
+describe("contractOverviewSchema — country (SP-2)", () => {
+  const baseOverview = {
+    contract_type: "Freelance Services Agreement",
+    parties: [{ name: "Provider", role_label: "Provider" }],
+    effective_date: null,
+    duration: null,
+    total_value: null,
+    governing_jurisdiction: "Netherlands",
+    key_terms: ["k1"],
+    clause_inventory: [{ title: "c1", section_ref: null }],
+  };
+
+  it("accepts EU-27 country codes on jurisdiction_evidence", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...baseOverview,
+      jurisdiction_evidence: {
+        source_type: "stated",
+        source_text: "Dutch law",
+        country: "NL",
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts country=null when jurisdiction is non-EU", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...baseOverview,
+      governing_jurisdiction: "Switzerland",
+      jurisdiction_evidence: {
+        source_type: "stated",
+        source_text: "Swiss law",
+        country: null,
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects lowercase country code", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...baseOverview,
+      jurisdiction_evidence: {
+        source_type: "stated",
+        source_text: "Dutch law",
+        country: "nl",
+      },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects source_type=unknown with a non-null country", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...baseOverview,
+      governing_jurisdiction: null,
+      jurisdiction_evidence: {
+        source_type: "unknown",
+        source_text: null,
+        country: "NL",
+      },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects non-EU ISO codes", () => {
+    const r = contractOverviewSchema.safeParse({
+      ...baseOverview,
+      jurisdiction_evidence: {
+        source_type: "stated",
+        source_text: "US law",
+        country: "US",
+      },
+    });
+    expect(r.success).toBe(false);
   });
 });

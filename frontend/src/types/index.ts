@@ -4,6 +4,23 @@ import type { StatuteCode } from "@/lib/applicable-law";
 export type FileType = "pdf" | "docx";
 
 /**
+ * SP-2 — EU-27 ISO-2 country codes. The 6 "supported" countries
+ * (DE/NL/FR/ES/IT/PL) carry dedicated statute entries in the
+ * applicable-law catalog; the remaining EU members receive EU-wide
+ * statutes only during Pass 2 dispatch. Non-EU jurisdictions collapse
+ * to `null` on `country`.
+ */
+export const EU_COUNTRY_CODES = [
+  "DE", "NL", "FR", "ES", "IT", "PL",
+  "BE", "AT", "SE", "DK", "FI", "IE", "PT", "LU",
+  "CZ", "HU", "GR", "RO", "BG", "HR", "SI", "SK",
+  "LT", "LV", "EE", "CY", "MT",
+] as const;
+
+/** SP-2 — ISO-2 country code constrained to EU-27 membership. */
+export type CountryCode = (typeof EU_COUNTRY_CODES)[number];
+
+/**
  * SP-1.7 — How the model determined governing_jurisdiction at the
  * contract level.
  *
@@ -14,10 +31,15 @@ export type FileType = "pdf" | "docx";
  *   reason.
  * - "unknown": neither possible; source_text is null AND the
  *   parent governing_jurisdiction is null.
+ *
+ * SP-2 adds `country` — an ISO 3166-1 alpha-2 code constrained to
+ * EU-27 membership. Null for non-EU jurisdictions AND when
+ * source_type === "unknown" (enforced by Zod invariant).
  */
 export interface JurisdictionEvidence {
   source_type: "stated" | "inferred" | "unknown";
   source_text: string | null;
+  country: CountryCode | null;
 }
 
 /**

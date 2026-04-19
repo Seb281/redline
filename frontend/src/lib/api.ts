@@ -257,3 +257,53 @@ export async function deleteAnalysis(id: string): Promise<void> {
     throw new Error(await extractErrorMessage(res, "Delete failed"));
   }
 }
+
+/** SP-5 retention response shape from PATCH / extend endpoints. */
+export interface RetentionState {
+  id: string;
+  pinned: boolean;
+  expires_at: string | null;
+}
+
+/**
+ * Pin or unpin a saved analysis.
+ *
+ * Pinned analyses are skipped by the retention sweep and shown with a
+ * pinned badge in the UI. Returns the updated retention state so the
+ * caller can patch its local cache without a follow-up GET.
+ */
+export async function pinAnalysis(
+  id: string,
+  pinned: boolean,
+): Promise<RetentionState> {
+  const res = await backendFetch(`/api/analyses/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pinned }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Pin failed"));
+  }
+
+  return res.json();
+}
+
+/**
+ * Reset the retention clock on a saved analysis.
+ *
+ * Pushes `expires_at` forward to `now() + RETENTION_DAYS`. Used for a
+ * "keep for another 30 days" button on the history UI.
+ */
+export async function extendAnalysis(id: string): Promise<RetentionState> {
+  const res = await backendFetch(
+    `/api/analyses/${encodeURIComponent(id)}/extend`,
+    { method: "POST" },
+  );
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Extend failed"));
+  }
+
+  return res.json();
+}

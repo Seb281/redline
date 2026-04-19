@@ -144,6 +144,14 @@ export default function PrivacyPage() {
             logged, not used for model training.
           </li>
           <li>
+            <strong>Saved analyses</strong> — If you are signed in and
+            explicitly save an analysis, it is retained for 30 days and then
+            automatically deleted by a daily sweep. You can pin an analysis
+            to keep it indefinitely, or extend the 30-day window at any
+            time from the history page. Unsigned-in runs and analyses you
+            never save are never written to the server.
+          </li>
+          <li>
             <strong>localStorage data</strong> — Persists in your browser until
             you clear it. No server-side copy exists.
           </li>

@@ -300,6 +300,14 @@ export interface AnalysisListItem {
   risk_medium: number;
   risk_low: number;
   created_at: string;
+  /**
+   * SP-5 retention — ISO timestamp after which an unpinned analysis is
+   * auto-deleted by the daily prune job. Optional so pre-SP-5 backends
+   * still deserialise, though the backend now always sets it.
+   */
+  expires_at?: string | null;
+  /** When true, the retention sweep skips this analysis. */
+  pinned?: boolean;
 }
 
 /** Payload for saving an analysis to the backend. */
@@ -333,4 +341,7 @@ export interface SavedAnalysis {
   updated_at: string | null;
   /** Missing on analyses saved before SP-1 Phase 5 rolled out. */
   provenance?: AnalysisProvenance;
+  /** SP-5 retention — see AnalysisListItem for the semantics. */
+  expires_at?: string | null;
+  pinned?: boolean;
 }

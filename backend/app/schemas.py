@@ -345,7 +345,12 @@ class SaveAnalysisRequest(BaseModel):
 
 
 class AnalysisListItem(BaseModel):
-    """Summary of a saved analysis for list views."""
+    """Summary of a saved analysis for list views.
+
+    ``expires_at`` and ``pinned`` (SP-5) drive the retention UI.
+    Pinned analyses are kept indefinitely; unpinned analyses are swept
+    by the daily prune job once ``expires_at`` elapses.
+    """
 
     id: str
     filename: str
@@ -357,6 +362,8 @@ class AnalysisListItem(BaseModel):
     risk_medium: int = 0
     risk_low: int = 0
     created_at: str
+    expires_at: str | None = None
+    pinned: bool = False
 
 
 class SavedAnalysisResponse(BaseModel):
@@ -382,3 +389,16 @@ class SavedAnalysisResponse(BaseModel):
     created_at: str
     updated_at: str | None = None
     provenance: dict = Field(default_factory=dict)
+    expires_at: str | None = None
+    pinned: bool = False
+
+
+class UpdateAnalysisRequest(BaseModel):
+    """PATCH body for saved analyses.
+
+    Exposes the retention controls (SP-5). ``pinned`` toggles the
+    never-expire flag; future fields like a title rename would land
+    here too.
+    """
+
+    pinned: bool | None = None

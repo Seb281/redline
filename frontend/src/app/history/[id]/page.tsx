@@ -7,8 +7,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ReportView } from "@/components/ReportView";
-import { getAnalysis } from "@/lib/api";
+import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
 import { legacyProvenance } from "@/lib/analyzer";
+import { getRetentionStatus } from "@/lib/retention";
 import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
 
 export default function HistoryDetailPage() {
@@ -18,6 +19,7 @@ export default function HistoryDetailPage() {
   const [analysis, setAnalysis] = useState<SavedAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retentionPending, setRetentionPending] = useState(false);
 
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -50,6 +52,44 @@ export default function HistoryDetailPage() {
     );
     setChatOpen(true);
   }, []);
+
+  /** Toggle the pin flag from the retention bar. */
+  const handleTogglePin = useCallback(async () => {
+    if (!analysis) return;
+    const next = !analysis.pinned;
+    setRetentionPending(true);
+    try {
+      const resp = await pinAnalysis(analysis.id, next);
+      setAnalysis(
+        (prev) =>
+          prev && {
+            ...prev,
+            pinned: resp.pinned,
+            expires_at: resp.expires_at,
+          },
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Pin failed");
+    } finally {
+      setRetentionPending(false);
+    }
+  }, [analysis]);
+
+  /** Reset the retention clock from the retention bar. */
+  const handleExtend = useCallback(async () => {
+    if (!analysis) return;
+    setRetentionPending(true);
+    try {
+      const resp = await extendAnalysis(analysis.id);
+      setAnalysis(
+        (prev) => prev && { ...prev, expires_at: resp.expires_at },
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Extend failed");
+    } finally {
+      setRetentionPending(false);
+    }
+  }, [analysis]);
 
   // Loading
   if (isLoading || authLoading) {
@@ -94,8 +134,52 @@ export default function HistoryDetailPage() {
     provenance: hasProvenance ? analysis.provenance! : legacyProvenance(),
   };
 
+  const retention = getRetentionStatus(analysis.expires_at, analysis.pinned);
+
   return (
     <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
+      {/* SP-5 retention bar */}
+      <div
+        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-[13px] font-[var(--font-body)]"
+        data-testid="retention-bar"
+      >
+        <span className="text-[var(--text-secondary)]">
+          {retention.pinned
+            ? "Pinned — this analysis will not be auto-deleted."
+            : retention.expired
+              ? "This analysis has expired and will be removed on the next sweep."
+              : `Auto-deletes in ${retention.daysRemaining} day${
+                  retention.daysRemaining === 1 ? "" : "s"
+                } unless pinned.`}
+        </span>
+        <div className="flex items-center gap-2">
+          {!analysis.pinned && (
+            <button
+              type="button"
+              onClick={handleExtend}
+              disabled={retentionPending}
+              className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1 text-[12px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-40"
+              data-testid="retention-extend"
+            >
+              Keep 30 more days
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleTogglePin}
+            disabled={retentionPending}
+            className={`rounded border px-3 py-1 text-[12px] transition-colors disabled:opacity-40 ${
+              analysis.pinned
+                ? "border-[var(--accent)] bg-[var(--accent)] text-white hover:opacity-90"
+                : "border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+            }`}
+            data-testid="retention-pin"
+          >
+            {analysis.pinned ? "Unpin" : "Pin forever"}
+          </button>
+        </div>
+      </div>
+
       <ReportView
         data={analyzeResponse}
         onReset={handleReset}

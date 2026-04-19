@@ -375,4 +375,51 @@ describe("useStreamingAnalysis", () => {
 
     expect(result.current.editableLabels).toEqual(["LANDLORD", "TENANT"]);
   });
+
+  it("confirmRedaction writes edited labels back to overview.parties[].role_label", async () => {
+    // Regression guard: ReportView (final report) renders ContractOverview
+    // without a labels prop, so it falls back to deriveLabels() which reads
+    // `party.role_label`. If the user edits a label in RedactionPreview, the
+    // final report must reflect the edit — not the original Pass 0 label.
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "Services Agreement",
+          parties: [
+            { name: "ACME Corp", role_label: "Provider" },
+            { name: "Beta LLC", role_label: "Client" },
+          ],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useStreamingAnalysis());
+    await act(async () => {
+      await result.current.runOverview("ACME Corp and Beta LLC agree.");
+    });
+
+    expect(result.current.editableLabels).toEqual(["PROVIDER", "CLIENT"]);
+
+    // User renames the first party.
+    act(() => {
+      result.current.updatePartyLabel(0, "VENDOR");
+    });
+    expect(result.current.editableLabels).toEqual(["VENDOR", "CLIENT"]);
+
+    act(() => {
+      result.current.confirmRedaction(new Set<string>());
+    });
+
+    expect(result.current.status).toBe("awaiting_role");
+    // The edited label must land on the overview so downstream consumers
+    // (ReportView, saved analyses) see the user's choice, not Pass 0's.
+    expect(result.current.overview?.parties[0].role_label).toBe("VENDOR");
+    expect(result.current.overview?.parties[1].role_label).toBe("CLIENT");
+  });
 });

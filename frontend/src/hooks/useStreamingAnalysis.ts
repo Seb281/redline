@@ -309,7 +309,26 @@ export function useStreamingAnalysis() {
       if (!disabledTokens.has(token)) active.set(token, original);
     }
     tokenMapRef.current = active;
-    setState((prev) => ({ ...prev, status: "awaiting_role", tokenMap: active }));
+
+    // Write edited labels back to overview.parties[].role_label so
+    // downstream consumers that fall back to `deriveLabels()` (ReportView,
+    // saved analyses replayed from /history) reflect the user's rename
+    // instead of the original Pass 0 label.
+    const updatedOverview = {
+      ...overview,
+      parties: overview.parties.map((p: Party, i: number) => ({
+        ...p,
+        role_label: labels[i],
+      })),
+    };
+    overviewRef.current = updatedOverview;
+
+    setState((prev) => ({
+      ...prev,
+      status: "awaiting_role",
+      overview: updatedOverview,
+      tokenMap: active,
+    }));
   }, []);
 
   /**

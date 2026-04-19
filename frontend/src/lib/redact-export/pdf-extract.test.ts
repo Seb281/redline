@@ -20,7 +20,7 @@ import {
   buildScannedPdf,
   buildSplitEmailPdf,
 } from "@/test-fixtures/redact/build-fixtures";
-import { quickTokenize } from "./tokenize-for-pdf";
+import { collectPatternRanges } from "./tokenize-for-pdf";
 import { findMatches } from "./span-matcher";
 
 describe("extractPdf", () => {
@@ -88,10 +88,10 @@ describe("extractPdf", () => {
     // The two items must concatenate directly in fullText.
     expect(out.fullText).toContain("hello@acme.test");
 
-    // End-to-end: quickTokenize must find the email, and the
+    // End-to-end: the pattern helper must find the email, and the
     // span-matcher must produce at least one coordinate match — no
     // skipped-match, the overlay will cover the token.
-    const tokens = quickTokenize(out.fullText);
+    const tokens = collectPatternRanges(out.fullText);
     const email = tokens.find((t) => t.kind === "EMAIL");
     expect(email).toBeDefined();
     const matched = findMatches(tokens, out.spans);

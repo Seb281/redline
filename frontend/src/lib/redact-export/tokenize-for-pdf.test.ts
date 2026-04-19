@@ -1,13 +1,16 @@
 /**
- * Tests for `quickTokenize` and `smartTokenize`.
+ * Tests for `tokenizeForPdf` and the internal `collectPatternRanges`.
  *
- * smartTokenize's overview fetch is stubbed via `vi.fn()` on
+ * `tokenizeForPdf`'s overview fetch is stubbed via `vi.fn()` on
  * `globalThis.fetch`. Tests never touch the network, and the
- * SmartOverviewError fallback is exercised by returning a non-2xx.
+ * SmartOverviewError failure path is exercised by returning a non-2xx.
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { quickTokenize, smartTokenize } from "./tokenize-for-pdf";
+import {
+  collectPatternRanges,
+  tokenizeForPdf,
+} from "./tokenize-for-pdf";
 
 const originalFetch = globalThis.fetch;
 
@@ -15,10 +18,10 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-describe("quickTokenize", () => {
+describe("collectPatternRanges", () => {
   it("returns pattern matches with per-kind counter labels", () => {
     const text = "Email hello@test.com and pay IBAN DE89370400440532013000 now.";
-    const out = quickTokenize(text);
+    const out = collectPatternRanges(text);
     const emails = out.filter((r) => r.kind === "EMAIL");
     const ibans = out.filter((r) => r.kind === "IBAN");
     expect(emails).toHaveLength(1);
@@ -29,14 +32,14 @@ describe("quickTokenize", () => {
 
   it("sorts output by start ascending", () => {
     const text = "first a@b.co then DE89370400440532013000";
-    const out = quickTokenize(text);
+    const out = collectPatternRanges(text);
     for (let i = 1; i < out.length; i++) {
       expect(out[i].start).toBeGreaterThanOrEqual(out[i - 1].start);
     }
   });
 });
 
-describe("smartTokenize", () => {
+describe("tokenizeForPdf", () => {
   it("merges pattern + party ranges with party winning on overlap", async () => {
     const text = "Acme BV is the provider. Contact a@b.co for support.";
     globalThis.fetch = vi.fn(async () =>
@@ -50,7 +53,7 @@ describe("smartTokenize", () => {
       ),
     ) as typeof fetch;
 
-    const out = await smartTokenize(text, "");
+    const out = await tokenizeForPdf(text, "");
     const party = out.ranges.find((t) => t.label === "[Provider]");
     expect(party).toBeDefined();
     expect(party?.kind).toBe("ORG");
@@ -83,7 +86,7 @@ describe("smartTokenize", () => {
       ),
     ) as typeof fetch;
 
-    const out = await smartTokenize(text, "");
+    const out = await tokenizeForPdf(text, "");
     const party = out.ranges.find((t) => t.label === "[Provider]");
     expect(party).toBeDefined();
     expect(party?.original).toBe("Acme BV");
@@ -108,7 +111,7 @@ describe("smartTokenize", () => {
       ),
     ) as typeof fetch;
 
-    const out = await smartTokenize(text, "");
+    const out = await tokenizeForPdf(text, "");
     expect(out.ranges.find((t) => t.label === "[Counterparty]")).toBeUndefined();
     expect(out.skipped).toHaveLength(1);
     expect(out.skipped[0]).toMatchObject({
@@ -122,7 +125,7 @@ describe("smartTokenize", () => {
     globalThis.fetch = vi.fn(async () =>
       new Response("down", { status: 500 }),
     ) as typeof fetch;
-    await expect(smartTokenize("any", "")).rejects.toMatchObject({
+    await expect(tokenizeForPdf("any", "")).rejects.toMatchObject({
       name: "SmartOverviewError",
     });
   });
@@ -131,7 +134,7 @@ describe("smartTokenize", () => {
     globalThis.fetch = vi.fn(async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;
-    await expect(smartTokenize("any", "")).rejects.toMatchObject({
+    await expect(tokenizeForPdf("any", "")).rejects.toMatchObject({
       name: "SmartOverviewError",
     });
   });

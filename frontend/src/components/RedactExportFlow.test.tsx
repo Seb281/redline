@@ -5,8 +5,8 @@
  * RedactExportFlow is an orchestrator that delegates everything to the hook
  * and sub-components. The interesting logic lives in:
  *   - RedactPreviewPanel: kind-level toggle state
- *   - RedactModeToggle: disabled state propagation
  *   - RedactDownloadCard: skipped-match banner gating (privacy-critical)
+ *   - RedactExportFlow: retry-in-place wiring for overview-stage errors
  *
  * We mock `useRedactExport` to drive state transitions without real pdfjs /
  * pdf-lib execution — those are covered in the lib-level tests.
@@ -14,7 +14,6 @@
 
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import { RedactModeToggle } from "./RedactModeToggle";
 import { RedactPreviewPanel } from "./RedactPreviewPanel";
 import { RedactDownloadCard } from "./RedactDownloadCard";
 import type { TokenRange, SkippedMatch } from "@/lib/redact-export/types";
@@ -48,53 +47,6 @@ function makeToken(
 function makeSensitiveBlob(): Blob {
   return new Blob(["PDF"], { type: "application/pdf" });
 }
-
-// ---------------------------------------------------------------------------
-// RedactModeToggle
-// ---------------------------------------------------------------------------
-
-describe("RedactModeToggle", () => {
-  afterEach(cleanup);
-
-  it("renders Quick and Smart buttons", () => {
-    render(
-      <RedactModeToggle mode="quick" onChange={vi.fn()} />,
-    );
-    expect(screen.getByText("Quick")).toBeTruthy();
-    expect(screen.getByText("Smart")).toBeTruthy();
-  });
-
-  it("calls onChange with 'smart' when Smart clicked", () => {
-    const onChange = vi.fn();
-    render(<RedactModeToggle mode="quick" onChange={onChange} />);
-    fireEvent.click(screen.getByText("Smart"));
-    expect(onChange).toHaveBeenCalledWith("smart");
-  });
-
-  it("calls onChange with 'quick' when Quick clicked in Smart mode", () => {
-    const onChange = vi.fn();
-    render(<RedactModeToggle mode="smart" onChange={onChange} />);
-    fireEvent.click(screen.getByText("Quick"));
-    expect(onChange).toHaveBeenCalledWith("quick");
-  });
-
-  it("shows AI description when Smart selected", () => {
-    render(<RedactModeToggle mode="smart" onChange={vi.fn()} />);
-    expect(
-      screen.getByText(/scrubbed text sent to Mistral/i),
-    ).toBeTruthy();
-  });
-
-  it("disables buttons when disabled prop is true", () => {
-    render(
-      <RedactModeToggle mode="quick" onChange={vi.fn()} disabled={true} />,
-    );
-    const buttons = screen.getAllByRole("button");
-    for (const btn of buttons) {
-      expect((btn as HTMLButtonElement).disabled).toBe(true);
-    }
-  });
-});
 
 // ---------------------------------------------------------------------------
 // RedactPreviewPanel
@@ -215,7 +167,6 @@ describe("RedactDownloadCard – download gating", () => {
       OTHER: 0,
     } as Record<TokenRange["kind"], number>,
     skipped: [] as SkippedMatch[],
-    smartFallbackNotice: false,
     onStartOver: vi.fn(),
   };
 
@@ -268,15 +219,6 @@ describe("RedactDownloadCard – download gating", () => {
     expect(btn.disabled).toBe(false);
   });
 
-  it("shows smartFallbackNotice banner when prop is true", () => {
-    render(
-      <RedactDownloadCard {...baseProps} smartFallbackNotice={true} />,
-    );
-    expect(
-      screen.getByText(/ai role labels were unavailable/i),
-    ).toBeTruthy();
-  });
-
   it("lists affected sensitive kinds in banner text", () => {
     const skipped: SkippedMatch[] = [
       { label: "Email 1", kind: "EMAIL", original: "alice@example.com" },
@@ -305,10 +247,10 @@ describe("RedactExportFlow – state transitions", () => {
     (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
       status: "idle",
       error: null,
-      smartFallbackNotice: false,
       preview: null,
       result: null,
       start: vi.fn(),
+      retryOverview: vi.fn(),
       confirmPreview: vi.fn(),
       reset: vi.fn(),
     });
@@ -322,13 +264,13 @@ describe("RedactExportFlow – state transitions", () => {
     (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
       status: "awaiting_preview",
       error: null,
-      smartFallbackNotice: false,
       preview: {
         tokens: [makeToken("EMAIL", "Email 1", "a@b.com")],
         extracted: { fullText: "a@b.com", spans: [], bytes: new ArrayBuffer(0), pageCount: 1 },
       },
       result: null,
       start: vi.fn(),
+      retryOverview: vi.fn(),
       confirmPreview: vi.fn(),
       reset: vi.fn(),
     });
@@ -342,7 +284,6 @@ describe("RedactExportFlow – state transitions", () => {
     (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
       status: "complete",
       error: null,
-      smartFallbackNotice: false,
       preview: null,
       result: {
         blob: makeSensitiveBlob(),
@@ -354,6 +295,7 @@ describe("RedactExportFlow – state transitions", () => {
         },
       },
       start: vi.fn(),
+      retryOverview: vi.fn(),
       confirmPreview: vi.fn(),
       reset: vi.fn(),
     });
@@ -362,20 +304,47 @@ describe("RedactExportFlow – state transitions", () => {
     expect(screen.getByTestId("redact-download-card")).toBeTruthy();
   });
 
-  it("renders error banner in error state", async () => {
+  it("renders error banner without retry for non-overview errors", async () => {
     const { useRedactExport } = await import("@/hooks/useRedactExport");
     (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
       status: "error",
       error: { stage: "extract", message: "File corrupted", recoverable: true },
-      smartFallbackNotice: false,
       preview: null,
       result: null,
       start: vi.fn(),
+      retryOverview: vi.fn(),
       confirmPreview: vi.fn(),
       reset: vi.fn(),
     });
     const { RedactExportFlow } = await import("./RedactExportFlow");
     render(<RedactExportFlow />);
     expect(screen.getByText("File corrupted")).toBeTruthy();
+    // Retry button only shows for overview-stage errors.
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.getByText("Start over")).toBeTruthy();
+  });
+
+  it("shows Retry button for overview-stage errors and wires retryOverview", async () => {
+    const retryOverview = vi.fn();
+    const { useRedactExport } = await import("@/hooks/useRedactExport");
+    (useRedactExport as ReturnType<typeof vi.fn>).mockReturnValue({
+      status: "error",
+      error: {
+        stage: "overview",
+        message: "AI role labels unavailable. Try again in a moment.",
+        recoverable: true,
+      },
+      preview: null,
+      result: null,
+      start: vi.fn(),
+      retryOverview,
+      confirmPreview: vi.fn(),
+      reset: vi.fn(),
+    });
+    const { RedactExportFlow } = await import("./RedactExportFlow");
+    render(<RedactExportFlow />);
+    const retryBtn = screen.getByText("Retry");
+    fireEvent.click(retryBtn);
+    expect(retryOverview).toHaveBeenCalledTimes(1);
   });
 });

@@ -11,8 +11,6 @@
  *   Yellow (no gate) when all skips are low-sensitivity (dates, amounts).
  * - Trigger the Blob URL download with a well-named file.
  * - Offer "Start over" to reset the hook to idle.
- * - Surface `smartFallbackNotice` as an info banner (Smart mode fell back
- *   to Quick because Pass 0 failed — not a hard error, just transparency).
  */
 
 "use client";
@@ -27,8 +25,6 @@ interface RedactDownloadCardProps {
   filename: string;
   matchesByKind: Record<TokenKind, number>;
   skipped: SkippedMatch[];
-  /** True when Smart mode fell back to Quick because Pass 0 failed. */
-  smartFallbackNotice: boolean;
   onStartOver: () => void;
 }
 
@@ -76,7 +72,6 @@ export function RedactDownloadCard({
   filename,
   matchesByKind,
   skipped,
-  smartFallbackNotice,
   onStartOver,
 }: RedactDownloadCardProps) {
   // Blob URL lives in a ref so we can revoke on unmount without triggering
@@ -156,16 +151,6 @@ export function RedactDownloadCard({
           </p>
         </div>
       </div>
-
-      {/* Smart fallback info banner */}
-      {smartFallbackNotice && (
-        <div className="mb-4 rounded border border-[var(--border-primary)] bg-[var(--bg-tertiary)] px-4 py-3">
-          <p className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-            AI role labels were unavailable — pattern-only labels used instead.
-            Your PDF is still fully redacted.
-          </p>
-        </div>
-      )}
 
       {/* Per-kind counts */}
       {totalMatches > 0 && (

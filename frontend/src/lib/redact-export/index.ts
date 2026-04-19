@@ -12,7 +12,6 @@ export type {
   PdfMatch,
   PdfSpan,
   PipelineError,
-  RedactMode,
   RedactStatus,
   SkippedMatch,
   TokenKind,
@@ -23,4 +22,4 @@ export { registerPdfWorker } from "./pdf-worker";
 export { extractPdf } from "./pdf-extract";
 export { findMatches } from "./span-matcher";
 export { buildRedactedPdf } from "./pdf-overlay";
-export { quickTokenize, smartTokenize } from "./tokenize-for-pdf";
+export { tokenizeForPdf } from "./tokenize-for-pdf";

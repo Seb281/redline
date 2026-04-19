@@ -1,21 +1,21 @@
 /**
- * Hook that drives the SP-3 client-side PDF redaction flow.
+ * Hook that drives the SP-3 client-side PDF redaction flow (Smart-only).
  *
  * State machine (mirrors `useStreamingAnalysis` shape):
  *
  *   idle
  *     → extracting        (start() validates file, parses PDF)
- *     → running_overview  (Smart only: fetch Pass 0 for role labels)
+ *     → running_overview  (fetch Pass 0 for role labels)
  *     → awaiting_preview  (UI shows `RedactionPreview` with tokens)
  *     → redacting         (confirmPreview() paints overlay)
  *     → complete          (Blob ready for download)
  *     → error             (any stage: see PipelineError.stage)
  *
- * Smart-mode graceful degradation: if Pass 0 fails, we fall back to
- * Quick mode and set `smartFallbackNotice = true`. The user still gets
- * a redacted PDF with pattern tokens — the privacy guarantee (nothing
- * leaves the browser except scrubbed text) is not weakened because
- * Quick mode never emits any network traffic at all.
+ * Pass 0 failure is a recoverable error: the extracted PDF stays in
+ * memory and the UI exposes `retryOverview()` so the user can re-run
+ * the Pass 0 call without re-uploading. This matches the product
+ * promise that `/redact` is about semantic role labels — we refuse to
+ * silently fall back to pattern-only output.
  */
 
 "use client";
@@ -24,14 +24,10 @@ import { useCallback, useRef, useState } from "react";
 import { extractPdf } from "@/lib/redact-export/pdf-extract";
 import { findMatches } from "@/lib/redact-export/span-matcher";
 import { buildRedactedPdf } from "@/lib/redact-export/pdf-overlay";
-import {
-  quickTokenize,
-  smartTokenize,
-} from "@/lib/redact-export/tokenize-for-pdf";
+import { tokenizeForPdf } from "@/lib/redact-export/tokenize-for-pdf";
 import type {
   ExtractedPdf,
   PipelineError,
-  RedactMode,
   RedactStatus,
   SkippedMatch,
   TokenKind,
@@ -60,8 +56,6 @@ function zeroKindTally(): Record<TokenKind, number> {
 export interface UseRedactExportApi {
   status: RedactStatus;
   error: PipelineError | null;
-  /** True after a Smart-mode overview fetch failed and we fell back to Quick. */
-  smartFallbackNotice: boolean;
   /** Populated after extraction so the UI can render the RedactionPreview. */
   preview: { extracted: ExtractedPdf; tokens: TokenRange[] } | null;
   /** Populated on `complete`: the redacted PDF Blob and per-kind stats. */
@@ -72,7 +66,14 @@ export interface UseRedactExportApi {
     matchesByKind: Record<TokenKind, number>;
   } | null;
   /** Kick the pipeline off. Validates the file synchronously first. */
-  start: (file: File, mode: RedactMode) => Promise<void>;
+  start: (file: File) => Promise<void>;
+  /**
+   * Re-run Pass 0 against the cached extracted PDF. Only valid when
+   * the hook is in `error` with `stage === "overview"` — otherwise
+   * no-ops. Lets the user recover from a transient Mistral failure
+   * without re-uploading.
+   */
+  retryOverview: () => Promise<void>;
   /** User confirms the preview (optionally disabling some kinds). */
   confirmPreview: (disabledKinds: Set<TokenKind>) => Promise<void>;
   reset: () => void;
@@ -82,7 +83,6 @@ export interface UseRedactExportApi {
 export function useRedactExport(): UseRedactExportApi {
   const [status, setStatus] = useState<RedactStatus>("idle");
   const [error, setError] = useState<PipelineError | null>(null);
-  const [smartFallbackNotice, setSmartFallbackNotice] = useState(false);
   const [preview, setPreview] = useState<
     { extracted: ExtractedPdf; tokens: TokenRange[] } | null
   >(null);
@@ -92,8 +92,12 @@ export function useRedactExport(): UseRedactExportApi {
   // stashed in a ref so the confirmPreview closure doesn't have to
   // capture it via state (which would fight React 19 transitions).
   const fileRef = useRef<File | null>(null);
-  // Smart-mode parties that Pass 0 returned but that never matched
-  // the PDF text (casing / whitespace mismatch, etc.). Surfaced into
+  // Cached extracted PDF so `retryOverview()` can skip re-parsing
+  // after a transient Pass 0 failure. Cleared on `reset()` and on
+  // successful transition into `awaiting_preview`.
+  const extractedRef = useRef<ExtractedPdf | null>(null);
+  // Parties that Pass 0 returned but that never matched the PDF text
+  // (casing / whitespace mismatch, etc.). Surfaced into
   // `result.skipped` so the sensitive-kind banner trips even though
   // no corresponding token entered the span-matcher.
   const smartSkippedRef = useRef<SkippedMatch[]>([]);
@@ -101,111 +105,117 @@ export function useRedactExport(): UseRedactExportApi {
   const reset = useCallback(() => {
     setStatus("idle");
     setError(null);
-    setSmartFallbackNotice(false);
     setPreview(null);
     setResult(null);
     fileRef.current = null;
+    extractedRef.current = null;
     smartSkippedRef.current = [];
   }, []);
 
-  const start = useCallback(async (file: File, mode: RedactMode) => {
-    // Reset derived state on a fresh run — but do it synchronously
-    // inside this callback so the caller can await the whole pipeline
-    // without observing a stale `complete` status between runs.
-    setError(null);
-    setSmartFallbackNotice(false);
-    setPreview(null);
-    setResult(null);
-    fileRef.current = file;
-    smartSkippedRef.current = [];
-
-    // ----- Upload validation (fail fast, never touch pdfjs) -----
-    if (file.type !== "application/pdf") {
-      setStatus("error");
-      setError({
-        stage: "upload",
-        message: "Only native PDFs are supported. Convert DOCX first.",
-        recoverable: true,
-      });
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      setStatus("error");
-      setError({
-        stage: "upload",
-        message: "File too large (max 10 MB).",
-        recoverable: true,
-      });
-      return;
-    }
-
-    setStatus("extracting");
-    let extracted: ExtractedPdf;
+  /**
+   * Run the Pass 0 → tokenize → preview sequence against an already-
+   * extracted PDF. Shared between `start()` (first run) and
+   * `retryOverview()` (after a transient Mistral failure).
+   */
+  const runOverview = useCallback(async (extracted: ExtractedPdf) => {
+    setStatus("running_overview");
     try {
-      const bytes = await file.arrayBuffer();
-      extracted = await extractPdf(bytes);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const { ranges, skipped } = await tokenizeForPdf(
+        extracted.fullText,
+        baseUrl,
+      );
+      smartSkippedRef.current = skipped;
+      setPreview({ extracted, tokens: ranges });
+      setStatus("awaiting_preview");
     } catch (err) {
       setStatus("error");
       setError({
-        stage: "extract",
+        stage: "overview",
         message:
-          err instanceof Error
-            ? err.message
-            : "Could not read PDF structure. File may be corrupted.",
+          err instanceof Error && err.name === "SmartOverviewError"
+            ? "AI role labels unavailable. Try again in a moment."
+            : err instanceof Error
+              ? err.message
+              : "AI role labels unavailable.",
         recoverable: true,
       });
-      return;
     }
-
-    if (extracted.fullText.length < MIN_TEXT_CHARS) {
-      setStatus("error");
-      setError({
-        stage: "extract",
-        message:
-          "This PDF looks scanned. Layout-preserving redaction needs selectable text.",
-        recoverable: true,
-      });
-      return;
-    }
-
-    // ----- Tokenization -----
-    let tokens: TokenRange[];
-    // Smart-mode only: parties from Pass 0 whose exact literal never
-    // appeared in `fullText`. Surfaced into `result.skipped` at confirm
-    // time so the download-gating banner fires on silent matches.
-    let smartSkipped: SkippedMatch[] = [];
-    if (mode === "smart") {
-      setStatus("running_overview");
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-        const smart = await smartTokenize(extracted.fullText, baseUrl);
-        tokens = smart.ranges;
-        smartSkipped = smart.skipped;
-      } catch (err) {
-        if (err instanceof Error && err.name === "SmartOverviewError") {
-          setSmartFallbackNotice(true);
-          tokens = quickTokenize(extracted.fullText);
-        } else {
-          setStatus("error");
-          setError({
-            stage: "overview",
-            message:
-              err instanceof Error
-                ? err.message
-                : "AI role labels unavailable.",
-            recoverable: true,
-          });
-          return;
-        }
-      }
-    } else {
-      tokens = quickTokenize(extracted.fullText);
-    }
-
-    setPreview({ extracted, tokens });
-    smartSkippedRef.current = smartSkipped;
-    setStatus("awaiting_preview");
   }, []);
+
+  const start = useCallback(
+    async (file: File) => {
+      // Reset derived state on a fresh run — synchronously inside
+      // this callback so the caller can await the whole pipeline
+      // without observing a stale `complete` status between runs.
+      setError(null);
+      setPreview(null);
+      setResult(null);
+      fileRef.current = file;
+      extractedRef.current = null;
+      smartSkippedRef.current = [];
+
+      // ----- Upload validation (fail fast, never touch pdfjs) -----
+      if (file.type !== "application/pdf") {
+        setStatus("error");
+        setError({
+          stage: "upload",
+          message: "Only native PDFs are supported. Convert DOCX first.",
+          recoverable: true,
+        });
+        return;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        setStatus("error");
+        setError({
+          stage: "upload",
+          message: "File too large (max 10 MB).",
+          recoverable: true,
+        });
+        return;
+      }
+
+      setStatus("extracting");
+      let extracted: ExtractedPdf;
+      try {
+        const bytes = await file.arrayBuffer();
+        extracted = await extractPdf(bytes);
+      } catch (err) {
+        setStatus("error");
+        setError({
+          stage: "extract",
+          message:
+            err instanceof Error
+              ? err.message
+              : "Could not read PDF structure. File may be corrupted.",
+          recoverable: true,
+        });
+        return;
+      }
+
+      if (extracted.fullText.length < MIN_TEXT_CHARS) {
+        setStatus("error");
+        setError({
+          stage: "extract",
+          message:
+            "This PDF looks scanned. Layout-preserving redaction needs selectable text.",
+          recoverable: true,
+        });
+        return;
+      }
+
+      extractedRef.current = extracted;
+      await runOverview(extracted);
+    },
+    [runOverview],
+  );
+
+  const retryOverview = useCallback(async () => {
+    const cached = extractedRef.current;
+    if (!cached) return;
+    setError(null);
+    await runOverview(cached);
+  }, [runOverview]);
 
   const confirmPreview = useCallback(
     async (disabledKinds: Set<TokenKind>) => {
@@ -235,7 +245,7 @@ export function useRedactExport(): UseRedactExportApi {
         for (const m of matches) {
           matchesByKind[m.kind] = (matchesByKind[m.kind] ?? 0) + 1;
         }
-        // Merge Smart-mode unmatched-party skips with the span-matcher
+        // Merge Pass 0 unmatched-party skips with the span-matcher
         // skips so a single `result.skipped` array drives the banner.
         const mergedSkipped: SkippedMatch[] = [
           ...skipped,
@@ -266,10 +276,10 @@ export function useRedactExport(): UseRedactExportApi {
   return {
     status,
     error,
-    smartFallbackNotice,
     preview,
     result,
     start,
+    retryOverview,
     confirmPreview,
     reset,
   };

@@ -143,27 +143,31 @@ export const analyzedClauseSchema = z.object({
     .object({
       observation: z.string().min(1),
       source_type: z.enum(["statute_cited", "general_principle"]),
+      // SP-2: accept any string on the wire, then post-filter in the
+      // transform below. Mistral's structured-output sometimes invents
+      // adjacent statute codes (e.g. "FR_CC_1199" next to FR_CC_1171);
+      // a strict enum collapses the whole batch when that happens, so
+      // we validate shape-only here and drop unknowns at transform time.
       citations: z.array(
         z.object({
-          code: z.enum(STATUTE_CODES),
+          code: z.string(),
         }),
       ),
     })
     .nullable()
-    .superRefine((val, ctx) => {
-      if (val === null) return;
-      if (val.source_type === "statute_cited" && val.citations.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "statute_cited requires at least one citation",
-        });
-      }
-      if (val.source_type === "general_principle" && val.citations.length > 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "general_principle requires citations to be empty",
-        });
-      }
+    .transform((val) => {
+      if (val === null) return null;
+      const allowed = new Set<string>(STATUTE_CODES);
+      const filtered = val.citations.filter((c) => allowed.has(c.code));
+      // Re-derive source_type from the filter outcome so the
+      // invariant (source_type ⇔ citations) always holds even if
+      // Mistral emitted mismatched values.
+      const sourceType = filtered.length > 0 ? "statute_cited" : "general_principle";
+      return {
+        ...val,
+        source_type: sourceType as "statute_cited" | "general_principle",
+        citations: filtered as Array<{ code: (typeof STATUTE_CODES)[number] }>,
+      };
     })
     .describe(
       "Structured legal grounding for this clause, or null when no canonical " +

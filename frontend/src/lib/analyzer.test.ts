@@ -320,7 +320,7 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
     expect(r.success).toBe(true);
   });
 
-  it("rejects statute_cited with empty citations (invariant)", () => {
+  it("normalizes statute_cited with empty citations to general_principle (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -329,10 +329,12 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("general_principle");
+    expect(r.data?.applicable_law?.citations).toEqual([]);
   });
 
-  it("rejects general_principle with non-empty citations (invariant)", () => {
+  it("normalizes general_principle with valid citations to statute_cited (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -341,10 +343,12 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [{ code: "EU_GDPR" }],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("statute_cited");
+    expect(r.data?.applicable_law?.citations).toEqual([{ code: "EU_GDPR" }]);
   });
 
-  it("rejects off-enum citation codes", () => {
+  it("drops off-catalog citation codes and downgrades source_type (SP-2)", () => {
     const r = analyzedClauseSchema.safeParse({
       ...clauseBase,
       applicable_law: {
@@ -353,7 +357,30 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
         citations: [{ code: "NOT_A_REAL_STATUTE" }],
       },
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.citations).toEqual([]);
+    expect(r.data?.applicable_law?.source_type).toBe("general_principle");
+  });
+
+  it("keeps valid citations and drops unknown ones (SP-2 mixed case)", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...clauseBase,
+      applicable_law: {
+        observation: "mixed",
+        source_type: "statute_cited",
+        citations: [
+          { code: "DE_BGB_276" },
+          { code: "NOT_A_REAL_STATUTE" },
+          { code: "EU_GDPR" },
+        ],
+      },
+    });
+    expect(r.success).toBe(true);
+    expect(r.data?.applicable_law?.source_type).toBe("statute_cited");
+    expect(r.data?.applicable_law?.citations).toEqual([
+      { code: "DE_BGB_276" },
+      { code: "EU_GDPR" },
+    ]);
   });
 
   it("rejects empty observation", () => {

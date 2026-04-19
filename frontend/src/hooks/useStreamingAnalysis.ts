@@ -27,9 +27,17 @@ import type {
   ContractOverview,
   AnalysisMode,
   Party,
+  PiiEntity,
 } from "@/types";
 import type { AnalysisEvent } from "@/lib/streaming-analyzer";
-import { redactPatterns, redactParties, redact, rebuildScrubbed } from "@/lib/redaction";
+import {
+  redactPatterns,
+  redactEntities,
+  redactParties,
+  redact,
+  rebuildScrubbed,
+  type PiiEntityInput,
+} from "@/lib/redaction";
 import { rehydrateClause } from "@/lib/redaction/rehydrate-clause";
 import {
   heuristicLabels,
@@ -111,6 +119,11 @@ export function useStreamingAnalysis() {
   // without waiting for React to flush a render.
   const rawTextRef = useRef<string | null>(null);
   const tokenMapRef = useRef<Map<string, string> | null>(null);
+  // SP-3.5 — Pass 0's LLM-sourced PII entity list, carried across
+  // `awaiting_redaction` / `awaiting_role` so `confirmRedaction` and
+  // `runAnalysis` can rebuild the scrubbed text with the same entity
+  // set that seeded the preview.
+  const entitiesRef = useRef<PiiEntityInput[]>([]);
   // Tracks the latest state snapshot so confirmRedaction can read
   // editableLabels without a stale closure.
   const stateRef = useRef<StreamingAnalysisState | null>(null);
@@ -132,6 +145,7 @@ export function useStreamingAnalysis() {
     overviewRef.current = null;
     rawTextRef.current = null;
     tokenMapRef.current = null;
+    entitiesRef.current = [];
     setState(INITIAL_STATE);
   }, [abort]);
 
@@ -163,6 +177,7 @@ export function useStreamingAnalysis() {
 
       rawTextRef.current = text;
       tokenMapRef.current = null;
+      entitiesRef.current = [];
       setState({
         status: "analyzing_overview",
         overview: null,
@@ -201,6 +216,26 @@ export function useStreamingAnalysis() {
         const body = (await response.json()) as { overview: ContractOverview };
         overviewRef.current = body.overview;
 
+        // SP-3.5 — normalise Pass 0's PII entities into the plain
+        // string-kind shape the redaction helpers expect. Missing /
+        // empty entries are filtered defensively: the backend and Zod
+        // schemas both default to [], but a legacy overview payload
+        // (no pii_entities key) should still flow through harmlessly.
+        const piiEntities: PiiEntityInput[] = (body.overview.pii_entities ?? [])
+          .filter((e): e is PiiEntity => Boolean(e?.kind) && Boolean(e?.text))
+          .map((e) => ({ kind: e.kind, text: e.text }));
+        entitiesRef.current = piiEntities;
+
+        // SP-3.5 Phase 1b — mask the LLM-flagged semantic PII (addresses,
+        // unprefixed phones, national IDs, DOBs, etc.) on top of the
+        // pattern-scrubbed text. Counters share the same kind space as
+        // patterns so `⟦PHONE_2⟧` can follow the regex's `⟦PHONE_1⟧`.
+        const entityPhase = redactEntities(
+          patternPhase.scrubbed,
+          piiEntities,
+          patternPhase.tokenMap,
+        );
+
         // SP-1.9 — compute role labels: LLM's role_label first, then
         // heuristic fill, then normalize + disambiguate.
         const heuristic = heuristicLabels(
@@ -218,9 +253,10 @@ export function useStreamingAnalysis() {
         }));
 
         // Phase 2 — mask the party names Pass 0 just told us about.
-        const partyPhase = redactParties(patternPhase.scrubbed, labeled);
+        const partyPhase = redactParties(entityPhase.scrubbed, labeled);
         const fullMap = new Map<string, string>();
         for (const [k, v] of patternPhase.tokenMap) fullMap.set(k, v);
+        for (const [k, v] of entityPhase.tokenMap) fullMap.set(k, v);
         for (const [k, v] of partyPhase.tokenMap) fullMap.set(k, v);
 
         // No detections → no preview to show; fall through to role select.
@@ -302,7 +338,7 @@ export function useStreamingAnalysis() {
       name: p.name,
       label: labels[i],
     }));
-    const { tokenMap: fullMap } = redact(raw, labeled);
+    const { tokenMap: fullMap } = redact(raw, labeled, entitiesRef.current);
 
     const active = new Map<string, string>();
     for (const [token, original] of fullMap) {
@@ -370,7 +406,12 @@ export function useStreamingAnalysis() {
       // trimmed to the user's chosen active subset, so we pass it as both
       // fullMap and activeTokens to rebuildScrubbed.
       const scrubbedForAnalysis = rawText
-        ? rebuildScrubbed(rawText, activeTokens, activeTokens)
+        ? rebuildScrubbed(
+            rawText,
+            activeTokens,
+            activeTokens,
+            entitiesRef.current,
+          )
         : null;
 
       if (!rawText || !scrubbedForAnalysis) {

@@ -62,6 +62,49 @@ export const partySchema = z.object({
     ),
 });
 
+/**
+ * Semantic PII entity kinds the LLM can surface on top of the regex
+ * pattern catalog. Patterns in `src/lib/redaction/patterns.ts` still run
+ * first (deterministic, cheap, no hallucination risk); these kinds are
+ * additive — they cover the long tail the regexes cannot safely cover
+ * across 27 member states (unprefixed phone numbers, postal addresses,
+ * dates of birth, national ID numbers in every EU format, etc.).
+ *
+ * `OTHER` is the intentional escape hatch for anything privacy-relevant
+ * that doesn't fit the enumerated buckets (signatures, licence plates,
+ * customer reference numbers, etc.). Kept narrow on purpose: anything
+ * more specific that turns up frequently should be promoted to its own
+ * kind so the UI can offer per-kind toggles.
+ */
+export const piiEntityKindEnum = z.enum([
+  "PERSON",
+  "ADDRESS",
+  "POSTCODE",
+  "PHONE",
+  "EMAIL",
+  "IBAN",
+  "VAT",
+  "ID_NUMBER",
+  "DOB",
+  "BANK",
+  "COMPANY_REG",
+  "URL",
+  "OTHER",
+]);
+
+export const piiEntitySchema = z.object({
+  kind: piiEntityKindEnum,
+  text: z
+    .string()
+    .min(1)
+    .describe(
+      "Verbatim substring copied from the contract — must match the document character-for-character. " +
+        "No paraphrasing, no normalisation, no translation. If you cannot copy a span verbatim, omit it.",
+    ),
+});
+
+export type PiiEntity = z.infer<typeof piiEntitySchema>;
+
 export const contractOverviewSchema = z.object({
   contract_type: z
     .string()
@@ -99,6 +142,15 @@ export const contractOverviewSchema = z.object({
   clause_inventory: z
     .array(clauseInventoryItemSchema)
     .describe("Every distinct clause in the contract — substantive and boilerplate alike"),
+  pii_entities: z
+    .array(piiEntitySchema)
+    .default([])
+    .describe(
+      "Personally identifying data beyond party names: addresses, phone numbers in any format, " +
+        "national identification numbers, dates of birth, bank details, company registration numbers, " +
+        "personal URLs, and similar. Each entry carries a verbatim substring so the redaction pipeline " +
+        "can locate it by exact-match. Use [] when no such data is present.",
+    ),
 });
 
 export const clauseCategoryEnum = z.enum([
@@ -452,7 +504,56 @@ Country code (SP-2):
   CZ, HU, GR, RO, BG, HR, SI, SK, LT, LV, EE, CY, MT.
 - Rationale: this is a machine field used to dispatch jurisdiction-specific \
   legal grounding. governing_jurisdiction (free text) still carries the \
-  display string.`;
+  display string.
+
+PII entities (pii_entities):
+- Flag every span of personally identifying data that would need to be \
+  redacted before sharing this contract. Regex patterns already catch \
+  some values — ignore any \`\u27E6KIND_N\u27E7\` markers you see in the \
+  text, they are already redacted placeholders. Also ignore the literal \
+  legal names of the parties themselves: those go through a separate \
+  role-label masking path. Everything else that identifies a natural \
+  person, their location, their accounts, or a company beyond its name \
+  belongs here.
+- Each entry has:
+    kind — one of PERSON, ADDRESS, POSTCODE, PHONE, EMAIL, IBAN, VAT, \
+           ID_NUMBER, DOB, BANK, COMPANY_REG, URL, OTHER.
+    text — the VERBATIM substring as it appears in the contract. Do not \
+           paraphrase, translate, normalise whitespace, or strip \
+           punctuation. If you cannot copy the span character-for-character, \
+           omit the entry.
+- Kind guide (non-exhaustive — use judgement, examples are typical forms):
+    PERSON      — individual names other than the contracting parties: \
+                  signatories, contact persons, witnesses, beneficiaries.
+    ADDRESS     — postal addresses, whether single-line or multi-line. \
+                  Emit the whole address as one entry when contiguous.
+    POSTCODE    — standalone postal codes not part of a broader ADDRESS \
+                  entry (e.g. "10115 Berlin" on its own line).
+    PHONE       — telephone numbers in any format, including local numbers \
+                  with no international prefix (e.g. "644 80 57 83" in \
+                  ES, "06 12 34 56 78" in FR, "030 12345678" in DE). \
+                  Landlines, mobile numbers, fax numbers all qualify.
+    EMAIL       — email addresses.
+    IBAN        — International Bank Account Numbers.
+    VAT         — EU VAT identification numbers (e.g. "DE123456789").
+    ID_NUMBER   — national ID / tax / social-security numbers in any \
+                  member-state format: NL BSN, FR NIR, DE Steuer-ID, \
+                  ES NIE/NIF/DNI, IT Codice Fiscale, PL PESEL, passport \
+                  numbers, driving-licence numbers.
+    DOB         — dates of birth. Only when clearly a birth date (context \
+                  mentions "born", "geboren", "né(e)", "nacido", "data \
+                  di nascita", "data urodzenia" or similar). Contract \
+                  effective dates and other generic dates do NOT qualify.
+    BANK        — non-IBAN bank details: BIC/SWIFT codes, sort codes, \
+                  legacy account numbers.
+    COMPANY_REG — commercial-register numbers: NL KvK, DE HRB, FR SIREN/ \
+                  SIRET, ES CIF (when distinct from VAT), IT REA, PL KRS.
+    URL         — personal websites, social media handles, profile links. \
+                  Skip generic legal citations and links to statutes.
+    OTHER       — anything else privacy-sensitive that does not fit above \
+                  (signatures, licence plates, passport photos, customer \
+                  reference numbers). Use sparingly.
+- Return an empty array when the contract contains no such data.`;
 
 // ---------------------------------------------------------------------------
 // Helpers

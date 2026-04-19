@@ -156,6 +156,42 @@ class ApplicableLaw(BaseModel):
         return self
 
 
+PiiEntityKind = Literal[
+    "PERSON",
+    "ADDRESS",
+    "POSTCODE",
+    "PHONE",
+    "EMAIL",
+    "IBAN",
+    "VAT",
+    "ID_NUMBER",
+    "DOB",
+    "BANK",
+    "COMPANY_REG",
+    "URL",
+    "OTHER",
+]
+
+
+class PiiEntity(BaseModel):
+    """One semantic PII span the LLM flagged in Pass 0.
+
+    Additive layer on top of the deterministic regex catalog: patterns
+    run first and catch the formats they can express cleanly (emails,
+    IBANs, VAT numbers, etc.); the LLM fills the long tail that regexes
+    cannot cover safely across 27 member states — unprefixed phone
+    numbers, postal addresses, national ID numbers, dates of birth.
+
+    ``text`` is the verbatim substring copied from the contract; the
+    client resolves it back to character offsets via exact-match before
+    masking. Backend is a shape-only pass-through for JSONB round-trip
+    (saved analyses store the Pass 0 overview wholesale).
+    """
+
+    kind: PiiEntityKind
+    text: str = Field(min_length=1)
+
+
 class ContractOverview(BaseModel):
     """High-level contract metadata extracted in Pass 0."""
 
@@ -168,6 +204,7 @@ class ContractOverview(BaseModel):
     jurisdiction_evidence: JurisdictionEvidence | None = None
     key_terms: list[str]
     clause_inventory: list[ClauseInventoryItem] = []
+    pii_entities: list[PiiEntity] = []
 
 
 class AnalyzedClause(BaseModel):

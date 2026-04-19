@@ -97,7 +97,12 @@ export function StreamingReportView({
       {status === "awaiting_redaction" && rawText && tokenMap && (
         <RedactionPreview
           raw={rawText}
-          scrubbed={rebuildScrubbed(rawText, tokenMap, tokenMap)}
+          scrubbed={rebuildScrubbed(
+            rawText,
+            tokenMap,
+            tokenMap,
+            overview?.pii_entities ?? [],
+          )}
           tokenMap={tokenMap}
           parties={state.overview!.parties}
           editableLabels={state.editableLabels}

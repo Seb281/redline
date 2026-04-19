@@ -10,9 +10,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
-    // pdfjs-dist legacy build pulls ~1MB of ESM and takes 5–10s to
+    // pdfjs-dist legacy build pulls ~1MB of ESM and takes 5–20s to
     // evaluate on a cold start under jsdom; default 5s is too tight.
-    testTimeout: 20000,
+    // 20s occasionally still trips on the barrel-import smoke test.
+    testTimeout: 30000,
     // pdfjs-dist ships ESM that vitest cannot transform through the default
     // externalisation path under jsdom; inlining keeps the worker stub path
     // resolvable during the redact-export tests.

@@ -144,6 +144,12 @@
     "dispute_resolution": "Resolución de litigios",
     "other": "Otros"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risk:",
+    "categoryPrefix": "Category:",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear all"
+  },
   "ClauseFilters": {
     "allRisks": "A todo riesgo",
     "high": "Alto",

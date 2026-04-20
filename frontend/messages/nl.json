@@ -144,6 +144,12 @@
     "dispute_resolution": "Geschillenbeslechting",
     "other": "Overige"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risk:",
+    "categoryPrefix": "Category:",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear all"
+  },
   "ClauseFilters": {
     "allRisks": "Alle risico’s",
     "high": "Hoog",

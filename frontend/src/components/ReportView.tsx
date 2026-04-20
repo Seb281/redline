@@ -14,6 +14,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { RiskChart } from "@/components/RiskChart";
 import { RiskRadar } from "@/components/RiskRadar";
+import { ActiveFilterPills } from "@/components/ActiveFilterPills";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
@@ -241,6 +242,18 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
 
       {/* Unusual clauses */}
       <UnusualClausesCallout clauses={clauses} />
+
+      {/* Active filter pills — dismissible row reflecting current riskFilter/categoryFilter */}
+      <ActiveFilterPills
+        riskFilter={riskFilter}
+        categoryFilter={categoryFilter}
+        onClearRisk={() => setRiskFilter("all")}
+        onClearCategory={() => setCategoryFilter("all")}
+        onClearAll={() => {
+          setRiskFilter("all");
+          setCategoryFilter("all");
+        }}
+      />
 
       {/* Filters */}
       <ClauseFilters

@@ -144,6 +144,12 @@
     "dispute_resolution": "Risoluzione delle controversie",
     "other": "Altro"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risk:",
+    "categoryPrefix": "Category:",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear all"
+  },
   "ClauseFilters": {
     "allRisks": "Tutti i rischi",
     "high": "Alto",

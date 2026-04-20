@@ -144,6 +144,12 @@
     "dispute_resolution": "Streitbeilegung",
     "other": "Sonstiges"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risk:",
+    "categoryPrefix": "Category:",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear all"
+  },
   "ClauseFilters": {
     "allRisks": "Alle Risiken",
     "high": "Hoch",

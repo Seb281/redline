@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Ocultar",
+    "compare": "Comparar",
     "history": "Historia",
     "showRealNames": "Mostrar nombres reales",
     "hideRealNames": "Ocultar los nombres reales",
@@ -53,6 +54,8 @@
     "generating": "Generando...",
     "exportPdf": "Exportar a PDF",
     "newContract": "Nuevo contrato",
+    "compare": "Compare",
+    "compareFallbackLabel": "Current contract",
     "askAi": "Pregunta a la IA",
     "notLegalAdvice": "No constituye asesoramiento jurídico",
     "pdfExportFailed": "No se ha podido exportar el PDF. Inténtalo de nuevo."
@@ -579,7 +582,11 @@
     "deleteFailed": "Error al eliminar",
     "pinFailed": "El pin ha fallado",
     "extendFailed": "La ampliación ha fallado",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "Select \"{filename}\" for comparison",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
+    "compareClear": "Clear",
+    "compareGo": "Compare selected"
   },
   "HistoryDetail": {
     "notFound": "No se ha encontrado ningún análisis",

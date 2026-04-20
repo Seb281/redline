@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Masquer",
+    "compare": "Comparer",
     "history": "Histoire",
     "showRealNames": "Afficher les vrais noms",
     "hideRealNames": "Masquer les noms réels",
@@ -53,6 +54,8 @@
     "generating": "Génération en cours...",
     "exportPdf": "Exporter au format PDF",
     "newContract": "Nouveau contrat",
+    "compare": "Compare",
+    "compareFallbackLabel": "Current contract",
     "askAi": "Demandez à l'IA",
     "notLegalAdvice": "Ceci ne constitue pas un avis juridique",
     "pdfExportFailed": "L'exportation au format PDF a échoué. Veuillez réessayer."
@@ -579,7 +582,11 @@
     "deleteFailed": "Échec de la suppression",
     "pinFailed": "Échec de l'épinglage",
     "extendFailed": "L'extension a échoué",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "Select \"{filename}\" for comparison",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
+    "compareClear": "Clear",
+    "compareGo": "Compare selected"
   },
   "HistoryDetail": {
     "notFound": "Analyse introuvable",

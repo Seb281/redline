@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Redigeren",
+    "compare": "Vergelijken",
     "history": "Geschiedenis",
     "showRealNames": "Echte namen weergeven",
     "hideRealNames": "Echte namen verbergen",
@@ -53,6 +54,8 @@
     "generating": "Bezig met genereren...",
     "exportPdf": "Als PDF exporteren",
     "newContract": "Nieuw contract",
+    "compare": "Compare",
+    "compareFallbackLabel": "Current contract",
     "askAi": "Vraag het aan de AI",
     "notLegalAdvice": "Dit is geen juridisch advies",
     "pdfExportFailed": "Het exporteren naar PDF is mislukt. Probeer het nog eens."
@@ -579,7 +582,11 @@
     "deleteFailed": "Verwijderen is mislukt",
     "pinFailed": "Het vastzetten is mislukt",
     "extendFailed": "Uitbreiden is mislukt",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "Select \"{filename}\" for comparison",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
+    "compareClear": "Clear",
+    "compareGo": "Compare selected"
   },
   "HistoryDetail": {
     "notFound": "Analyse niet gevonden",

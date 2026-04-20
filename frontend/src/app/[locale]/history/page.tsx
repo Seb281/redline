@@ -10,9 +10,9 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import {
@@ -27,10 +27,43 @@ import type { AnalysisListItem } from "@/types";
 export default function HistoryPage() {
   const t = useTranslations("History");
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<AnalysisListItem[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  /**
+   * Multi-select state for the compare hand-off. Empty set → no
+   * checkboxes are ticked. We deliberately only enable "Compare"
+   * when *exactly two* rows are selected: one vs many or many vs many
+   * would need a more complex chooser we don't want to ship yet.
+   */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  /** Toggle membership of an id in the selection set. */
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /** Selected ids ordered by their appearance in the current list. */
+  const orderedSelected = useMemo(
+    () => analyses.filter((a) => selectedIds.has(a.id)).map((a) => a.id),
+    [analyses, selectedIds],
+  );
+
+  const canCompare = orderedSelected.length === 2;
+
+  /** Fire the compare hand-off — first-selected becomes slot A. */
+  const handleCompareSelected = useCallback(() => {
+    if (!canCompare) return;
+    const [a, b] = orderedSelected;
+    router.push(`/compare?a=${a}&b=${b}`);
+  }, [canCompare, orderedSelected, router]);
 
   /** Fetch analyses when authenticated. */
   useEffect(() => {
@@ -194,6 +227,25 @@ export default function HistoryPage() {
                 className="flex items-center justify-between rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 transition-colors hover:bg-[var(--bg-secondary)] theme-transition"
                 data-testid={`analysis-row-${analysis.id}`}
               >
+                {/* Multi-select checkbox for the compare hand-off.
+                    A clicked label inside the row link would navigate;
+                    we keep this as a plain button outside the Link. */}
+                <label
+                  className="mr-3 flex cursor-pointer items-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(analysis.id)}
+                    onChange={() => toggleSelected(analysis.id)}
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                    aria-label={t("compareSelectAria", {
+                      filename: analysis.filename,
+                    })}
+                    data-testid={`compare-select-${analysis.id}`}
+                  />
+                </label>
+
                 <Link
                   href={`/history/${analysis.id}`}
                   className="flex-1 no-underline"
@@ -334,6 +386,41 @@ export default function HistoryPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating compare bar — visible as soon as one row is selected.
+          Explicit "Clear" escape hatch so the user is never stuck with
+          a leftover tick. Compare stays disabled unless exactly 2 are
+          selected; the count messaging makes the rule visible. */}
+      {selectedIds.size > 0 && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition"
+          data-testid="compare-bar"
+        >
+          <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5 sm:px-7">
+            <p className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
+              {t("compareSelectedCount", { count: selectedIds.size })}
+            </p>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="rounded px-4 py-2 text-[14px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
+              >
+                {t("compareClear")}
+              </button>
+              <button
+                type="button"
+                onClick={handleCompareSelected}
+                disabled={!canCompare}
+                className="rounded border border-[var(--accent)] px-4 py-2 text-[14px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                data-testid="compare-go"
+              >
+                {t("compareGo")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

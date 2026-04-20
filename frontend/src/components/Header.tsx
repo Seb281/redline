@@ -36,6 +36,14 @@ export function Header() {
             {t("redact")}
           </Link>
 
+          {/* Compare link — side-by-side contract comparison */}
+          <Link
+            href="/compare"
+            className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
+          >
+            {t("compare")}
+          </Link>
+
           {/* History link — always visible, page handles auth state */}
           <Link
             href="/history"

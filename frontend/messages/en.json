@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Redact",
+    "compare": "Compare",
     "history": "History",
     "showRealNames": "Show real names",
     "hideRealNames": "Hide real names",
@@ -53,6 +54,8 @@
     "generating": "Generating...",
     "exportPdf": "Export PDF",
     "newContract": "New Contract",
+    "compare": "Compare",
+    "compareFallbackLabel": "Current contract",
     "askAi": "Ask AI",
     "notLegalAdvice": "Not legal advice",
     "pdfExportFailed": "PDF export failed. Please try again."
@@ -579,7 +582,11 @@
     "deleteFailed": "Delete failed",
     "pinFailed": "Pin failed",
     "extendFailed": "Extend failed",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "Select \"{filename}\" for comparison",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
+    "compareClear": "Clear",
+    "compareGo": "Compare selected"
   },
   "HistoryDetail": {
     "notFound": "Analysis not found",

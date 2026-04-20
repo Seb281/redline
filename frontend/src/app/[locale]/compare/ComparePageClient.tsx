@@ -43,8 +43,9 @@ export function ComparePageClient() {
   const searchParams = useSearchParams();
 
   // Mount-only: replay ReportView carry-over and/or ?a/?b query params.
-  // Loader callbacks are stable refs from the hook, so this effect is
-  // deliberately keyed to an empty dependency list.
+  // Carry-over wins over `?a` so the report's hand-off cannot be
+  // silently clobbered by a leftover query string; `?b` is always
+  // honoured because carry-over only ever populates side A.
   useEffect(() => {
     const carried = takeCarriedAnalysis();
     if (carried) {
@@ -53,7 +54,7 @@ export function ComparePageClient() {
 
     const a = searchParams?.get("a");
     const b = searchParams?.get("b");
-    if (a) {
+    if (a && !carried) {
       void slotA.loadSavedAnalysis(a, a);
     }
     if (b) {

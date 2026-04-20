@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Schwärzen",
+    "compare": "Vergleichen",
     "history": "Geschichte",
     "showRealNames": "Echte Namen anzeigen",
     "hideRealNames": "Echte Namen verbergen",
@@ -53,6 +54,8 @@
     "generating": "Wird generiert...",
     "exportPdf": "Als PDF exportieren",
     "newContract": "Neuer Vertrag",
+    "compare": "Vergleichen",
+    "compareFallbackLabel": "Aktueller Vertrag",
     "askAi": "Frage die KI",
     "notLegalAdvice": "Keine Rechtsberatung",
     "pdfExportFailed": "Der PDF-Export ist fehlgeschlagen. Bitte versuchen Sie es erneut."
@@ -579,7 +582,11 @@
     "deleteFailed": "Löschen fehlgeschlagen",
     "pinFailed": "Das Anheften ist fehlgeschlagen",
     "extendFailed": "Erweiterung fehlgeschlagen",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "„{filename}“ zum Vergleich auswählen",
+    "compareSelectedCount": "{count, plural, =1 {# ausgewählt — wählen Sie einen weiteren zum Vergleichen} =2 {# ausgewählt — bereit zum Vergleichen} other {# ausgewählt — wählen Sie genau 2}}",
+    "compareClear": "Zurücksetzen",
+    "compareGo": "Auswahl vergleichen"
   },
   "HistoryDetail": {
     "notFound": "Analyse nicht gefunden",
@@ -639,5 +646,56 @@
   },
   "AnalysisLocalePicker": {
     "label": "Analysesprache"
+  },
+  "Compare": {
+    "pageTitle": "Verträge vergleichen",
+    "pageSubtitle": "Legen Sie zwei analysierte Verträge nebeneinander. Sehen Sie, welcher riskanter ist, wo sie sich unterscheiden und was für jeden einzigartig ist.",
+    "slotAHeading": "Vertrag A",
+    "slotBHeading": "Vertrag B",
+    "slotRemove": "Entfernen",
+    "slotLoading": "{label} wird analysiert…",
+    "slotTryAgain": "Erneut versuchen",
+    "pickerSamplesHeading": "Beispiel auswählen",
+    "pickerSavedShow": "Oder eine gespeicherte Analyse laden",
+    "pickerSavedHide": "Gespeicherte Analysen ausblenden",
+    "pickerSavedLoading": "Gespeicherte Analysen werden geladen…",
+    "pickerSavedEmpty": "Noch keine gespeicherten Analysen.",
+    "pickerLoginToUseSaved": "Melden Sie sich an, um eine Ihrer gespeicherten Analysen zu laden.",
+    "clauses": "{count, plural, one {# Klausel} other {# Klauseln}}",
+    "statRiskierIn": "Riskanter in {label}",
+    "statUniqueToOne": "Nur in einem",
+    "statSameRisk": "Gleiches Risikoniveau",
+    "leanA": "Insgesamt: {label} ist riskanter",
+    "leanB": "Insgesamt: {label} ist riskanter",
+    "leanComparable": "Insgesamt: vergleichbares Risiko",
+    "jurisdictionPair": "{a} vs. {b}",
+    "jurisdictionUnknown": "—",
+    "filterAll": "Alle",
+    "filterDifferences": "Unterschiede",
+    "filterHigherIn": "Höher in {label}",
+    "filterUnique": "Einzigartig",
+    "filterGroupLabel": "Vergleichszeilen filtern",
+    "noMatchingClause": "Keine passende Klausel",
+    "noMatchingFilter": "Keine Zeile passt zu diesem Filter.",
+    "samples": {
+      "nl_freelance": "NL — Freelance-Vertrag",
+      "fr_employment": "FR — Arbeitsvertrag",
+      "de_saas_dpa": "DE — SaaS + AVV",
+      "es_saas_services": "ES — SaaS-/Dienstleistungsvertrag",
+      "it_employment": "IT — Arbeitsvertrag",
+      "pl_distribution": "PL — Vertriebsvertrag"
+    },
+    "errors": {
+      "sampleFailed": "Beispielanalyse fehlgeschlagen",
+      "savedFailed": "Gespeicherte Analyse konnte nicht geladen werden",
+      "savedListFailed": "Gespeicherte Analysen konnten nicht geladen werden"
+    }
+  },
+  "CompareClauseRow": {
+    "verdictHigherA": "Höher in A",
+    "verdictHigherB": "Höher in B",
+    "verdictSame": "Gleiches Niveau",
+    "verdictUniqueA": "Nur in A",
+    "verdictUniqueB": "Nur in B"
   }
 }

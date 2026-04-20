@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Ocultar",
+    "compare": "Comparar",
     "history": "Historia",
     "showRealNames": "Mostrar nombres reales",
     "hideRealNames": "Ocultar los nombres reales",
@@ -53,6 +54,8 @@
     "generating": "Generando...",
     "exportPdf": "Exportar a PDF",
     "newContract": "Nuevo contrato",
+    "compare": "Comparar",
+    "compareFallbackLabel": "Contrato actual",
     "askAi": "Pregunta a la IA",
     "notLegalAdvice": "No constituye asesoramiento jurídico",
     "pdfExportFailed": "No se ha podido exportar el PDF. Inténtalo de nuevo."
@@ -579,7 +582,11 @@
     "deleteFailed": "Error al eliminar",
     "pinFailed": "El pin ha fallado",
     "extendFailed": "La ampliación ha fallado",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "Seleccionar «{filename}» para comparar",
+    "compareSelectedCount": "{count, plural, =1 {# seleccionado — elige uno más para comparar} =2 {# seleccionados — listos para comparar} other {# seleccionados — elige exactamente 2}}",
+    "compareClear": "Borrar",
+    "compareGo": "Comparar seleccionados"
   },
   "HistoryDetail": {
     "notFound": "No se ha encontrado ningún análisis",
@@ -639,5 +646,56 @@
   },
   "AnalysisLocalePicker": {
     "label": "Lenguaje de análisis"
+  },
+  "Compare": {
+    "pageTitle": "Comparar contratos",
+    "pageSubtitle": "Coloca dos contratos analizados lado a lado. Descubre cuál conlleva más riesgo, en qué se diferencian y qué es exclusivo de cada uno.",
+    "slotAHeading": "Contrato A",
+    "slotBHeading": "Contrato B",
+    "slotRemove": "Quitar",
+    "slotLoading": "Analizando {label}…",
+    "slotTryAgain": "Reintentar",
+    "pickerSamplesHeading": "Elige un ejemplo",
+    "pickerSavedShow": "O carga un análisis guardado",
+    "pickerSavedHide": "Ocultar análisis guardados",
+    "pickerSavedLoading": "Cargando análisis guardados…",
+    "pickerSavedEmpty": "Aún no hay análisis guardados.",
+    "pickerLoginToUseSaved": "Inicia sesión para cargar uno de tus análisis guardados.",
+    "clauses": "{count, plural, one {# cláusula} other {# cláusulas}}",
+    "statRiskierIn": "Más arriesgado en {label}",
+    "statUniqueToOne": "Exclusivo de uno",
+    "statSameRisk": "Mismo nivel de riesgo",
+    "leanA": "En conjunto: {label} es más arriesgado",
+    "leanB": "En conjunto: {label} es más arriesgado",
+    "leanComparable": "En conjunto: riesgo comparable",
+    "jurisdictionPair": "{a} vs {b}",
+    "jurisdictionUnknown": "—",
+    "filterAll": "Todas",
+    "filterDifferences": "Diferencias",
+    "filterHigherIn": "Más alto en {label}",
+    "filterUnique": "Exclusivas",
+    "filterGroupLabel": "Filtrar filas de comparación",
+    "noMatchingClause": "Sin cláusula equivalente",
+    "noMatchingFilter": "Ninguna fila coincide con este filtro.",
+    "samples": {
+      "nl_freelance": "NL — Contrato de autónomo",
+      "fr_employment": "FR — Contrato laboral",
+      "de_saas_dpa": "DE — SaaS + DPA",
+      "es_saas_services": "ES — Acuerdo SaaS / servicios",
+      "it_employment": "IT — Contrato laboral",
+      "pl_distribution": "PL — Contrato de distribución"
+    },
+    "errors": {
+      "sampleFailed": "El análisis del ejemplo ha fallado",
+      "savedFailed": "No se ha podido cargar el análisis guardado",
+      "savedListFailed": "No se han podido cargar los análisis guardados"
+    }
+  },
+  "CompareClauseRow": {
+    "verdictHigherA": "Más alto en A",
+    "verdictHigherB": "Más alto en B",
+    "verdictSame": "Mismo nivel",
+    "verdictUniqueA": "Solo en A",
+    "verdictUniqueB": "Solo en B"
   }
 }

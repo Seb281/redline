@@ -1,6 +1,7 @@
 {
   "Header": {
     "redact": "Redigeren",
+    "compare": "Vergelijken",
     "history": "Geschiedenis",
     "showRealNames": "Echte namen weergeven",
     "hideRealNames": "Echte namen verbergen",
@@ -53,6 +54,8 @@
     "generating": "Bezig met genereren...",
     "exportPdf": "Als PDF exporteren",
     "newContract": "Nieuw contract",
+    "compare": "Vergelijken",
+    "compareFallbackLabel": "Huidig contract",
     "askAi": "Vraag het aan de AI",
     "notLegalAdvice": "Dit is geen juridisch advies",
     "pdfExportFailed": "Het exporteren naar PDF is mislukt. Probeer het nog eens."
@@ -579,7 +582,11 @@
     "deleteFailed": "Verwijderen is mislukt",
     "pinFailed": "Het vastzetten is mislukt",
     "extendFailed": "Uitbreiden is mislukt",
-    "clauseCount": "{count, plural, one {# clause} other {# clauses}}"
+    "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
+    "compareSelectAria": "\"{filename}\" selecteren voor vergelijking",
+    "compareSelectedCount": "{count, plural, =1 {# geselecteerd — kies er nog een om te vergelijken} =2 {# geselecteerd — klaar om te vergelijken} other {# geselecteerd — kies er precies 2}}",
+    "compareClear": "Wissen",
+    "compareGo": "Selectie vergelijken"
   },
   "HistoryDetail": {
     "notFound": "Analyse niet gevonden",
@@ -639,5 +646,56 @@
   },
   "AnalysisLocalePicker": {
     "label": "Analysetaal"
+  },
+  "Compare": {
+    "pageTitle": "Contracten vergelijken",
+    "pageSubtitle": "Zet twee geanalyseerde contracten naast elkaar. Zie welke risicovoller is, waar ze verschillen en wat uniek is voor elk.",
+    "slotAHeading": "Contract A",
+    "slotBHeading": "Contract B",
+    "slotRemove": "Verwijderen",
+    "slotLoading": "{label} wordt geanalyseerd…",
+    "slotTryAgain": "Opnieuw proberen",
+    "pickerSamplesHeading": "Kies een voorbeeld",
+    "pickerSavedShow": "Of laad een opgeslagen analyse",
+    "pickerSavedHide": "Opgeslagen analyses verbergen",
+    "pickerSavedLoading": "Opgeslagen analyses worden geladen…",
+    "pickerSavedEmpty": "Nog geen opgeslagen analyses.",
+    "pickerLoginToUseSaved": "Log in om een van uw opgeslagen analyses te laden.",
+    "clauses": "{count, plural, one {# clausule} other {# clausules}}",
+    "statRiskierIn": "Risicovoller in {label}",
+    "statUniqueToOne": "Uniek voor één",
+    "statSameRisk": "Zelfde risiconiveau",
+    "leanA": "Algemeen: {label} is risicovoller",
+    "leanB": "Algemeen: {label} is risicovoller",
+    "leanComparable": "Algemeen: vergelijkbaar risico",
+    "jurisdictionPair": "{a} vs {b}",
+    "jurisdictionUnknown": "—",
+    "filterAll": "Alle",
+    "filterDifferences": "Verschillen",
+    "filterHigherIn": "Hoger in {label}",
+    "filterUnique": "Uniek",
+    "filterGroupLabel": "Vergelijkingsrijen filteren",
+    "noMatchingClause": "Geen overeenkomende clausule",
+    "noMatchingFilter": "Geen rijen komen overeen met dit filter.",
+    "samples": {
+      "nl_freelance": "NL — Freelance-overeenkomst",
+      "fr_employment": "FR — Arbeidsovereenkomst",
+      "de_saas_dpa": "DE — SaaS + Verwerkersovereenkomst",
+      "es_saas_services": "ES — SaaS-/diensten-overeenkomst",
+      "it_employment": "IT — Arbeidsovereenkomst",
+      "pl_distribution": "PL — Distributieovereenkomst"
+    },
+    "errors": {
+      "sampleFailed": "Voorbeeldanalyse mislukt",
+      "savedFailed": "Kan opgeslagen analyse niet laden",
+      "savedListFailed": "Kan opgeslagen analyses niet laden"
+    }
+  },
+  "CompareClauseRow": {
+    "verdictHigherA": "Hoger in A",
+    "verdictHigherB": "Hoger in B",
+    "verdictSame": "Zelfde niveau",
+    "verdictUniqueA": "Alleen in A",
+    "verdictUniqueB": "Alleen in B"
   }
 }

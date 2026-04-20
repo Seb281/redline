@@ -4,8 +4,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import type { AnalyzedClause, AnalyzeResponse, ClauseCategory, RiskLevel } from "@/types";
+import { writeCarriedAnalysis } from "@/lib/compare/session";
 import { AnalysisFooter } from "@/components/AnalysisFooter";
 import { ClauseCard } from "@/components/ClauseCard";
 import { ClauseFilters, type SortOption } from "@/components/ClauseFilters";
@@ -119,6 +120,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       other: tCat("other"),
     },
   }), [tExport, tCat]);
+  const router = useRouter();
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ClauseCategory | "all">("all");
@@ -157,6 +159,17 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       setSaveError(err instanceof Error ? err.message : t("save"));
     }
   }, [isAuthenticated, onSave, t]);
+
+  // Hand this analysis off to /compare as slot A and navigate. The
+  // label prefers the contract_type because the report never carries a
+  // filename from the upload screen; a translated fallback keeps the
+  // slot card readable when the overview is sparse.
+  const handleCompare = useCallback(() => {
+    const label =
+      (data.overview.contract_type ?? "").trim() || t("compareFallbackLabel");
+    writeCarriedAnalysis({ label, data });
+    router.push("/compare");
+  }, [data, router, t]);
 
   const { summary, clauses } = data;
   const filteredClauses = useFilteredClauses(clauses, riskFilter, categoryFilter, sort);
@@ -343,6 +356,13 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
               className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
             >
               {exporting ? t("generating") : t("exportPdf")}
+            </button>
+            <button
+              type="button"
+              onClick={handleCompare}
+              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
+            >
+              {t("compare")}
             </button>
             <button
               type="button"

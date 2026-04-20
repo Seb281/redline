@@ -144,6 +144,12 @@
     "dispute_resolution": "Geschillenbeslechting",
     "other": "Overige"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risico:",
+    "categoryPrefix": "Categorie:",
+    "removeFilter": "Filter verwijderen: {label}",
+    "clearAll": "Alles wissen"
+  },
   "ClauseFilters": {
     "allRisks": "Alle risico’s",
     "high": "Hoog",
@@ -173,7 +179,28 @@
   },
   "RiskChart": {
     "ariaLabel": "Risicoclassificatie: {high} hoog, {medium} gemiddeld, {low} laag, {info} informatief",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Risiconiveau: {label}, {count} clausules, {percentage} %",
+    "tooltipPercent": "{percentage}",
+    "clearFilter": "Filter wissen",
+    "labels": {
+      "high": "Hoog",
+      "medium": "Medium",
+      "low": "Laag",
+      "informational": "Informatief"
+    }
+  },
+  "RiskRadar": {
+    "ariaLabel": "Risico per categorie: {categories, plural, one {# category} other {# categories}} op {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filter op {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
+    "tooltipMaxRisk": "Maximaal risico: {maxRisk}",
+    "riskLevel": {
+      "informational": "Informatief",
+      "low": "Laag",
+      "medium": "Medium",
+      "high": "Hoog"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Ongebruikelijke bepalingen"

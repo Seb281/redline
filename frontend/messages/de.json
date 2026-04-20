@@ -144,6 +144,12 @@
     "dispute_resolution": "Streitbeilegung",
     "other": "Sonstiges"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Risiko:",
+    "categoryPrefix": "Kategorie:",
+    "removeFilter": "Filter entfernen: {label}",
+    "clearAll": "Alle löschen"
+  },
   "ClauseFilters": {
     "allRisks": "Alle Risiken",
     "high": "Hoch",
@@ -173,7 +179,28 @@
   },
   "RiskChart": {
     "ariaLabel": "Risikoeinstufung: {high} hoch, {medium} mittel, {low} niedrig, {info} informativ",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Risikostufe: {label}, {count} Klauseln, {percentage} %",
+    "tooltipPercent": "{percentage}",
+    "clearFilter": "Filter löschen",
+    "labels": {
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig",
+      "informational": "Informativ"
+    }
+  },
+  "RiskRadar": {
+    "ariaLabel": "Risiken nach Kategorie: {categories, plural, one {# category} other {# categories}} unter {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Nach „{category}“ filtern: {count, plural, one {# clause} other {# clauses}}, „max risk“ {maxRisk}",
+    "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
+    "tooltipMaxRisk": "Maximales Risiko: {maxRisk}",
+    "riskLevel": {
+      "informational": "Informativ",
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Ungewöhnliche Klauseln"

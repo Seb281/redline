@@ -144,6 +144,12 @@
     "dispute_resolution": "Risoluzione delle controversie",
     "other": "Altro"
   },
+  "ActiveFilterPills": {
+    "riskPrefix": "Rischio:",
+    "categoryPrefix": "Categoria:",
+    "removeFilter": "Rimuovi filtro: {label}",
+    "clearAll": "Cancella tutto"
+  },
   "ClauseFilters": {
     "allRisks": "Tutti i rischi",
     "high": "Alto",
@@ -173,7 +179,28 @@
   },
   "RiskChart": {
     "ariaLabel": "Distribuzione del rischio: {high} alto, {medium} medio, {low} basso, {info} informativo",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Livello di rischio: {label}, clausole {count}, {percentage} %",
+    "tooltipPercent": "{percentage}",
+    "clearFilter": "Cancella filtro",
+    "labels": {
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Basso",
+      "informational": "Informativo"
+    }
+  },
+  "RiskRadar": {
+    "ariaLabel": "Rischi per categoria: {categories, plural, one {# category} other {# categories}} su {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filtra per {category}: {count, plural, one {# clause} other {# clauses}}, rischio massimo {maxRisk}",
+    "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
+    "tooltipMaxRisk": "Rischio massimo: {maxRisk}",
+    "riskLevel": {
+      "informational": "Informativo",
+      "low": "Basso",
+      "medium": "Medio",
+      "high": "Alto"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Clausole insolite"
@@ -611,6 +638,6 @@
     "it": "Italiano"
   },
   "AnalysisLocalePicker": {
-    "label": "Lingua dell'analisi"
+    "label": "Linguaggio di analisi"
   }
 }

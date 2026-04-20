@@ -145,10 +145,10 @@
     "other": "Altro"
   },
   "ActiveFilterPills": {
-    "riskPrefix": "Risk:",
-    "categoryPrefix": "Category:",
-    "removeFilter": "Remove filter: {label}",
-    "clearAll": "Clear all"
+    "riskPrefix": "Rischio:",
+    "categoryPrefix": "Categoria:",
+    "removeFilter": "Rimuovi filtro: {label}",
+    "clearAll": "Cancella tutto"
   },
   "ClauseFilters": {
     "allRisks": "Tutti i rischi",
@@ -180,8 +180,8 @@
   "RiskChart": {
     "ariaLabel": "Distribuzione del rischio: {high} alto, {medium} medio, {low} basso, {info} informativo",
     "clauses": "{count, plural, one {# clause} other {# clauses}}",
-    "segmentAriaLabel": "Livello di rischio: {label}, {count} clausole, {percentage}%",
-    "tooltipPercent": "{percentage}%",
+    "segmentAriaLabel": "Livello di rischio: {label}, clausole {count}, {percentage} %",
+    "tooltipPercent": "{percentage}",
     "clearFilter": "Cancella filtro",
     "labels": {
       "high": "Alto",
@@ -191,15 +191,15 @@
     }
   },
   "RiskRadar": {
-    "ariaLabel": "Risk by category: {categories, plural, one {# category} other {# categories}} across {clauses, plural, one {# clause} other {# clauses}}",
-    "spokeAriaLabel": "Filter by {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "ariaLabel": "Rischi per categoria: {categories, plural, one {# category} other {# categories}} su {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filtra per {category}: {count, plural, one {# clause} other {# clauses}}, rischio massimo {maxRisk}",
     "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
-    "tooltipMaxRisk": "Max risk: {maxRisk}",
+    "tooltipMaxRisk": "Rischio massimo: {maxRisk}",
     "riskLevel": {
-      "informational": "Informational",
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
+      "informational": "Informativo",
+      "low": "Basso",
+      "medium": "Medio",
+      "high": "Alto"
     }
   },
   "UnusualClausesCallout": {
@@ -638,6 +638,6 @@
     "it": "Italiano"
   },
   "AnalysisLocalePicker": {
-    "label": "Lingua dell'analisi"
+    "label": "Linguaggio di analisi"
   }
 }

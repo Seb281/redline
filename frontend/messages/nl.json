@@ -145,10 +145,10 @@
     "other": "Overige"
   },
   "ActiveFilterPills": {
-    "riskPrefix": "Risk:",
-    "categoryPrefix": "Category:",
-    "removeFilter": "Remove filter: {label}",
-    "clearAll": "Clear all"
+    "riskPrefix": "Risico:",
+    "categoryPrefix": "Categorie:",
+    "removeFilter": "Filter verwijderen: {label}",
+    "clearAll": "Alles wissen"
   },
   "ClauseFilters": {
     "allRisks": "Alle risico’s",
@@ -180,26 +180,26 @@
   "RiskChart": {
     "ariaLabel": "Risicoclassificatie: {high} hoog, {medium} gemiddeld, {low} laag, {info} informatief",
     "clauses": "{count, plural, one {# clause} other {# clauses}}",
-    "segmentAriaLabel": "Risiconiveau: {label}, {count} clausules, {percentage}%",
-    "tooltipPercent": "{percentage}%",
+    "segmentAriaLabel": "Risiconiveau: {label}, {count} clausules, {percentage} %",
+    "tooltipPercent": "{percentage}",
     "clearFilter": "Filter wissen",
     "labels": {
       "high": "Hoog",
-      "medium": "Gemiddeld",
+      "medium": "Medium",
       "low": "Laag",
       "informational": "Informatief"
     }
   },
   "RiskRadar": {
-    "ariaLabel": "Risk by category: {categories, plural, one {# category} other {# categories}} across {clauses, plural, one {# clause} other {# clauses}}",
-    "spokeAriaLabel": "Filter by {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "ariaLabel": "Risico per categorie: {categories, plural, one {# category} other {# categories}} op {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filter op {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
     "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
-    "tooltipMaxRisk": "Max risk: {maxRisk}",
+    "tooltipMaxRisk": "Maximaal risico: {maxRisk}",
     "riskLevel": {
-      "informational": "Informational",
-      "low": "Low",
+      "informational": "Informatief",
+      "low": "Laag",
       "medium": "Medium",
-      "high": "High"
+      "high": "Hoog"
     }
   },
   "UnusualClausesCallout": {

@@ -145,10 +145,10 @@
     "other": "Sonstiges"
   },
   "ActiveFilterPills": {
-    "riskPrefix": "Risk:",
-    "categoryPrefix": "Category:",
-    "removeFilter": "Remove filter: {label}",
-    "clearAll": "Clear all"
+    "riskPrefix": "Risiko:",
+    "categoryPrefix": "Kategorie:",
+    "removeFilter": "Filter entfernen: {label}",
+    "clearAll": "Alle löschen"
   },
   "ClauseFilters": {
     "allRisks": "Alle Risiken",
@@ -180,8 +180,8 @@
   "RiskChart": {
     "ariaLabel": "Risikoeinstufung: {high} hoch, {medium} mittel, {low} niedrig, {info} informativ",
     "clauses": "{count, plural, one {# clause} other {# clauses}}",
-    "segmentAriaLabel": "Risikostufe: {label}, {count} Klauseln, {percentage}%",
-    "tooltipPercent": "{percentage}%",
+    "segmentAriaLabel": "Risikostufe: {label}, {count} Klauseln, {percentage} %",
+    "tooltipPercent": "{percentage}",
     "clearFilter": "Filter löschen",
     "labels": {
       "high": "Hoch",
@@ -191,15 +191,15 @@
     }
   },
   "RiskRadar": {
-    "ariaLabel": "Risk by category: {categories, plural, one {# category} other {# categories}} across {clauses, plural, one {# clause} other {# clauses}}",
-    "spokeAriaLabel": "Filter by {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "ariaLabel": "Risiken nach Kategorie: {categories, plural, one {# category} other {# categories}} unter {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Nach „{category}“ filtern: {count, plural, one {# clause} other {# clauses}}, „max risk“ {maxRisk}",
     "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
-    "tooltipMaxRisk": "Max risk: {maxRisk}",
+    "tooltipMaxRisk": "Maximales Risiko: {maxRisk}",
     "riskLevel": {
-      "informational": "Informational",
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
+      "informational": "Informativ",
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
     }
   },
   "UnusualClausesCallout": {

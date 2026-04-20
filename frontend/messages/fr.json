@@ -145,10 +145,10 @@
     "other": "Autres"
   },
   "ActiveFilterPills": {
-    "riskPrefix": "Risk:",
-    "categoryPrefix": "Category:",
-    "removeFilter": "Remove filter: {label}",
-    "clearAll": "Clear all"
+    "riskPrefix": "Risque :",
+    "categoryPrefix": "Catégorie :",
+    "removeFilter": "Supprimer le filtre : {label}",
+    "clearAll": "Tout effacer"
   },
   "ClauseFilters": {
     "allRisks": "Tous risques",
@@ -180,26 +180,26 @@
   "RiskChart": {
     "ariaLabel": "Répartition des risques : {high} élevé, {medium} moyen, {low} faible, {info} à titre informatif",
     "clauses": "{count, plural, one {# clause} other {# clauses}}",
-    "segmentAriaLabel": "Niveau de risque : {label}, {count} clauses, {percentage}%",
-    "tooltipPercent": "{percentage}%",
-    "clearFilter": "Effacer le filtre",
+    "segmentAriaLabel": "Niveau de risque : {label}, {count} clauses, {percentage} %",
+    "tooltipPercent": "{percentage}",
+    "clearFilter": "Vider le filtre",
     "labels": {
       "high": "Élevé",
       "medium": "Moyen",
       "low": "Faible",
-      "informational": "Informatif"
+      "informational": "À titre d'information"
     }
   },
   "RiskRadar": {
-    "ariaLabel": "Risk by category: {categories, plural, one {# category} other {# categories}} across {clauses, plural, one {# clause} other {# clauses}}",
-    "spokeAriaLabel": "Filter by {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "ariaLabel": "Risques par catégorie : {categories, plural, one {# category} other {# categories}} sur {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filtrer par {category} : {count, plural, one {# clause} other {# clauses}}, risque maximal {maxRisk}",
     "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
-    "tooltipMaxRisk": "Max risk: {maxRisk}",
+    "tooltipMaxRisk": "Risque maximal : {maxRisk}",
     "riskLevel": {
-      "informational": "Informational",
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
+      "informational": "À titre d'information",
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé"
     }
   },
   "UnusualClausesCallout": {
@@ -638,6 +638,6 @@
     "it": "Italien"
   },
   "AnalysisLocalePicker": {
-    "label": "Langue d'analyse"
+    "label": "Langage d'analyse"
   }
 }

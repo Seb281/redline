@@ -1,8 +1,34 @@
 /** Tests for AnalysisFooter — transparency colophon per EU AI Act. */
 
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
+import React from "react";
 import { screen, cleanup, fireEvent } from "@testing-library/react";
 import { renderWithIntl as render } from "@/test-fixtures/i18n";
+
+// Stub `@/i18n/navigation` so next-intl's `createNavigation` (which
+// transitively reaches for `next/navigation`) does not blow up under
+// jsdom. Matches the same shim used in other component tests that
+// render the SP-7 locale-aware Link.
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({
+    href,
+    children,
+    className,
+  }: {
+    href: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+  usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  redirect: vi.fn(),
+  getPathname: vi.fn(),
+}));
+
 import { AnalysisFooter } from "./AnalysisFooter";
 import { LEGACY_PROVENANCE_PROVIDER } from "@/lib/analyzer";
 import type { AnalysisProvenance } from "@/types";

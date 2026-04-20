@@ -840,8 +840,21 @@ export function buildProvenance(
     timestamp: new Date().toISOString(),
     redaction_location: "client",
     analysis_locale: analysisLocale,
+    schema_version: TRANSPARENCY_RECEIPT_SCHEMA_VERSION,
   };
 }
+
+/**
+ * SP-9 — version tag for the transparency-receipt wrapper.
+ *
+ * Stored on `AnalysisProvenance.schema_version` so each analysis keeps
+ * the receipt-schema it was born under. Bumped (as a string) whenever
+ * the receipt JSON shape evolves — see `transparency-receipt.ts` for
+ * the full wrapper. Kept alongside `PROMPT_TEMPLATE_VERSION` because
+ * both tags travel end-to-end on every saved analysis and future-me
+ * will expect to find them in the same module.
+ */
+export const TRANSPARENCY_RECEIPT_SCHEMA_VERSION = "1" as const;
 
 // ---------------------------------------------------------------------------
 // Inventory cap — defends Pass 2 from over-segmented overviews

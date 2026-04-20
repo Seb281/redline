@@ -20,6 +20,12 @@ import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
 import { downloadMarkdown, downloadPdf, type MarkdownLabels } from "@/lib/export";
+import {
+  buildReceipt,
+  downloadReceipt,
+  type TransparencyReceipt,
+} from "@/lib/transparency-receipt";
+import { fetchTransparencyReceipt } from "@/lib/api";
 
 interface ReportViewProps {
   data: AnalyzeResponse;
@@ -28,6 +34,18 @@ interface ReportViewProps {
   onAskAboutClause?: (clause: AnalyzedClause) => void;
   /** Persist the analysis. Returns the saved analysis ID. */
   onSave?: () => Promise<string>;
+  /**
+   * SP-9 — original upload filename, echoed into the transparency
+   * receipt for identification. Optional so callers that genuinely
+   * don't have one (e.g. demo contracts mid-flight) still work.
+   */
+  filename?: string | null;
+  /**
+   * SP-9 — saved-analysis id when rendering a row from history. Lets
+   * the receipt download pull the stable server-side copy instead of
+   * rebuilding locally.
+   */
+  savedId?: string | null;
 }
 
 const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2, informational: 3 };
@@ -58,7 +76,7 @@ function useFilteredClauses(
 }
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
-export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave }: ReportViewProps) {
+export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave, filename, savedId }: ReportViewProps) {
   const t = useTranslations("ReportView");
   const tExport = useTranslations("Export");
   const tCat = useTranslations("ClauseCategory");
@@ -132,6 +150,15 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
   const [saveError, setSaveError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
+  // SP-9 — remember the saved analysis id after a successful save so the
+  // transparency-receipt download can pull the server-stable copy on the
+  // second click. Initialised from the `savedId` prop so the history
+  // detail path uses the existing row id without a round-trip through
+  // `onSave`.
+  const [persistedId, setPersistedId] = useState<string | null>(
+    savedId ?? null,
+  );
+
   // When user becomes authenticated while LoginPrompt is showing,
   // dismiss the prompt so the Save button is ready to click.
   useEffect(() => {
@@ -152,13 +179,39 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
     setSaveState("saving");
     setSaveError(null);
     try {
-      await onSave();
+      const newId = await onSave();
+      setPersistedId(newId);
       setSaveState("saved");
     } catch (err) {
       setSaveState("error");
       setSaveError(err instanceof Error ? err.message : t("save"));
     }
   }, [isAuthenticated, onSave, t]);
+
+  /**
+   * SP-9 — download the transparency receipt for this analysis.
+   *
+   * Prefers the backend endpoint whenever a persisted id is available so
+   * the receipt carries server-side provenance (authoritative source for
+   * a saved row). Falls back to the pure client builder for anonymous
+   * sessions or when the backend call fails — users must always be able
+   * to pull the AI Act disclosure even if persistence is offline.
+   */
+  const handleDownloadReceipt = useCallback(async () => {
+    let receipt: TransparencyReceipt;
+    if (persistedId) {
+      try {
+        receipt = (await fetchTransparencyReceipt(
+          persistedId,
+        )) as unknown as TransparencyReceipt;
+      } catch {
+        receipt = buildReceipt(data, { id: persistedId, filename });
+      }
+    } else {
+      receipt = buildReceipt(data, { filename });
+    }
+    downloadReceipt(receipt);
+  }, [data, filename, persistedId]);
 
   // Hand this analysis off to /compare as slot A and navigate. The
   // label prefers the contract_type because the report never carries a
@@ -302,7 +355,12 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       {/* Transparency colophon — EU AI Act disclosure of the machine
           that produced the analysis. Guarded with optional chaining so
           any stray legacy caller without provenance won't crash. */}
-      {data.provenance && <AnalysisFooter provenance={data.provenance} />}
+      {data.provenance && (
+        <AnalysisFooter
+          provenance={data.provenance}
+          onDownloadReceipt={handleDownloadReceipt}
+        />
+      )}
 
       {/* Sticky export bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">

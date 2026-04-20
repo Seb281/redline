@@ -277,6 +277,14 @@ export interface AnalysisProvenance {
    * rather than guessing.
    */
   analysis_locale?: string;
+  /**
+   * SP-9 — version tag for the transparency-receipt wrapper. Bumped
+   * (as a string) when the receipt shape evolves so consumers can diff
+   * receipts across releases. Optional so pre-SP-9 saved analyses
+   * deserialize unchanged — `/api/analyses/{id}/receipt` treats an
+   * absent value as "1" (the initial release).
+   */
+  schema_version?: string;
 }
 
 /** Full response from POST /api/analyze. */

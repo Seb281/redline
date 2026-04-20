@@ -1,7 +1,7 @@
 {
   "Header": {
     "redact": "Redigeren",
-    "compare": "Vergelijken",
+    "compare": "Vergelijk",
     "history": "Geschiedenis",
     "showRealNames": "Echte namen weergeven",
     "hideRealNames": "Echte namen verbergen",
@@ -16,7 +16,8 @@
   "Footer": {
     "brand": "Redline",
     "privacyPolicy": "Privacybeleid",
-    "portfolio": "Portfolio"
+    "portfolio": "Portfolio",
+    "transparency": "Transparantie"
   },
   "CookieBanner": {
     "body": "Redline gebruikt localStorage uitsluitend voor thema-instellingen. Er worden geen cookies of tracking gebruikt.",
@@ -55,7 +56,7 @@
     "generating": "Bezig met genereren...",
     "exportPdf": "Als PDF exporteren",
     "newContract": "Nieuw contract",
-    "compare": "Vergelijken",
+    "compare": "Vergelijk",
     "compareFallbackLabel": "Huidig contract",
     "askAi": "Vraag het aan de AI",
     "notLegalAdvice": "Dit is geen juridisch advies",
@@ -266,7 +267,11 @@
     "legacyNote": "Opgenomen voordat transparantie-logging was ingeschakeld",
     "disclosure": "Deze analyse is gegenereerd door een generatief AI-systeem. Geregistreerd conform de transparantievereisten van de EU-AI-wet.",
     "ocrNote": "Tekst geëxtraheerd via OCR op het apparaat zelf — zonder beeldverwerkingsmodel van een derde partij.",
-    "hybridOcrNote": "Sommige pagina’s zijn gescand met behulp van OCR op het apparaat zelf — er is geen beeldverwerkingsmodel van een derde partij gebruikt."
+    "hybridOcrNote": "Sommige pagina’s zijn gescand met behulp van OCR op het apparaat zelf — er is geen beeldverwerkingsmodel van een derde partij gebruikt.",
+    "schemaVersion": "Ontvangstschema",
+    "downloadReceipt": "Transparantiebewijs downloaden (JSON)",
+    "downloadReceiptDesc": "Machinaal leesbaar overzicht van deze analyse — herkomst, verwerkingsstroom, instellingen.",
+    "transparencyPageLink": "Bekijk hoe dit aansluit bij de AI-wet"
   },
   "RedactExportFlow": {
     "label": "Redactie waarbij privacy voorop staat",
@@ -488,12 +493,14 @@
     "rightPortability": "Gegevensoverdraagbaarheid",
     "rightObject": "Bezwaar maken tegen de verwerking",
     "rightComplain": "Dien een klacht in bij een toezichthoudende autoriteit",
-    "rightsNoStorage": "Als je ingelogd bent, kun je je recht op inzage (art. 15) en het recht op wissing (art. 17) rechtstreeks uitoefenen via je <link>accountpagina</link>. \"Mijn gegevens exporteren\" levert één JSON-bestand op met je accountgegevens en elke opgeslagen analyse. \"Mijn account verwijderen\" verwijdert je account en alle bijbehorende gegevens definitief na een getypte bevestiging. Voor anonieme bezoekers is er niets op onze servers om in te zien of te verwijderen — je gegevens op <code>localStorage</code> vallen volledig onder jouw controle in je browser.",
-    "rightsContact": "Neem voor overige vragen contact op met <email></email>.",
+    "rightsNoStorage": "Als u bent ingelogd, kunt u rechtstreeks vanaf uw <link>accountpagina</link> gebruikmaken van uw recht op inzage (art. 15) en het recht op verwijdering (art. 17). \"Mijn gegevens exporteren\" levert één JSON-bundel op met uw accountgegevens en alle opgeslagen analyses. \"Mijn account verwijderen\" verwijdert uw account en alle bijbehorende gegevens definitief na een bevestiging via het toetsenbord. Voor anonieme bezoekers is er niets op onze servers om in te zien of te verwijderen — uw <code>localStorage</code>-gegevens staan volledig onder uw controle in uw browser.",
+    "rightsContact": "Neem voor overige verzoeken contact op met <email></email>.",
     "changesTitle": "Wijzigingen in dit beleid",
     "changesBody": "We kunnen dit beleid van tijd tot tijd aanpassen. De datum onder ‘Laatst bijgewerkt’ bovenaan de pagina geeft de meest recente herziening weer. Bij belangrijke wijzigingen wordt de datum aangepast.",
     "transfersAI": "De contracttekst wordt door Mistral La Plateforme binnen de Europese Unie (Parijs) verwerkt. Voor de AI-analyse vindt er geen doorgifte buiten de EU/EER plaats.",
-    "transfersOperational": "Vercel en Railway kunnen operationele metadata (verzoekheaders, IP-adressen tijdens een verzoek) buiten de EU verwerken op grond van hun respectievelijke gegevensverwerkingsovereenkomsten. Er verlaat geen contracttekst de EU."
+    "transfersOperational": "Vercel en Railway kunnen operationele metadata (verzoekheaders, IP-adressen tijdens een verzoek) buiten de EU verwerken op grond van hun respectieve gegevensverwerkingsovereenkomsten. Er verlaat geen contracttekst de EU.",
+    "aiActTitle": "Standpunt ten aanzien van de EU-AI-wet",
+    "aiActBody": "Redline is een generatieve AI-tool die onderworpen is aan de transparantieverplichtingen van EU-Verordening 2024/1689. Elke analyse bevat een herkomstrecord (model, regio, tijdstempel, beleid inzake redeneringsinspanning per doorloop) en een disclaimer dat de output door AI is gegenereerd. De volledige koppeling aan artikel 13 en artikel 50, het pijplijndiagram, de terugdraaimogelijkheden voor operators en het machinaal leesbare ontvangstbewijs zijn te vinden op de <link>transparantiepagina</link>."
   },
   "DataResidency": {
     "metaTitle": "Gegevensopslag — Redline",
@@ -504,7 +511,7 @@
     "defaultTitle": "Standaardgegevensstromen",
     "defaultDesc": "Deze processors worden telkens ingeschakeld wanneer je Redline gebruikt.",
     "optionalTitle": "Optionele gegevensstromen",
-    "optionalDesc": "Deze processors worden alleen ingeschakeld wanneer een specifieke functie — opgeslagen geschiedenis of inloggen via Magic Link — door de beheerder is ingeschakeld.",
+    "optionalDesc": "Deze processors worden alleen ingeschakeld wanneer een specifieke functie — opgeslagen geschiedenis of inloggen via een magische link — door de beheerder is ingeschakeld.",
     "configNote": "Deze pagina wordt rechtstreeks gegenereerd op basis van de getypte configuratie in `<code>frontend/src/lib/data-flows.ts</code>`, zodat deze de actuele configuratie volgt zonder dat er handmatig wijzigingen hoeven te worden aangebracht.",
     "i18nNote": "De gebruikersinterface van Chrome is vertaald naar het Engels, Frans, Duits, Nederlands, Spaans en Italiaans. De analyse-uitvoer (samenvattingen van clausules, risico-uitleg, chatantwoorden) wordt rechtstreeks door Mistral gegenereerd — er komt geen tussenliggende machinevertaaldienst aan de contracttekst. Elke taalversie wordt pas ingeschakeld nadat een moedertaalspreker de prompts heeft gecontroleerd; taalversies die nog in behandeling zijn, vallen terug op de Engelse analyse, zodat geen enkele gebruiker ongecontroleerde juridische teksten van het LLM in zijn of haar eigen taal te zien krijgt.",
     "data": "Gegevens",
@@ -554,7 +561,8 @@
         ],
         "notes": "Dit wordt alleen gebruikt als de omgevingsvariabele RESEND_API_KEY in de backend is ingesteld. E-mailadressen worden uitsluitend naar Resend verzonden om de aanmeldingslink te versturen en worden niet gebruikt voor marketingdoeleinden."
       }
-    }
+    },
+    "transparencyNote": "Zie de <link>pagina over transparantie</link> voor informatie over de inventarisatie van de standpunten met betrekking tot de EU-AI-wet, de maatregelen waarmee exploitanten hun activiteiten kunnen terugdraaien en het machinaal leesbare transparantiebewijs."
   },
   "History": {
     "title": "Uw analyses",
@@ -575,10 +583,10 @@
     "pinFailed": "Het vastzetten is mislukt",
     "extendFailed": "Uitbreiden is mislukt",
     "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
-    "compareSelectAria": "\"{filename}\" selecteren voor vergelijking",
-    "compareSelectedCount": "{count, plural, =1 {# geselecteerd — kies er nog een om te vergelijken} =2 {# geselecteerd — klaar om te vergelijken} other {# geselecteerd — kies er precies 2}}",
+    "compareSelectAria": "Selecteer „{filename}” ter vergelijking",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Wissen",
-    "compareGo": "Selectie vergelijken"
+    "compareGo": "Vergelijk geselecteerde"
   },
   "HistoryDetail": {
     "notFound": "Analyse niet gevonden",
@@ -640,53 +648,53 @@
     "label": "Analysetaal"
   },
   "Compare": {
-    "pageTitle": "Contracten vergelijken",
-    "pageSubtitle": "Zet twee geanalyseerde contracten naast elkaar. Zie welke risicovoller is, waar ze verschillen en wat uniek is voor elk.",
+    "pageTitle": "Vergelijk contracten",
+    "pageSubtitle": "Zet twee geanalyseerde contracten naast elkaar. Bekijk welk contract risicovoller is, waarin ze van elkaar verschillen en wat elk contract uniek maakt.",
     "slotAHeading": "Contract A",
     "slotBHeading": "Contract B",
     "slotRemove": "Verwijderen",
     "slotLoading": "{label} wordt geanalyseerd…",
-    "slotTryAgain": "Opnieuw proberen",
+    "slotTryAgain": "Probeer het nog eens",
     "pickerSamplesHeading": "Kies een voorbeeld",
     "pickerSavedShow": "Of laad een opgeslagen analyse",
     "pickerSavedHide": "Opgeslagen analyses verbergen",
     "pickerSavedLoading": "Opgeslagen analyses worden geladen…",
-    "pickerSavedEmpty": "Nog geen opgeslagen analyses.",
+    "pickerSavedEmpty": "Er zijn nog geen analyses opgeslagen.",
     "pickerLoginToUseSaved": "Log in om een van uw opgeslagen analyses te laden.",
-    "clauses": "{count, plural, one {# clausule} other {# clausules}}",
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
     "statRiskierIn": "Risicovoller in {label}",
     "statUniqueToOne": "Uniek voor één",
-    "statSameRisk": "Zelfde risiconiveau",
-    "leanA": "Algemeen: {label} is risicovoller",
-    "leanB": "Algemeen: {label} is risicovoller",
+    "statSameRisk": "Hetzelfde risiconiveau",
+    "leanA": "Algemeen: {label} neigt naar meer risico",
+    "leanB": "Algemeen: {label} neigt naar meer risico",
     "leanComparable": "Algemeen: vergelijkbaar risico",
     "jurisdictionPair": "{a} vs {b}",
     "jurisdictionUnknown": "—",
-    "filterAll": "Alle",
+    "filterAll": "Alles",
     "filterDifferences": "Verschillen",
-    "filterHigherIn": "Hoger in {label}",
+    "filterHigherIn": "Meer informatie op {label}",
     "filterUnique": "Uniek",
     "filterGroupLabel": "Vergelijkingsrijen filteren",
     "noMatchingClause": "Geen overeenkomende clausule",
-    "noMatchingFilter": "Geen rijen komen overeen met dit filter.",
+    "noMatchingFilter": "Er zijn geen rijen die aan deze filtervoorwaarden voldoen.",
     "samples": {
-      "nl_freelance": "NL — Freelance-overeenkomst",
+      "nl_freelance": "NL — Freelanceovereenkomst",
       "fr_employment": "FR — Arbeidsovereenkomst",
-      "de_saas_dpa": "DE — SaaS + Verwerkersovereenkomst",
-      "es_saas_services": "ES — SaaS-/diensten-overeenkomst",
+      "de_saas_dpa": "DE — SaaS + DPA",
+      "es_saas_services": "ES — SaaS-/dienstverleningsovereenkomst",
       "it_employment": "IT — Arbeidsovereenkomst",
       "pl_distribution": "PL — Distributieovereenkomst"
     },
     "errors": {
-      "sampleFailed": "Voorbeeldanalyse mislukt",
-      "savedFailed": "Kan opgeslagen analyse niet laden",
-      "savedListFailed": "Kan opgeslagen analyses niet laden"
+      "sampleFailed": "De analyse van het monster is mislukt",
+      "savedFailed": "De opgeslagen analyse kan niet worden geladen",
+      "savedListFailed": "De opgeslagen analyses konden niet worden geladen"
     }
   },
   "CompareClauseRow": {
     "verdictHigherA": "Hoger in A",
     "verdictHigherB": "Hoger in B",
-    "verdictSame": "Zelfde niveau",
+    "verdictSame": "Hetzelfde niveau",
     "verdictUniqueA": "Alleen in A",
     "verdictUniqueB": "Alleen in B"
   },
@@ -694,23 +702,98 @@
     "title": "Account",
     "loginPrompt": "Log in om je account te beheren",
     "backHome": "← Terug naar Redline",
-    "signedInAs": "Ingelogd als <strong>{email}</strong>",
+    "signedInAs": "Aangemeld als <strong>{email}</strong>",
     "exportHeading": "Exporteer je gegevens",
-    "exportBody": "Download een kopie van alles wat Redline over je bewaart — je accountgegevens en elke opgeslagen analyse, inclusief verlopen analyses die niet meer zichtbaar zijn in je geschiedenis.",
+    "exportBody": "Download een kopie van alle gegevens die Redline over u bewaart: uw accountgegevens en alle opgeslagen analyses, inclusief die welke zijn verlopen en niet meer in uw geschiedenis te zien zijn.",
     "exportAction": "Mijn gegevens exporteren",
-    "exportPreparing": "Voorbereiden…",
-    "exportFailedFallback": "Exporteren mislukt",
-    "deleteHeading": "Verwijder je account",
-    "deleteBody": "Hiermee worden je account en elke opgeslagen analyse definitief verwijderd. Je ontvangt een bevestigingsmail. Deze verwijdering kan niet ongedaan worden gemaakt.",
+    "exportPreparing": "Bezig met laden…",
+    "exportFailedFallback": "Exporteren is mislukt",
+    "deleteHeading": "Je account verwijderen",
+    "deleteBody": "Hiermee worden je account en alle opgeslagen analyses definitief verwijderd. Je ontvangt een bevestigingsmail. Het verwijderen kan niet ongedaan worden gemaakt.",
     "deleteAction": "Mijn account verwijderen"
   },
   "DeleteAccountModal": {
-    "title": "Verwijder je account",
-    "body": "Hiermee worden je account en elke opgeslagen analyse definitief verwijderd. Dit kan niet ongedaan worden gemaakt.",
-    "typeToConfirm": "Typ <strong>{email}</strong> om te bevestigen.",
+    "title": "Je account verwijderen",
+    "body": "Hiermee worden je account en alle opgeslagen analyses definitief verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "typeToConfirm": "Typ '<strong>{email}</strong>' om te bevestigen.",
     "cancel": "Annuleren",
     "confirm": "Mijn account verwijderen",
     "deleting": "Bezig met verwijderen…",
-    "failedFallback": "Verwijdering mislukt. Probeer het opnieuw."
+    "failedFallback": "Het verwijderen is mislukt. Probeer het nog eens."
+  },
+  "Transparency": {
+    "metaTitle": "Transparantie van de AI-wet — Redline",
+    "metaDescription": "Hoe Redline zich verhoudt tot artikel 13 en artikel 50 van de EU-AI-wet, het traject dat een analyse doorloopt, en de terugdraaiingsmechanismen voor operators.",
+    "back": "← Terug naar het privacybeleid",
+    "title": "Transparantie in de AI-wet",
+    "description": "Redline is een generatieve AI-tool die een eerste analyse van contracten opstelt. De EU-AI-wet (Verordening 2024/1689) verplicht aanbieders en gebruikers van dergelijke systemen om gebruikers te informeren over wat er achter de schermen gebeurt. Deze pagina bevat die informatie.",
+    "aiActTitle": "Hoe Redline zich verhoudt tot de AI-wet",
+    "aiActDesc": "Twee artikelen zijn hier rechtstreeks van toepassing. De rest van de regelgeving staat los van de implementatie op portefeuilleniveau waarmee Redline werkt, maar het onderstaande overzicht is bewust kort gehouden om een eerlijk beeld te geven.",
+    "articles": {
+      "art13": {
+        "title": "Artikel 13 — Transparantie voor gebruikers van AI-systemen met een hoog risico",
+        "body": "Elke analyse bevat een herkomstblok (model, momentopname, regio, versie van de prompt-sjabloon, beleid inzake de redeneringsinspanning per doorloop, tijdstempel) dat in de redactionele voettekst onder elk rapport wordt weergegeven. Het machinaal leesbare overzicht op deze pagina bevat dezelfde informatie in de vorm van een downloadbaar JSON-bestand."
+      },
+      "art50": {
+        "title": "Artikel 50 — Openbaarmaking van door AI gegenereerde resultaten",
+        "body": "Elk rapport begint met een banner waarin wordt vermeld dat de analyse door AI is gegenereerd, en eindigt met een voettekst waarin het model wordt genoemd dat het rapport heeft geproduceerd. De exportrij (Markdown en PDF) bevat dezelfde vermelding, zodat het feit dat de output door AI is gegenereerd ook na het exporteren behouden blijft."
+      }
+    },
+    "pipelineTitle": "De pijplijn die een analyse doorloopt",
+    "pipelineDesc": "Elke contractanalyse doorloopt hetzelfde proces van vijf stappen. LLM-verzoeken worden doorgestuurd naar Mistral in Parijs; de tekst wordt in de browser bewerkt voordat deze het apparaat verlaat.",
+    "pipelineSteps": {
+      "pass0": {
+        "label": "Pass 0 — overzicht",
+        "desc": "Mistral haalt het contracttype, de partijen, het rechtsgebied en een overzicht van de clausules eruit. Eerst wordt op patronen gebaseerde redigering van persoonsgegevens uitgevoerd, zodat namen en ID’s nooit worden doorgegeven."
+      },
+      "redaction": {
+        "label": "Redactie (aan de kant van de gebruiker)",
+        "desc": "De gebruiker controleert de in de browser gedetecteerde entiteiten en geeft aan welke moeten worden gemaskeerd voordat er een volledige tekst wordt opgevraagd. Er verlaten geen onbewerkte persoonsgegevens het apparaat."
+      },
+      "pass1": {
+        "label": "Stap 1 — extractie",
+        "desc": "Mistral ontvangt de bewerkte volledige tekst en levert gestructureerde clausules terug die zijn gekoppeld aan de Pass 0-inventaris."
+      },
+      "pass2": {
+        "label": "Pass 2 — risico",
+        "desc": "Elke bepaling wordt geclassificeerd, beoordeeld en getoetst aan een voor het rechtsgebied specifieke lijst met toegestane bepalingen. Er worden geen citaten uit vrije tekst meegenomen — alleen vermeldingen die op de witte lijst van de catalogus staan, blijven over."
+      },
+      "chat": {
+        "label": "Chat (optioneel)",
+        "desc": "De gebruiker kan vervolgvragen stellen. De context wordt momenteel geselecteerd op basis van trefwoordovereenkomst; de top-k-zinnen worden samen met de vraag naar Mistral gestuurd."
+      }
+    },
+    "leversTitle": "Handgrepen voor het terugdraaien van de aandrijving",
+    "leversDesc": "Met deze omgevingsvariabelen kan de implementator het gedrag van de observable tijdens de uitvoering aanpassen zonder dat er opnieuw geïmplementeerd hoeft te worden. Ze zijn bedoeld om ervoor te zorgen dat de transparantie behouden blijft tijdens het afhandelen van incidenten.",
+    "levers": {
+      "analysisLocaleOverride": {
+        "label": "Locatie van krachtanalyse",
+        "desc": "Wanneer deze optie is ingesteld op een routeringslocale (bijv. `en`), negeert elk pipeline-verzoek de UI-locale van de gebruiker en wordt in plaats daarvan deze locale gebruikt. Niet instellen in een productieomgeving."
+      },
+      "pass2RetryEnabled": {
+        "label": "Poging 2: herhaling met korte reeks",
+        "desc": "Als `true` is ingesteld, voert Pass 2 een batch één keer opnieuw uit als het model minder dan de helft van de verwachte clausules retourneert. Stel `false` in om deze functie uit te schakelen tijdens een storing bij de provider."
+      },
+      "retentionDays": {
+        "label": "Bewaarperiode (dagen)",
+        "desc": "Opgeslagen analyses worden na dit aantal dagen automatisch verwijderd, tenzij de gebruiker ze vastzet. Standaard 30. In overeenstemming met artikel 5, lid 1, onder e), van de AVG."
+      }
+    },
+    "limitationsTitle": "Bekende beperkingen",
+    "limitationsDesc": "Redline is een hulpmiddel voor een eerste beoordeling, geen vervanging voor een advocaat. De onderstaande lijst geeft een eerlijk overzicht van wat het model wel en niet kan.",
+    "limitations": {
+      "hallucination": "Mistral kan feiten verzinnen die aannemelijk lijken. De analyse moet altijd worden getoetst aan de tekst van de clausule voordat men erop vertrouwt. Het product toetst de output aan een lijst van toegestane bepalingen in de wet om één veelvoorkomende foutbron (verzonnen jurisprudentie) te beperken, niet om hallucinaties in het algemeen uit te sluiten.",
+      "statuteShortlistGaps": "De catalogus met toepasselijk recht omvat zes EU-lidstaten (DE, NL, FR, ES, IT, PL) met specifieke wetten, plus EU-richtlijnen. Voor andere EU-rechtsgebieden geldt alleen EU-recht; voor niet-EU-rechtsgebieden wordt teruggevallen op algemene beginselen zonder verwijzingen naar specifieke wetten.",
+      "notLegalAdvice": "Redline is uitsluitend bedoeld ter informatie en vormt geen juridisch advies. Alles wat wezenlijke gevolgen heeft voor uw rechten of verplichtingen, dient te worden beoordeeld door een bevoegde advocaat in het betreffende rechtsgebied.",
+      "languageCoverage": "De zes ondersteunde talen (EN, FR, DE, NL, ES, IT) worden door Mistral rechtstreeks gegenereerd — er is geen sprake van achteraf uitgevoerde machinevertaling. Voor andere EU-talen wordt teruggevallen op de Engelse analyse totdat ze zijn gecontroleerd."
+    },
+    "receiptTitle": "Machinaal leesbare transparante kassabon",
+    "receiptDesc": "Elke analyse kan worden geëxporteerd als een klein JSON-document waarin het herkomstblok, de pijplijn, de instellingen van de operator en de verwijzingen naar artikelen uit de AI-wet zijn vastgelegd. Het rapport is stabiel (`schema_version: \"1\"`), zodat auditors rapporten uit verschillende releases met elkaar kunnen vergelijken. Je kunt het downloaden via de uitklapbare voettekst onder elk rapport.",
+    "pipelineLlmBadge": "LLM",
+    "pipelineLocalBadge": "Lokaal",
+    "crossLinksTitle": "Gerelateerde pagina's",
+    "crossLinkPrivacy": "Privacybeleid",
+    "crossLinkDataResidency": "Gegevensopslaglocatie",
+    "notProductionMark": "Implementatie van het portfolio — geen gecertificeerd AI-systeem met een hoog risico in de zin van de AI-wet."
   }
 }

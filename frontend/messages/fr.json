@@ -16,7 +16,8 @@
   "Footer": {
     "brand": "Redline",
     "privacyPolicy": "Politique de confidentialité",
-    "portfolio": "Portefeuille"
+    "portfolio": "Portefeuille",
+    "transparency": "Transparence"
   },
   "CookieBanner": {
     "body": "Redline utilise uniquement localStorage pour les préférences de thème. Pas de cookies ni de suivi.",
@@ -266,7 +267,11 @@
     "legacyNote": "Enregistré avant l'activation de la journalisation transparente",
     "disclosure": "Cette analyse a été générée par un système d'IA générative. Enregistrée conformément aux exigences de transparence de la loi européenne sur l'IA.",
     "ocrNote": "Texte extrait via la reconnaissance optique de caractères (OCR) intégrée à l'appareil — sans recours à un modèle de vision tiers.",
-    "hybridOcrNote": "Certaines pages ont été extraites à l'aide d'un OCR intégré à l'appareil — sans recours à un modèle de vision tiers."
+    "hybridOcrNote": "Certaines pages ont été extraites à l'aide d'un OCR intégré à l'appareil — sans recours à un modèle de vision tiers.",
+    "schemaVersion": "Schéma de reçu",
+    "downloadReceipt": "Télécharger le reçu de transparence (JSON)",
+    "downloadReceiptDesc": "Enregistrement lisible par machine de cette analyse — traçabilité, pipeline, paramètres de réglage.",
+    "transparencyPageLink": "Découvrez comment cela s'inscrit dans le cadre de la loi sur l'IA"
   },
   "RedactExportFlow": {
     "label": "Expurgation axée sur la protection de la vie privée",
@@ -488,12 +493,14 @@
     "rightPortability": "Portabilité des données",
     "rightObject": "S'opposer au traitement",
     "rightComplain": "Déposer une plainte auprès d'une autorité de contrôle",
-    "rightsNoStorage": "Si vous êtes connecté, vous pouvez exercer vos droits d'accès (art. 15) et d'effacement (art. 17) directement depuis votre <link>page de compte</link>. « Exporter mes données » renvoie une archive JSON unique contenant votre enregistrement de compte et chacune de vos analyses enregistrées. « Supprimer mon compte » efface définitivement votre compte et toutes les données associées après confirmation saisie. Pour les visiteurs anonymes, il n'y a rien sur nos serveurs à consulter ou à supprimer — vos données sur <code>localStorage</code> sont entièrement sous votre contrôle dans votre navigateur.",
+    "rightsNoStorage": "Si vous êtes connecté, vous pouvez exercer vos droits d'accès (art. 15) et de suppression (art. 17) directement depuis <link>la page de</link> votre <link>compte</link>. La fonction « Exporter mes données » génère un fichier JSON unique contenant les informations de votre compte et toutes les analyses enregistrées. La fonction « Supprimer mon compte » supprime définitivement votre compte et toutes les données associées après une confirmation saisie au clavier. Pour les visiteurs anonymes, il n'y a rien à consulter ou à supprimer sur nos serveurs : vos données de navigation sont entièrement sous votre contrôle dans votre navigateur.",
     "rightsContact": "Pour toute autre demande, veuillez contacter <email></email>.",
     "changesTitle": "Modifications apportées à la présente politique",
     "changesBody": "Nous pouvons être amenés à mettre à jour la présente politique de temps à autre. La date de « Dernière mise à jour » indiquée en haut de la page correspond à la dernière révision. Toute modification importante sera signalée par une mise à jour de cette date.",
-    "transfersAI": "Le texte du contrat est traité par Mistral La Plateforme au sein de l'Union européenne (à Paris). Aucun transfert hors de l'UE/EEE n'a lieu lors de l'étape d'analyse par IA.",
-    "transfersOperational": "Vercel et Railway peuvent traiter des métadonnées opérationnelles (en-têtes de requête, adresses IP pendant une requête) en dehors de l'UE, conformément à leurs accords de traitement des données respectifs. Aucun texte contractuel ne quitte l'UE."
+    "transfersAI": "Le texte du contrat est traité par Mistral La Plateforme au sein de l'Union européenne (à Paris). Aucun transfert hors de l'UE/EEE n'a lieu pour l'étape d'analyse par IA.",
+    "transfersOperational": "Vercel et Railway peuvent traiter des métadonnées opérationnelles (en-têtes de requêtes, adresses IP lors d'une requête) en dehors de l'UE dans le cadre de leurs accords de traitement des données respectifs. Aucun texte contractuel ne quitte l'UE.",
+    "aiActTitle": "Position sur la loi européenne sur l'IA",
+    "aiActBody": "Redline est un outil d'IA générative soumis aux obligations de transparence prévues par le règlement (UE) n° 2024/1689. Chaque analyse est accompagnée d'un enregistrement de provenance (modèle, région, horodatage, politique relative à l'effort de raisonnement par passage) et d'une mention indiquant que le résultat est généré par l'IA. La correspondance complète avec les articles 13 et 50, le diagramme du pipeline, les leviers de retour en arrière de l'opérateur et le reçu lisible par machine sont disponibles sur la <link>page de transparence</link>."
   },
   "DataResidency": {
     "metaTitle": "Localisation des données — Redline",
@@ -504,7 +511,7 @@
     "defaultTitle": "Flux de données par défaut",
     "defaultDesc": "Ces processeurs interviennent à chaque fois que vous utilisez Redline.",
     "optionalTitle": "Flux de données facultatifs",
-    "optionalDesc": "Ces processeurs n'interviennent que lorsqu'une fonctionnalité spécifique — l'historique enregistré ou la connexion via un lien magique — est activée par l'opérateur.",
+    "optionalDesc": "Ces processeurs n'interviennent que lorsque l'opérateur active une fonctionnalité spécifique, telle que l'historique enregistré ou la connexion via un lien magique.",
     "configNote": "Cette page est générée directement à partir du fichier de configuration <code>frontend/src/lib/data-flows.ts</code> saisi, ce qui permet de suivre la configuration en temps réel sans décalage manuel.",
     "i18nNote": "L'interface utilisateur de Chrome est traduite en anglais, français, allemand, néerlandais, espagnol et italien. Les résultats d'analyse (résumés des clauses, explications des risques, réponses au chat) sont générés en mode natif par Mistral : aucun service de traduction automatique intermédiaire n'intervient sur le texte du contrat. Chaque version linguistique n'est activée qu'après révision des invites par un locuteur natif ; les versions en attente de révision reviennent à l'analyse en anglais, de sorte qu'aucun utilisateur ne voit s'afficher dans sa langue des textes juridiques générés par un modèle de langage de grande envergure (LLM) qui n'ont pas été révisés.",
     "data": "Données",
@@ -554,7 +561,8 @@
         ],
         "notes": "Cette option n'est utilisée que si la variable d'environnement RESEND_API_KEY est définie au niveau du serveur. Les adresses e-mail sont transmises à Resend uniquement dans le but d'envoyer le lien de connexion et ne sont pas utilisées à des fins de marketing."
       }
-    }
+    },
+    "transparencyNote": "Pour en savoir plus sur la cartographie des positions relatives à la loi européenne sur l'IA, les moyens de recours des opérateurs et le reçu de transparence lisible par machine, consultez la <link>page consacrée à la transparence</link>."
   },
   "History": {
     "title": "Vos analyses",
@@ -575,10 +583,10 @@
     "pinFailed": "Échec de l'épinglage",
     "extendFailed": "L'extension a échoué",
     "clauseCount": "{count, plural, one {# clause} other {# clauses}}",
-    "compareSelectAria": "Sélectionner « {filename} » pour la comparaison",
-    "compareSelectedCount": "{count, plural, =1 {# sélectionné — choisissez-en un autre pour comparer} =2 {# sélectionnés — prêt à comparer} other {# sélectionnés — choisissez-en exactement 2}}",
+    "compareSelectAria": "Sélectionnez « {filename} » pour comparer",
+    "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Effacer",
-    "compareGo": "Comparer la sélection"
+    "compareGo": "Comparer les éléments sélectionnés"
   },
   "HistoryDetail": {
     "notFound": "Analyse introuvable",
@@ -641,76 +649,151 @@
   },
   "Compare": {
     "pageTitle": "Comparer les contrats",
-    "pageSubtitle": "Placez deux contrats analysés côte à côte. Voyez lequel est le plus risqué, où ils diffèrent et ce qui est propre à chacun.",
+    "pageSubtitle": "Comparez deux contrats analysés côte à côte. Déterminez lequel présente le plus de risques, en quoi ils diffèrent et quelles sont leurs particularités respectives.",
     "slotAHeading": "Contrat A",
     "slotBHeading": "Contrat B",
-    "slotRemove": "Retirer",
-    "slotLoading": "Analyse de {label}…",
-    "slotTryAgain": "Réessayer",
-    "pickerSamplesHeading": "Choisir un exemple",
+    "slotRemove": "Supprimer",
+    "slotLoading": "Analyse d'{label}…",
+    "slotTryAgain": "Réessayez",
+    "pickerSamplesHeading": "Choisissez un échantillon",
     "pickerSavedShow": "Ou charger une analyse enregistrée",
     "pickerSavedHide": "Masquer les analyses enregistrées",
     "pickerSavedLoading": "Chargement des analyses enregistrées…",
-    "pickerSavedEmpty": "Aucune analyse enregistrée.",
+    "pickerSavedEmpty": "Aucune analyse n'a encore été enregistrée.",
     "pickerLoginToUseSaved": "Connectez-vous pour charger l'une de vos analyses enregistrées.",
     "clauses": "{count, plural, one {# clause} other {# clauses}}",
-    "statRiskierIn": "Plus risqué dans {label}",
-    "statUniqueToOne": "Propre à un",
+    "statRiskierIn": "Plus risqué dans l'{label}",
+    "statUniqueToOne": "Propre à un seul",
     "statSameRisk": "Même niveau de risque",
-    "leanA": "Globalement : {label} est plus risqué",
-    "leanB": "Globalement : {label} est plus risqué",
-    "leanComparable": "Globalement : risque comparable",
-    "jurisdictionPair": "{a} vs {b}",
+    "leanA": "Dans l'ensemble : «{label}» prend davantage de risques",
+    "leanB": "Dans l'ensemble : «{label}» prend davantage de risques",
+    "leanComparable": "Dans l'ensemble : risque comparable",
+    "jurisdictionPair": "{a} contre l'{b}",
     "jurisdictionUnknown": "—",
     "filterAll": "Tout",
     "filterDifferences": "Différences",
-    "filterHigherIn": "Plus élevé dans {label}",
+    "filterHigherIn": "Plus d'informations sur {label}",
     "filterUnique": "Unique",
     "filterGroupLabel": "Filtrer les lignes de comparaison",
     "noMatchingClause": "Aucune clause correspondante",
     "noMatchingFilter": "Aucune ligne ne correspond à ce filtre.",
     "samples": {
-      "nl_freelance": "NL — Contrat de freelance",
+      "nl_freelance": "NL — Contrat de travail indépendant",
       "fr_employment": "FR — Contrat de travail",
       "de_saas_dpa": "DE — SaaS + DPA",
-      "es_saas_services": "ES — Contrat SaaS / services",
-      "it_employment": "IT — Contrat de travail",
+      "es_saas_services": "ES — Contrat SaaS / de services",
+      "it_employment": "Informatique — Contrat de travail",
       "pl_distribution": "PL — Contrat de distribution"
     },
     "errors": {
-      "sampleFailed": "Échec de l'analyse de l'exemple",
+      "sampleFailed": "L'analyse de l'échantillon a échoué",
       "savedFailed": "Impossible de charger l'analyse enregistrée",
       "savedListFailed": "Impossible de charger les analyses enregistrées"
     }
   },
   "CompareClauseRow": {
-    "verdictHigherA": "Plus élevé en A",
-    "verdictHigherB": "Plus élevé en B",
-    "verdictSame": "Même niveau",
-    "verdictUniqueA": "Uniquement en A",
-    "verdictUniqueB": "Uniquement en B"
+    "verdictHigherA": "Un ton plus haut",
+    "verdictHigherB": "Un ton plus haut en si",
+    "verdictSame": "Au même niveau",
+    "verdictUniqueA": "Uniquement à A",
+    "verdictUniqueB": "Uniquement à B"
   },
   "Account": {
     "title": "Compte",
     "loginPrompt": "Connectez-vous pour gérer votre compte",
     "backHome": "← Retour à Redline",
-    "signedInAs": "Connecté en tant que <strong>{email}</strong>",
-    "exportHeading": "Exporter vos données",
-    "exportBody": "Téléchargez une copie de tout ce que Redline conserve à votre sujet — votre enregistrement de compte et chacune de vos analyses enregistrées, y compris celles qui ont expiré et ne figurent plus dans votre historique.",
+    "signedInAs": "Connecté sous le nom d'<strong>{email}</strong>",
+    "exportHeading": "Exportez vos données",
+    "exportBody": "Téléchargez une copie de toutes les données que Redline détient à votre sujet : l'historique de votre compte et toutes les analyses enregistrées, y compris celles qui ont expiré et qui ne sont plus visibles dans votre historique.",
     "exportAction": "Exporter mes données",
     "exportPreparing": "Préparation…",
-    "exportFailedFallback": "Échec de l'exportation",
+    "exportFailedFallback": "L'exportation a échoué",
     "deleteHeading": "Supprimer votre compte",
-    "deleteBody": "Cette action supprime définitivement votre compte et toutes les analyses enregistrées. Vous recevrez un e-mail de confirmation. La suppression est irréversible.",
+    "deleteBody": "Cette opération supprime définitivement votre compte ainsi que toutes les analyses enregistrées. Vous recevrez un e-mail de confirmation. La suppression est irréversible.",
     "deleteAction": "Supprimer mon compte"
   },
   "DeleteAccountModal": {
     "title": "Supprimer votre compte",
     "body": "Cette action supprime définitivement votre compte et toutes les analyses enregistrées. Elle est irréversible.",
-    "typeToConfirm": "Saisissez <strong>{email}</strong> pour confirmer.",
+    "typeToConfirm": "Tapez «<strong>{email}</strong>» pour confirmer.",
     "cancel": "Annuler",
     "confirm": "Supprimer mon compte",
     "deleting": "Suppression en cours…",
     "failedFallback": "La suppression a échoué. Veuillez réessayer."
+  },
+  "Transparency": {
+    "metaTitle": "Transparence de la loi sur l'IA — Redline",
+    "metaDescription": "Comment Redline s'inscrit dans le cadre des articles 13 et 50 de la loi européenne sur l'IA, le parcours suivi par l'analyse et les mécanismes de retour en arrière mis à la disposition des opérateurs.",
+    "back": "← Retour à la politique de confidentialité",
+    "title": "Transparence de la loi sur l'IA",
+    "description": "Redline est un outil d'IA générative qui rédige des analyses de contrats en première lecture. La loi européenne sur l'IA (règlement 2024/1689) impose aux fournisseurs et aux exploitants de tels systèmes d'informer les utilisateurs du fonctionnement interne de ces systèmes. Cette page constitue cette information.",
+    "aiActTitle": "En quoi Redline s'inscrit dans le cadre de la loi sur l'IA",
+    "aiActDesc": "Deux articles s'appliquent directement. Le reste de la réglementation ne concerne pas le déploiement à l'échelle de portefeuille pratiqué par Redline, mais la liste ci-dessous a été délibérément réduite afin de rester fidèle à la réalité.",
+    "articles": {
+      "art13": {
+        "title": "Article 13 — Transparence à l'égard des utilisateurs de systèmes d'IA à haut risque",
+        "body": "Chaque analyse comporte un bloc de provenance (modèle, instantané, région, version du modèle de prompt, politique relative à l'effort de raisonnement par passage, horodatage) affiché dans le pied de page éditorial sous chaque rapport. Le justificatif lisible par machine figurant sur cette page regroupe ces mêmes informations sous forme de fichier JSON téléchargeable."
+      },
+      "art50": {
+        "title": "Article 50 — Divulgation des résultats générés par l'IA",
+        "body": "Chaque rapport s'ouvre sur une bannière d'avertissement précisant qu'il s'agit d'une analyse générée par l'IA et se termine par un pied de page indiquant le nom du modèle qui l'a produite. Les versions exportées du rapport (au format Markdown et PDF) comportent la même mention, de sorte que la nature générée par l'IA du document est conservée lors du transfert."
+      }
+    },
+    "pipelineTitle": "Le pipeline parcouru par une analyse",
+    "pipelineDesc": "Chaque analyse de contrat suit le même processus en cinq étapes. Les requêtes adressées au LLM sont transmises à Mistral, à Paris ; la caviardage s'effectue dans le navigateur avant que le texte ne quitte l'appareil.",
+    "pipelineSteps": {
+      "pass0": {
+        "label": "Pass 0 — Présentation générale",
+        "desc": "Mistral extrait le type de contrat, les parties, la juridiction compétente et la liste des clauses. La masquage des données à caractère personnel (PII) basé sur des modèles est effectué en premier lieu, de sorte que les noms et les identifiants ne soient jamais transmis."
+      },
+      "redaction": {
+        "label": "Masquage (côté client)",
+        "desc": "L'utilisateur examine les entités détectées dans le navigateur et indique celles qui doivent être masquées avant tout traitement du texte intégral. Aucune donnée personnelle brute ne quitte l'appareil."
+      },
+      "pass1": {
+        "label": "Étape 1 — extraction",
+        "desc": "Mistral reçoit le texte intégral expurgé et renvoie des clauses structurées liées à l'inventaire Pass 0."
+      },
+      "pass2": {
+        "label": "Étape 2 — risque",
+        "desc": "Chaque clause est classée, notée et vérifiée par rapport à une liste blanche de dispositions légales propres à chaque juridiction. Aucune citation en texte libre n'est prise en compte : seules les entrées figurant sur la liste blanche du catalogue sont retenues."
+      },
+      "chat": {
+        "label": "Chat (facultatif)",
+        "desc": "L'utilisateur peut poser des questions complémentaires. Le contexte est actuellement sélectionné en fonction des mots-clés communs ; les k clauses les plus pertinentes sont envoyées avec la question à Mistral."
+      }
+    },
+    "leversTitle": "Leviers de retour d'origine",
+    "leversDesc": "Ces variables d'environnement permettent au responsable du déploiement de modifier le comportement des observables en cours d'exécution sans avoir à procéder à un nouveau déploiement. Elles ont été mises en place pour garantir que la transparence soit préservée lors de la gestion des incidents.",
+    "levers": {
+      "analysisLocaleOverride": {
+        "label": "Forcer l'analyse locale",
+        "desc": "Lorsqu'il est défini sur une locale de routage (par exemple `en`), chaque requête de pipeline ignore la locale de l'interface utilisateur et utilise celle-ci à la place. À désactiver en production."
+      },
+      "pass2RetryEnabled": {
+        "label": "Passage 2 : nouvelle tentative avec un tableau court",
+        "desc": "Lorsque la valeur est définie sur `true`, Pass 2 relance un lot une seule fois si le modèle renvoie moins de la moitié des clauses attendues. Définissez la valeur sur `false` pour désactiver cette fonctionnalité en cas d'incident au niveau du fournisseur."
+      },
+      "retentionDays": {
+        "label": "Période de conservation (jours)",
+        "desc": "Les analyses enregistrées sont automatiquement supprimées après ce nombre de jours, sauf si l'utilisateur les épingle. Valeur par défaut : 30. Conforme à l'article 5, paragraphe 1, point e), du RGPD."
+      }
+    },
+    "limitationsTitle": "Limites connues",
+    "limitationsDesc": "Redline est un assistant de première approche, et ne remplace pas un avocat. La liste ci-dessous présente en toute honnêteté ce que le modèle est capable de faire et ce qu'il ne peut pas faire.",
+    "limitations": {
+      "hallucination": "Mistral peut inventer des faits qui semblent plausibles. Il convient toujours de recouper l'analyse avec le texte de la clause avant de s'y fier. Le produit compare les résultats à une liste blanche de dispositions légales afin de limiter un type d'erreur courant (la jurisprudence inventée), et non pour éliminer les erreurs de fond en général.",
+      "statuteShortlistGaps": "Le catalogue des législations applicables couvre six États membres de l'UE (DE, NL, FR, ES, IT, PL) dotés de lois spécifiques, ainsi que les directives européennes. Les autres juridictions de l'UE ne sont soumises qu'au droit européen ; les juridictions hors UE se fondent sur des principes généraux, sans référence à des textes législatifs.",
+      "notLegalAdvice": "Redline est fourni à titre purement informatif et ne constitue pas un avis juridique. Tout élément susceptible d'avoir une incidence significative sur vos droits ou vos obligations doit être examiné par un avocat agréé dans la juridiction concernée.",
+      "languageCoverage": "Les six langues prises en charge (EN, FR, DE, NL, ES, IT) sont générées en natif par Mistral — sans recours à la traduction automatique a posteriori. Les autres langues de l'UE sont traitées en anglais jusqu'à ce qu'elles soient révisées."
+    },
+    "receiptTitle": "Reçu transparent lisible par machine",
+    "receiptDesc": "Chaque analyse peut être exportée sous la forme d'un petit fichier JSON qui consigne le bloc de provenance, le pipeline, les paramètres de l'opérateur et les références aux articles de la loi sur l'IA. Le fichier est stable (`schema_version: \"1\"`) ; les auditeurs peuvent ainsi comparer les fichiers entre les différentes versions. Vous pouvez le télécharger à partir du pied de page déroulant de n'importe quel rapport.",
+    "pipelineLlmBadge": "LL.M.",
+    "pipelineLocalBadge": "Local",
+    "crossLinksTitle": "Pages connexes",
+    "crossLinkPrivacy": "Politique de confidentialité",
+    "crossLinkDataResidency": "Localisation des données",
+    "notProductionMark": "Mise en œuvre du portefeuille — il ne s'agit pas d'un système d'IA à haut risque certifié au sens de la loi sur l'IA."
   }
 }

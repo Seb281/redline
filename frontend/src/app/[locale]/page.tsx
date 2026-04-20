@@ -427,6 +427,7 @@ export default function Home() {
             onOpenChat={handleOpenChat}
             onAskAboutClause={handleAskAboutClause}
             onSave={handleSave}
+            filename={state.upload.filename}
           />
           <ChatPanel
             isOpen={chatOpen}

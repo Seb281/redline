@@ -68,6 +68,13 @@ interface SavedAnalysisReportProps {
   onReset: () => void;
   onOpenChat: () => void;
   onAskAboutClause: (clause: AnalyzedClause) => void;
+  /**
+   * SP-9 — original upload filename + saved-analysis id, threaded into
+   * the transparency receipt so history-view downloads pull the stable
+   * server-side copy by id rather than falling back to a local build.
+   */
+  filename?: string | null;
+  savedId?: string | null;
 }
 
 /**
@@ -80,6 +87,8 @@ export function SavedAnalysisReport({
   onReset,
   onOpenChat,
   onAskAboutClause,
+  filename,
+  savedId,
 }: SavedAnalysisReportProps) {
   const uiLocale = useLocale() as Locale;
   const savedLocale = data.provenance.analysis_locale;
@@ -90,6 +99,8 @@ export function SavedAnalysisReport({
       onReset={onReset}
       onOpenChat={onOpenChat}
       onAskAboutClause={onAskAboutClause}
+      filename={filename}
+      savedId={savedId}
     />
   );
 

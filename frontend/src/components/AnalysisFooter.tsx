@@ -19,11 +19,20 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { LEGACY_PROVENANCE_PROVIDER } from "@/lib/analyzer";
 import type { AnalysisProvenance, ReasoningEffortLabel } from "@/types";
 
 interface AnalysisFooterProps {
   provenance: AnalysisProvenance;
+  /**
+   * SP-9 — trigger a download of the machine-readable transparency
+   * receipt (JSON). Optional so the footer still renders when mounted
+   * outside `ReportView` (e.g. the saved-analysis preview in the
+   * history tests). When omitted, the download affordance is hidden
+   * rather than rendered in a half-wired state.
+   */
+  onDownloadReceipt?: () => void | Promise<void>;
 }
 
 /** Uppercase micro-label styling used throughout the expanded panel. */
@@ -90,7 +99,10 @@ function LegacyFooter() {
 }
 
 /** Colophon footer rendered at the tail of an analysis report. */
-export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
+export function AnalysisFooter({
+  provenance,
+  onDownloadReceipt,
+}: AnalysisFooterProps) {
   const t = useTranslations("AnalysisFooter");
   const [expanded, setExpanded] = useState(false);
 
@@ -169,6 +181,10 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
                     : "\u2014"
               }
             />
+            <MetaField
+              label={t("schemaVersion")}
+              value={provenance.schema_version ?? "\u2014"}
+            />
           </div>
 
           <div className="flex flex-col gap-3">
@@ -197,6 +213,31 @@ export function AnalysisFooter({ provenance }: AnalysisFooterProps) {
         <p className="mt-5 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
           {t("disclosure")}
         </p>
+
+        {/* SP-9 — AI Act transparency receipt + page cross-link. Kept
+            inside the expanded disclosure panel so the report surface
+            itself stays user-focused; compliance artifacts live in the
+            compliance surface. */}
+        <div className="mt-4 flex flex-col gap-2 border-t border-[var(--border-primary)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {onDownloadReceipt && (
+            <button
+              type="button"
+              onClick={() => {
+                void onDownloadReceipt();
+              }}
+              data-testid="download-transparency-receipt"
+              className="inline-flex items-baseline gap-1 self-start text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--accent)] hover:underline"
+            >
+              <span>{t("downloadReceipt")}</span>
+            </button>
+          )}
+          <Link
+            href="/transparency"
+            className="text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--accent)] hover:underline"
+          >
+            {t("transparencyPageLink")}
+          </Link>
+        </div>
       </div>
 
       {provenance.text_source === "ocr" && (

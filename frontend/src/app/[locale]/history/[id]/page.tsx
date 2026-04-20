@@ -216,6 +216,8 @@ export default function HistoryDetailPage() {
         onReset={handleReset}
         onOpenChat={() => setChatOpen(true)}
         onAskAboutClause={handleAskAboutClause}
+        filename={analysis.filename}
+        savedId={analysis.id}
       />
       <ChatPanel
         isOpen={chatOpen}

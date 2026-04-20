@@ -24,6 +24,7 @@ from app.schemas import (
     SavedAnalysisResponse,
     UpdateAnalysisRequest,
 )
+from app.services.transparency import build_receipt
 
 router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 limiter = Limiter(key_func=get_remote_address)
@@ -265,6 +266,72 @@ async def get_analysis(analysis_id: str, request: Request) -> SavedAnalysisRespo
         provenance=provenance,
         expires_at=expires_at,
         pinned=pinned,
+    )
+
+
+@router.get("/{analysis_id}/receipt")
+async def get_analysis_receipt(analysis_id: str, request: Request) -> dict:
+    """SP-9 — Return the AI Act transparency receipt for a saved analysis.
+
+    Mirrors the client-side builder in
+    ``frontend/src/lib/transparency-receipt.ts`` so authenticated users
+    download the same JSON shape for a saved analysis as anonymous
+    users build locally for the current session. The receipt serialises
+    the stored provenance plus the canonical pipeline, operator levers,
+    and AI Act article references; it does NOT include contract text,
+    clause text, or any user identifier.
+
+    Security: owner-only. An expired unpinned row is treated as deleted
+    (404) to match ``GET /api/analyses/{id}`` semantics — the prune
+    sweep has not run yet, but the row should not be visible.
+    """
+    user = await get_current_user(request)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    db = get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    row = await db.fetch_one(
+        "SELECT * FROM analyses WHERE id = :id",
+        {"id": analysis_id},
+    )
+
+    if row is None or str(row["user_id"]) != user["id"]:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    pinned = bool(row["pinned"]) if "pinned" in row.keys() else False
+    raw_expires_at = row["expires_at"] if "expires_at" in row.keys() else None
+    now = datetime.now(timezone.utc)
+    if (
+        not pinned
+        and isinstance(raw_expires_at, datetime)
+        and raw_expires_at <= now
+    ):
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    clauses = row["clauses"]
+    if isinstance(clauses, str):
+        clauses = json.loads(clauses)
+
+    provenance: dict = {}
+    try:
+        raw_provenance = row["provenance"]
+    except (KeyError, IndexError):
+        raw_provenance = None
+    if raw_provenance is not None:
+        provenance = (
+            json.loads(raw_provenance)
+            if isinstance(raw_provenance, str)
+            else raw_provenance
+        )
+
+    return build_receipt(
+        analysis_id=str(row["id"]),
+        filename=row["filename"],
+        clause_count=len(clauses) if isinstance(clauses, list) else 0,
+        provenance=provenance,
     )
 
 

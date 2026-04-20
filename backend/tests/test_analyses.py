@@ -290,13 +290,15 @@ def test_save_analysis_persists_provenance():
     call_params = db.execute.await_args.args[1]
     # `redaction_location` defaults to None in SP-1.6; `text_source`
     # defaults to None in SP-1.5; `analysis_locale` defaults to None in
-    # SP-7 Layer B' (pre-locale rows round-trip as unknown). Round-
-    # tripped provenance carries the optional fields alongside the input.
+    # SP-7 Layer B' (pre-locale rows round-trip as unknown);
+    # `schema_version` defaults to None in SP-9 for pre-receipt rows.
+    # Round-tripped provenance carries the optional fields alongside the input.
     expected = {
         **provenance,
         "redaction_location": None,
         "text_source": None,
         "analysis_locale": None,
+        "schema_version": None,
     }
     assert json.loads(call_params["provenance"]) == expected
 
@@ -377,6 +379,230 @@ def test_get_analysis_missing_provenance_defaults_to_empty():
 
     assert resp.status_code == 200
     assert resp.json()["provenance"] == {}
+
+
+# --- GET /api/analyses/{id}/receipt (SP-9 transparency receipt) ---
+
+
+def test_get_receipt_without_auth_returns_401():
+    """GET /api/analyses/{id}/receipt without authentication returns 401."""
+    from unittest.mock import patch
+
+    with patch(
+        "app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=None
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Not authenticated"
+
+
+def test_get_receipt_nonexistent_returns_404():
+    """GET /api/analyses/{id}/receipt returns 404 for a missing row."""
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = None
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/nonexistent/receipt")
+
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Analysis not found"
+
+
+def test_get_receipt_wrong_owner_returns_404():
+    """GET /api/analyses/{id}/receipt hides rows belonging to another user."""
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "other-user-456",
+        "filename": "contract.pdf",
+        "clauses": [],
+        "provenance": {},
+        "pinned": False,
+        "expires_at": None,
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Analysis not found"
+
+
+def test_get_receipt_expired_unpinned_returns_404():
+    """An expired unpinned row is treated as deleted for the receipt too."""
+    from unittest.mock import patch
+
+    past = datetime.now(timezone.utc) - timedelta(days=1)
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "clauses": [],
+        "provenance": {},
+        "pinned": False,
+        "expires_at": past,
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 404
+
+
+def test_get_receipt_returns_expected_shape():
+    """The receipt wraps stored provenance with the SP-9 canonical shape."""
+    from unittest.mock import patch
+
+    provenance = {
+        "provider": "mistral",
+        "model": "mistral-small-4",
+        "snapshot": "mistral-small-2603",
+        "region": "eu-west-paris",
+        "reasoning_effort_per_pass": {
+            "overview": "low",
+            "extraction": "medium",
+            "risk": "high",
+            "think_hard": "high",
+        },
+        "prompt_template_version": "1.0",
+        "timestamp": "2026-04-15T12:00:00Z",
+        "analysis_locale": "fr",
+        "schema_version": "1",
+    }
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "clauses": [
+            {"title": "Non-Compete", "risk_level": "high"},
+            {"title": "Governing Law", "risk_level": "low"},
+        ],
+        "provenance": provenance,
+        "pinned": True,
+        "expires_at": None,
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["kind"] == "redline.transparency.receipt"
+    assert body["schema_version"] == "1"
+    assert body["analysis"] == {
+        "id": "analysis-1",
+        "filename": "contract.pdf",
+        "clause_count": 2,
+        "analysis_locale": "fr",
+    }
+    assert body["provenance"] == provenance
+    assert [s["key"] for s in body["pipeline"]] == [
+        "pass0",
+        "redaction",
+        "pass1",
+        "pass2",
+        "chat",
+    ]
+    refs = [a["reference"] for a in body["ai_act_articles"]]
+    assert "Art. 13" in refs
+    assert "Art. 50" in refs
+    assert len(body["operator_levers"]) > 0
+    assert len(body["limitations"]) > 0
+    # Privacy-by-design: the receipt must never leak contract/clause text.
+    import json as _json
+
+    serialised = _json.dumps(body)
+    assert "clause_text" not in serialised
+    assert "contract_text" not in serialised
+
+
+def test_get_receipt_handles_string_encoded_jsonb():
+    """Provenance + clauses may come back as JSON strings from asyncpg."""
+    from unittest.mock import patch
+    import json as _json
+
+    provenance = {
+        "provider": "mistral",
+        "model": "mistral-small-4",
+        "snapshot": "mistral-small-2603",
+        "region": "eu-west-paris",
+        "reasoning_effort_per_pass": {
+            "overview": "low",
+            "extraction": "medium",
+            "risk": "high",
+            "think_hard": "high",
+        },
+        "prompt_template_version": "1.0",
+        "timestamp": "2026-04-15T12:00:00Z",
+    }
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "clauses": _json.dumps([{"title": "Non-Compete", "risk_level": "high"}]),
+        "provenance": _json.dumps(provenance),
+        "pinned": False,
+        "expires_at": datetime(2099, 1, 1, tzinfo=timezone.utc),
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["analysis"]["clause_count"] == 1
+    assert body["provenance"] == provenance
+
+
+def test_get_receipt_missing_provenance_defaults_to_empty():
+    """Legacy pre-phase-5 rows with no provenance still produce a valid receipt."""
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "clauses": [],
+        "pinned": False,
+        "expires_at": datetime(2099, 1, 1, tzinfo=timezone.utc),
+    }
+
+    with (
+        patch("app.routers.analyses.get_current_user", new_callable=AsyncMock, return_value=MOCK_USER),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1/receipt")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["kind"] == "redline.transparency.receipt"
+    assert body["schema_version"] == "1"
+    assert body["provenance"] == {}
+    assert body["analysis"]["analysis_locale"] is None
 
 
 def test_delete_analysis_without_auth_returns_401():

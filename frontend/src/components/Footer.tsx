@@ -24,6 +24,13 @@ export async function Footer() {
           {t("privacyPolicy")}
         </Link>
         <span className="mx-1">&middot;</span>{" "}
+        <Link
+          href="/transparency"
+          className="hover:text-[var(--text-secondary)] hover:underline"
+        >
+          {t("transparency")}
+        </Link>
+        <span className="mx-1">&middot;</span>{" "}
         <a
           href="https://seb.giupana.com"
           target="_blank"

@@ -320,6 +320,12 @@ class ProvenanceModel(BaseModel):
     # a new routing locale doesn't require a backend migration; the
     # frontend is the source of truth for the enabled locale set.
     analysis_locale: str | None = None
+    # SP-9: version tag for the transparency-receipt wrapper. Bumped (as
+    # a string) whenever the receipt shape evolves so consumers can diff
+    # receipts across releases. Optional so pre-SP-9 payloads deserialize
+    # unchanged; the receipt endpoint treats ``None`` as ``"1"`` (initial
+    # release).
+    schema_version: str | None = None
 
     @field_validator("provider")
     @classmethod

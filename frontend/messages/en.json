@@ -16,6 +16,7 @@
   "Footer": {
     "brand": "Redline",
     "privacyPolicy": "Privacy Policy",
+    "transparency": "Transparency",
     "portfolio": "Portfolio"
   },
   "CookieBanner": {
@@ -266,7 +267,11 @@
     "legacyNote": "Recorded before transparency logging was enabled",
     "disclosure": "This analysis was produced by a generative AI system. Logged per EU AI Act transparency requirements.",
     "ocrNote": "Text extracted via on-device OCR — no third-party vision model.",
-    "hybridOcrNote": "Some pages extracted via on-device OCR — no third-party vision model."
+    "hybridOcrNote": "Some pages extracted via on-device OCR — no third-party vision model.",
+    "schemaVersion": "Receipt schema",
+    "downloadReceipt": "Download transparency receipt (JSON)",
+    "downloadReceiptDesc": "Machine-readable record of this analysis — provenance, pipeline, operator levers.",
+    "transparencyPageLink": "See how this maps to the AI Act"
   },
   "RedactExportFlow": {
     "label": "Privacy-first redaction",
@@ -490,6 +495,8 @@
     "rightComplain": "Lodge a complaint with a supervisory authority",
     "rightsNoStorage": "If you are signed in, you can exercise the rights of access (Art. 15) and erasure (Art. 17) directly from your <link>account page</link>. \"Export my data\" returns a single JSON bundle containing your account record and every saved analysis. \"Delete my account\" permanently removes your account and all associated data after a typed confirmation. For anonymous visitors, there is nothing on our servers to access or delete — your <code>localStorage</code> data is entirely under your control in your browser.",
     "rightsContact": "For any other requests, contact <email></email>.",
+    "aiActTitle": "EU AI Act posture",
+    "aiActBody": "Redline is a generative-AI tool subject to the transparency obligations in EU Regulation 2024/1689. Every analysis carries a provenance record (model, region, timestamp, reasoning-effort policy per pass) and a disclaimer that the output is AI-generated. The full mapping to Art 13 and Art 50, the pipeline diagram, the operator rollback levers, and the machine-readable receipt live on the <link>transparency page</link>.",
     "changesTitle": "Changes to this policy",
     "changesBody": "We may update this policy from time to time. The \"Last updated\" date at the top of the page reflects the most recent revision. Material changes will be reflected by an updated date.",
     "transfersAI": "Contract text is processed by Mistral La Plateforme within the European Union (Paris). No transfer outside the EU/EEA occurs for the AI analysis step.",
@@ -507,6 +514,7 @@
     "optionalDesc": "These processors only come into play when a specific feature — saved history or magic-link sign-in — is enabled by the operator.",
     "configNote": "This page is rendered directly from the typed <code>frontend/src/lib/data-flows.ts</code> config so it tracks the live configuration without manual drift.",
     "i18nNote": "UI chrome is translated to English, French, German, Dutch, Spanish, and Italian. Analysis output (clause summaries, risk explanations, chat answers) is produced natively by Mistral — no intermediate machine-translation service touches the contract text. Each locale is enabled only after a native speaker reviews the prompts; locales still pending review fall back to English analysis so no user sees unreviewed LLM legal prose in their language.",
+    "transparencyNote": "For the EU AI Act posture mapping, operator rollback levers, and the machine-readable transparency receipt, see the <link>transparency page</link>.",
     "data": "Data",
     "legalBasis": "Legal basis",
     "notes": "Notes",
@@ -555,6 +563,81 @@
         "notes": "Only used when the backend RESEND_API_KEY env var is set. Email addresses are sent to Resend solely to deliver the sign-in link and not used for marketing."
       }
     }
+  },
+  "Transparency": {
+    "metaTitle": "AI Act transparency — Redline",
+    "metaDescription": "How Redline maps to Art 13 and Art 50 of the EU AI Act, the pipeline an analysis traverses, and the operator rollback levers.",
+    "back": "← Back to Privacy Policy",
+    "title": "AI Act transparency",
+    "description": "Redline is a generative-AI tool that writes first-pass contract analyses. The EU AI Act (Regulation 2024/1689) asks providers and deployers of such systems to tell users what is happening under the hood. This page is that disclosure.",
+    "aiActTitle": "How Redline maps to the AI Act",
+    "aiActDesc": "Two articles apply squarely. The rest of the regulation is orthogonal to the portfolio-scale deployment Redline runs at, but the record below is kept deliberately short so it stays honest.",
+    "articles": {
+      "art13": {
+        "title": "Article 13 — Transparency to users of high-risk AI systems",
+        "body": "Every analysis carries a provenance block (model, snapshot, region, prompt-template version, reasoning-effort policy per pass, timestamp) rendered in the editorial footer below every report. The machine-readable receipt on this page packages the same information as downloadable JSON."
+      },
+      "art50": {
+        "title": "Article 50 — Disclosure of AI-generated output",
+        "body": "Every report opens with a disclaimer banner that names the analysis as AI-generated and closes with a footer naming the model that produced it. The report export (Markdown and PDF) carries the same disclosure so the AI-generated nature of the output survives the handoff."
+      }
+    },
+    "pipelineTitle": "The pipeline an analysis traverses",
+    "pipelineDesc": "Every contract analysis runs through the same five-stage pipeline. LLM calls go to Mistral in Paris; redaction happens in the browser before any text leaves the device.",
+    "pipelineSteps": {
+      "pass0": {
+        "label": "Pass 0 — overview",
+        "desc": "Mistral extracts contract type, parties, jurisdiction, and a clause inventory. Pattern-based PII redaction runs first so names and IDs never travel."
+      },
+      "redaction": {
+        "label": "Redaction (client-side)",
+        "desc": "The user reviews detected entities in the browser and confirms which ones to redact before any full-text call. No raw PII leaves the device."
+      },
+      "pass1": {
+        "label": "Pass 1 — extraction",
+        "desc": "Mistral receives the redacted full text and returns structured clauses anchored to the Pass 0 inventory."
+      },
+      "pass2": {
+        "label": "Pass 2 — risk",
+        "desc": "Each clause is classified, scored, and grounded against a jurisdiction-specific statute allowlist. No free-text citations — only entries the catalog whitelists survive."
+      },
+      "chat": {
+        "label": "Chat (optional)",
+        "desc": "The user may ask follow-up questions. Context is selected by keyword overlap today; top-k clauses are sent with the question to Mistral."
+      }
+    },
+    "leversTitle": "Operator rollback levers",
+    "leversDesc": "These environment variables let the deployer change observable behaviour at runtime without a redeploy. They exist because transparency needs to survive incident response.",
+    "levers": {
+      "analysisLocaleOverride": {
+        "label": "Force analysis locale",
+        "desc": "When set to a routing locale (e.g. `en`), every pipeline request ignores the user's UI locale and uses this one instead. Unset in production."
+      },
+      "pass2RetryEnabled": {
+        "label": "Pass 2 short-array retry",
+        "desc": "When `true`, Pass 2 reissues a batch once if the model returns fewer than half the expected clauses. Set `false` to disable during a provider incident."
+      },
+      "retentionDays": {
+        "label": "Retention window (days)",
+        "desc": "Saved analyses auto-delete after this many days unless the user pins them. Default 30. Aligns with GDPR Art. 5(1)(e)."
+      }
+    },
+    "limitationsTitle": "Known limitations",
+    "limitationsDesc": "Redline is a first-pass assistant, not a substitute for a lawyer. The list below is the honest floor of what the model can and cannot do.",
+    "limitations": {
+      "hallucination": "Mistral may invent facts that look plausible. The analysis should always be cross-checked against the clause text before relying on it. The product grounds output against a statute allowlist to limit one common failure mode (invented case law), not to eliminate hallucination in general.",
+      "statuteShortlistGaps": "The applicable-law catalog covers six EU member states (DE, NL, FR, ES, IT, PL) with dedicated statutes, plus EU-wide directives. Other EU jurisdictions receive EU-wide law only; non-EU jurisdictions fall back to general principles with no statute citations.",
+      "notLegalAdvice": "Redline is informational only and does not constitute legal advice. A human lawyer licensed in the relevant jurisdiction should review anything that materially affects your rights or obligations.",
+      "languageCoverage": "The six supported locales (EN, FR, DE, NL, ES, IT) are emitted natively by Mistral — no post-hoc machine translation. Other EU languages fall back to English analysis until they are reviewed."
+    },
+    "receiptTitle": "Machine-readable transparency receipt",
+    "receiptDesc": "Every analysis can be exported as a small JSON document that records the provenance block, the pipeline, the operator levers, and the AI Act article references. The receipt is stable (`schema_version: \"1\"`) so auditors can diff receipts across releases. Download it from the expanded footer on any report.",
+    "pipelineLlmBadge": "LLM",
+    "pipelineLocalBadge": "Local",
+    "crossLinksTitle": "Related pages",
+    "crossLinkPrivacy": "Privacy policy",
+    "crossLinkDataResidency": "Data residency",
+    "notProductionMark": "Portfolio deployment — not a certified high-risk AI system under the AI Act."
   },
   "History": {
     "title": "Your Analyses",

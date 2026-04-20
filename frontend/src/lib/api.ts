@@ -258,6 +258,29 @@ export async function deleteAnalysis(id: string): Promise<void> {
   }
 }
 
+/**
+ * SP-9 — Fetch the transparency receipt for a saved analysis.
+ *
+ * The backend endpoint mirrors the client-side `buildReceipt` output
+ * shape, so callers can treat the returned JSON as a
+ * `TransparencyReceipt` and hand it to `downloadReceipt()` unchanged.
+ * Returned as an unknown-shaped record so the typed import boundary
+ * stays in `transparency-receipt.ts` — the caller narrows.
+ */
+export async function fetchTransparencyReceipt(
+  id: string,
+): Promise<Record<string, unknown>> {
+  const res = await backendFetch(
+    `/api/analyses/${encodeURIComponent(id)}/receipt`,
+  );
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Receipt unavailable"));
+  }
+
+  return res.json();
+}
+
 /** SP-5 retention response shape from PATCH / extend endpoints. */
 export interface RetentionState {
   id: string;

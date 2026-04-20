@@ -192,6 +192,21 @@ export default async function PrivacyPage({
         </p>
       </Section>
 
+      <Section title={t("aiActTitle")}>
+        <p>
+          {t.rich("aiActBody", {
+            link: (chunks) => (
+              <Link
+                href="/transparency"
+                className="text-[var(--accent)] hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      </Section>
+
       <Section title={t("changesTitle")}>
         <p>{t("changesBody")}</p>
       </Section>

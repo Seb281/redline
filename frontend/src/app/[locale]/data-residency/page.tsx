@@ -125,8 +125,20 @@ export default async function DataResidencyPage({
           code: (chunks) => <code>{chunks}</code>,
         })}
       </p>
-      <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
+      <p className="mb-3 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
         {t("i18nNote")}
+      </p>
+      <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
+        {t.rich("transparencyNote", {
+          link: (chunks) => (
+            <Link
+              href="/transparency"
+              className="text-[var(--accent)] hover:underline"
+            >
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </main>
   );

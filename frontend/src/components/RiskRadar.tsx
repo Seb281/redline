@@ -74,9 +74,13 @@ function labelTextAnchor(angleRad: number): "start" | "end" | "middle" {
   const a = ((angleRad % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   // Vertical band: within ±30° of 12 or 6 o'clock
   const VERT_BAND = Math.PI / 6;
-  const top = Math.PI / 2; // 6 o'clock in SVG coords (y down)
-  const bottom = (3 * Math.PI) / 2; // 12 o'clock in SVG coords
-  if (Math.abs(a - top) < VERT_BAND || Math.abs(a - bottom) < VERT_BAND) {
+  // Angle values named after the SVG (y-down) screen position they correspond to.
+  const sixOClock = Math.PI / 2; // bottom of the chart
+  const twelveOClock = (3 * Math.PI) / 2; // top of the chart
+  if (
+    Math.abs(a - sixOClock) < VERT_BAND ||
+    Math.abs(a - twelveOClock) < VERT_BAND
+  ) {
     return "middle";
   }
   // 0–π = right half (3→12→9 o'clock going CW in screen space is actually

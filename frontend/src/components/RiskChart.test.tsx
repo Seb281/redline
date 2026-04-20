@@ -117,3 +117,25 @@ describe("RiskChart — interactive (with onSegmentClick)", () => {
     expect(handler).toHaveBeenCalledWith("high");
   });
 });
+
+describe("RiskChart — tooltip", () => {
+  it("renders label, clause-plural count, and percentage once on hover", () => {
+    render(<RiskChart breakdown={singleBucket} onSegmentClick={() => {}} />);
+    const btn = screen.getByRole("button", { name: /High/ });
+    fireEvent.mouseEnter(btn);
+    // Tooltip content: "High — 5 clauses (100%)"
+    // Regression guard: ICU plural owns the count interpolation (via `#`).
+    // Prefixing a raw count would produce "High — 5 5 clauses (100%)".
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.textContent).toMatch(/^High\s*—\s*5 clauses\s*\(100%\)\s*$/);
+  });
+
+  it("hides tooltip on mouse leave", () => {
+    render(<RiskChart breakdown={singleBucket} onSegmentClick={() => {}} />);
+    const btn = screen.getByRole("button", { name: /High/ });
+    fireEvent.mouseEnter(btn);
+    expect(screen.queryByRole("tooltip")).toBeTruthy();
+    fireEvent.mouseLeave(btn);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+});

@@ -121,7 +121,7 @@ export function RiskChart({ breakdown, activeRisk, onSegmentClick }: RiskChartPr
             info,
           })}
         >
-          {/* Background track */}
+          {/* Background track — decorative chrome; breakdown read by SR via the parent svg aria-label */}
           <circle
             cx={CX}
             cy={CY}
@@ -129,6 +129,7 @@ export function RiskChart({ breakdown, activeRisk, onSegmentClick }: RiskChartPr
             fill="none"
             stroke="var(--bg-tertiary)"
             strokeWidth={OUTER_R - INNER_R}
+            aria-hidden="true"
           />
 
           {arcs.map(({ level, count, startAngle, endAngle }) => {
@@ -192,7 +193,7 @@ export function RiskChart({ breakdown, activeRisk, onSegmentClick }: RiskChartPr
             );
           })}
 
-          {/* Centre count */}
+          {/* Centre count — visually repeats the total already in the svg aria-label */}
           <text
             x={CX}
             y={CY + 6}
@@ -201,6 +202,7 @@ export function RiskChart({ breakdown, activeRisk, onSegmentClick }: RiskChartPr
             fontWeight="700"
             fill="var(--text-primary)"
             style={{ fontFamily: "var(--font-body)" }}
+            aria-hidden="true"
           >
             {total}
           </text>
@@ -210,7 +212,7 @@ export function RiskChart({ breakdown, activeRisk, onSegmentClick }: RiskChartPr
         <VizTooltip position={tooltip.position}>
           {tooltip.data && (
             <span>
-              {tooltip.data.label} — {tooltip.data.count} {t("clauses", { count: tooltip.data.count })} ({t("tooltipPercent", { percentage: tooltip.data.percentage })})
+              {tooltip.data.label} — {t("clauses", { count: tooltip.data.count })} ({t("tooltipPercent", { percentage: tooltip.data.percentage })})
             </span>
           )}
         </VizTooltip>

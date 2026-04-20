@@ -93,10 +93,13 @@ export function describeDonutSegment(
       ? startAngleRad + Math.sign(span || 1) * (TWO_PI - 0.001)
       : endAngleRad;
 
-  const outerStart = polarToCartesian(cx, cy, outerR, startAngleRad);
-  const outerEnd = polarToCartesian(cx, cy, outerR, effectiveEnd);
-  const innerStart = polarToCartesian(cx, cy, innerR, effectiveEnd);
-  const innerEnd = polarToCartesian(cx, cy, innerR, startAngleRad);
+  // Corner points named by (radius, angle): e.g. `outerAtStart` = outer radius at start angle.
+  // The SVG path visits them in the order outer-start → outer-end → inner-end → inner-start
+  // (clockwise around the annular sector, closing back to outer-start with `Z`).
+  const outerAtStart = polarToCartesian(cx, cy, outerR, startAngleRad);
+  const outerAtEnd = polarToCartesian(cx, cy, outerR, effectiveEnd);
+  const innerAtEnd = polarToCartesian(cx, cy, innerR, effectiveEnd);
+  const innerAtStart = polarToCartesian(cx, cy, innerR, startAngleRad);
 
   const delta = effectiveEnd - startAngleRad;
   const largeArc = Math.abs(delta) > Math.PI ? 1 : 0;
@@ -104,13 +107,13 @@ export function describeDonutSegment(
 
   return [
     // Outer arc (start → end, CW)
-    `M ${outerStart.x} ${outerStart.y}`,
-    `A ${outerR} ${outerR} 0 ${largeArc} ${sweep} ${outerEnd.x} ${outerEnd.y}`,
-    // Line to inner arc at end angle
-    `L ${innerStart.x} ${innerStart.y}`,
+    `M ${outerAtStart.x} ${outerAtStart.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} ${sweep} ${outerAtEnd.x} ${outerAtEnd.y}`,
+    // Line across to the inner edge at the end angle
+    `L ${innerAtEnd.x} ${innerAtEnd.y}`,
     // Inner arc (end → start, CCW)
-    `A ${innerR} ${innerR} 0 ${largeArc} ${sweep === 1 ? 0 : 1} ${innerEnd.x} ${innerEnd.y}`,
-    // Close back to outer start
+    `A ${innerR} ${innerR} 0 ${largeArc} ${sweep === 1 ? 0 : 1} ${innerAtStart.x} ${innerAtStart.y}`,
+    // Close back to outerAtStart
     "Z",
   ].join(" ");
 }

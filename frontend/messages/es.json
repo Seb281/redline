@@ -7,6 +7,7 @@
     "hideRealNames": "Ocultar los nombres reales",
     "showNames": "Mostrar nombres",
     "hideNames": "Ocultar nombres",
+    "account": "Cuenta",
     "logOut": "Cerrar sesión",
     "switchToDark": "Activar el modo oscuro",
     "switchToLight": "Cambiar al modo claro",
@@ -491,8 +492,8 @@
     "rightPortability": "Portabilidad de datos",
     "rightObject": "Oponerse al tratamiento",
     "rightComplain": "Presentar una reclamación ante una autoridad de control",
-    "rightsNoStorage": "Dado que no almacenamos ningún dato personal en nuestros servidores, la mayoría de estos derechos se respetan de forma predeterminada: no hay nada a lo que acceder, corregir o eliminar. Los datos de <code>localStorage</code> están totalmente bajo tu control en tu navegador.",
-    "rightsContact": "Para cualquier consulta, ponte en contacto con <email></email>.",
+    "rightsNoStorage": "Si has iniciado sesión, puedes ejercer los derechos de acceso (art. 15) y supresión (art. 17) directamente desde tu <link>página de cuenta</link>. «Exportar mis datos» devuelve un único archivo JSON con tu registro de cuenta y cada análisis guardado. «Eliminar mi cuenta» borra de forma permanente tu cuenta y todos los datos asociados tras una confirmación escrita. Para los visitantes anónimos, no hay nada en nuestros servidores a lo que acceder o eliminar: los datos de <code>localStorage</code> están totalmente bajo tu control en tu navegador.",
+    "rightsContact": "Para cualquier otra consulta, ponte en contacto con <email></email>.",
     "changesTitle": "Modificaciones de esta política",
     "changesBody": "Es posible que actualicemos esta política periódicamente. La fecha de «Última actualización» que aparece en la parte superior de la página indica la revisión más reciente. Los cambios sustanciales se reflejarán en la fecha de actualización."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Mismo nivel",
     "verdictUniqueA": "Solo en A",
     "verdictUniqueB": "Solo en B"
+  },
+  "Account": {
+    "title": "Cuenta",
+    "loginPrompt": "Inicia sesión para gestionar tu cuenta",
+    "backHome": "← Volver a Redline",
+    "signedInAs": "Sesión iniciada como <strong>{email}</strong>",
+    "exportHeading": "Exporta tus datos",
+    "exportBody": "Descarga una copia de todo lo que Redline conserva sobre ti — tu registro de cuenta y cada análisis guardado, incluidos los que han caducado y ya no aparecen en tu historial.",
+    "exportAction": "Exportar mis datos",
+    "exportPreparing": "Preparando…",
+    "exportFailedFallback": "La exportación ha fallado",
+    "deleteHeading": "Elimina tu cuenta",
+    "deleteBody": "Esta acción elimina de forma permanente tu cuenta y todos los análisis guardados. Recibirás un correo de confirmación. La eliminación no se puede deshacer.",
+    "deleteAction": "Eliminar mi cuenta"
+  },
+  "DeleteAccountModal": {
+    "title": "Elimina tu cuenta",
+    "body": "Esta acción elimina de forma permanente tu cuenta y todos los análisis guardados. No se puede deshacer.",
+    "typeToConfirm": "Escribe <strong>{email}</strong> para confirmar.",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar mi cuenta",
+    "deleting": "Eliminando…",
+    "failedFallback": "La eliminación ha fallado. Inténtalo de nuevo."
   }
 }

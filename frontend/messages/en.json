@@ -7,6 +7,7 @@
     "hideRealNames": "Hide real names",
     "showNames": "Show names",
     "hideNames": "Hide names",
+    "account": "Account",
     "logOut": "Log out",
     "switchToDark": "Switch to dark mode",
     "switchToLight": "Switch to light mode",
@@ -491,8 +492,8 @@
     "rightPortability": "Data portability",
     "rightObject": "Object to processing",
     "rightComplain": "Lodge a complaint with a supervisory authority",
-    "rightsNoStorage": "Since we do not store any personal data on our servers, most of these rights are satisfied by default — there is nothing to access, correct, or delete. Your <code>localStorage</code> data is entirely under your control in your browser.",
-    "rightsContact": "For any requests, contact <email></email>.",
+    "rightsNoStorage": "If you are signed in, you can exercise the rights of access (Art. 15) and erasure (Art. 17) directly from your <link>account page</link>. \"Export my data\" returns a single JSON bundle containing your account record and every saved analysis. \"Delete my account\" permanently removes your account and all associated data after a typed confirmation. For anonymous visitors, there is nothing on our servers to access or delete — your <code>localStorage</code> data is entirely under your control in your browser.",
+    "rightsContact": "For any other requests, contact <email></email>.",
     "changesTitle": "Changes to this policy",
     "changesBody": "We may update this policy from time to time. The \"Last updated\" date at the top of the page reflects the most recent revision. Material changes will be reflected by an updated date."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Same level",
     "verdictUniqueA": "Only in A",
     "verdictUniqueB": "Only in B"
+  },
+  "Account": {
+    "title": "Account",
+    "loginPrompt": "Log in to manage your account",
+    "backHome": "← Back to Redline",
+    "signedInAs": "Signed in as <strong>{email}</strong>",
+    "exportHeading": "Export your data",
+    "exportBody": "Download a copy of everything Redline holds about you — your account record and every saved analysis, including expired ones that are not visible in your history.",
+    "exportAction": "Export my data",
+    "exportPreparing": "Preparing…",
+    "exportFailedFallback": "Export failed",
+    "deleteHeading": "Delete your account",
+    "deleteBody": "This permanently deletes your account and every saved analysis. You will receive a confirmation email. The deletion cannot be undone.",
+    "deleteAction": "Delete my account"
+  },
+  "DeleteAccountModal": {
+    "title": "Delete your account",
+    "body": "This permanently deletes your account and every saved analysis. It cannot be undone.",
+    "typeToConfirm": "Type <strong>{email}</strong> to confirm.",
+    "cancel": "Cancel",
+    "confirm": "Delete my account",
+    "deleting": "Deleting…",
+    "failedFallback": "Deletion failed. Please try again."
   }
 }

@@ -7,6 +7,7 @@
     "hideRealNames": "Nascondi i nomi reali",
     "showNames": "Mostra i nomi",
     "hideNames": "Nascondi i nomi",
+    "account": "Account",
     "logOut": "Esci",
     "switchToDark": "Passa alla modalità scura",
     "switchToLight": "Passa alla modalità chiara",
@@ -491,8 +492,8 @@
     "rightPortability": "Portabilità dei dati",
     "rightObject": "Opporsi al trattamento",
     "rightComplain": "Presentare un reclamo presso un'autorità di controllo",
-    "rightsNoStorage": "Poiché non conserviamo alcun dato personale sui nostri server, la maggior parte di questi diritti è garantita di default: non c'è nulla a cui accedere, da correggere o da cancellare. I tuoi dati su <code>localStorage</code> sono interamente sotto il tuo controllo nel tuo browser.",
-    "rightsContact": "Per qualsiasi richiesta, contattateci<email></email>.",
+    "rightsNoStorage": "Se hai effettuato l'accesso, puoi esercitare i diritti di accesso (art. 15) e cancellazione (art. 17) direttamente dalla tua <link>pagina account</link>. «Esporta i miei dati» restituisce un singolo file JSON contenente il tuo record account e ogni analisi salvata. «Elimina il mio account» rimuove definitivamente il tuo account e tutti i dati associati dopo una conferma digitata. Per i visitatori anonimi non c'è nulla sui nostri server a cui accedere o da eliminare: i tuoi dati su <code>localStorage</code> sono interamente sotto il tuo controllo nel tuo browser.",
+    "rightsContact": "Per qualsiasi altra richiesta, contattateci <email></email>.",
     "changesTitle": "Modifiche alla presente informativa",
     "changesBody": "La presente informativa potrà essere aggiornata di tanto in tanto. La data di \"Ultimo aggiornamento\" riportata nella parte superiore della pagina indica la revisione più recente. Eventuali modifiche sostanziali saranno segnalate da un aggiornamento della data."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Stesso livello",
     "verdictUniqueA": "Solo in A",
     "verdictUniqueB": "Solo in B"
+  },
+  "Account": {
+    "title": "Account",
+    "loginPrompt": "Accedi per gestire il tuo account",
+    "backHome": "← Torna a Redline",
+    "signedInAs": "Hai effettuato l'accesso come <strong>{email}</strong>",
+    "exportHeading": "Esporta i tuoi dati",
+    "exportBody": "Scarica una copia di tutto ciò che Redline conserva su di te — il tuo record account e ogni analisi salvata, comprese quelle scadute che non sono più visibili nella cronologia.",
+    "exportAction": "Esporta i miei dati",
+    "exportPreparing": "Preparazione in corso…",
+    "exportFailedFallback": "Esportazione non riuscita",
+    "deleteHeading": "Elimina il tuo account",
+    "deleteBody": "Questa operazione elimina definitivamente il tuo account e ogni analisi salvata. Riceverai un'email di conferma. L'eliminazione non può essere annullata.",
+    "deleteAction": "Elimina il mio account"
+  },
+  "DeleteAccountModal": {
+    "title": "Elimina il tuo account",
+    "body": "Questa operazione elimina definitivamente il tuo account e ogni analisi salvata. Non può essere annullata.",
+    "typeToConfirm": "Digita <strong>{email}</strong> per confermare.",
+    "cancel": "Annulla",
+    "confirm": "Elimina il mio account",
+    "deleting": "Eliminazione in corso…",
+    "failedFallback": "Eliminazione non riuscita. Riprova."
   }
 }

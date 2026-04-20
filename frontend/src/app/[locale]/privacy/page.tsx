@@ -188,7 +188,19 @@ export default async function PrivacyPage({
           <li>{t("rightObject")}</li>
           <li>{t("rightComplain")}</li>
         </ul>
-        <p className="mt-3">{t.rich("rightsNoStorage", { code })}</p>
+        <p className="mt-3">
+          {t.rich("rightsNoStorage", {
+            code,
+            link: (chunks) => (
+              <Link
+                href="/account"
+                className="text-[var(--accent)] hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
         <p className="mt-3">
           {t.rich("rightsContact", { email: () => emailLink })}
         </p>

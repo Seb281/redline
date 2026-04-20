@@ -7,6 +7,7 @@
     "hideRealNames": "Masquer les noms réels",
     "showNames": "Afficher les noms",
     "hideNames": "Masquer les noms",
+    "account": "Compte",
     "logOut": "Se déconnecter",
     "switchToDark": "Passer en mode sombre",
     "switchToLight": "Passer en mode clair",
@@ -491,8 +492,8 @@
     "rightPortability": "Portabilité des données",
     "rightObject": "S'opposer au traitement",
     "rightComplain": "Déposer une plainte auprès d'une autorité de contrôle",
-    "rightsNoStorage": "Étant donné que nous ne conservons aucune donnée personnelle sur nos serveurs, la plupart de ces droits sont respectés par défaut : il n'y a rien à consulter, à corriger ou à supprimer. Vos données de navigation sur <code>localStorage</code> sont entièrement sous votre contrôle dans votre navigateur.",
-    "rightsContact": "Pour toute demande, veuillez contacter <email></email>.",
+    "rightsNoStorage": "Si vous êtes connecté, vous pouvez exercer vos droits d'accès (art. 15) et d'effacement (art. 17) directement depuis votre <link>page de compte</link>. « Exporter mes données » renvoie une archive JSON unique contenant votre enregistrement de compte et chacune de vos analyses enregistrées. « Supprimer mon compte » efface définitivement votre compte et toutes les données associées après confirmation saisie. Pour les visiteurs anonymes, il n'y a rien sur nos serveurs à consulter ou à supprimer — vos données sur <code>localStorage</code> sont entièrement sous votre contrôle dans votre navigateur.",
+    "rightsContact": "Pour toute autre demande, veuillez contacter <email></email>.",
     "changesTitle": "Modifications apportées à la présente politique",
     "changesBody": "Nous pouvons être amenés à mettre à jour la présente politique de temps à autre. La date de « Dernière mise à jour » indiquée en haut de la page correspond à la dernière révision. Toute modification importante sera signalée par une mise à jour de cette date."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Même niveau",
     "verdictUniqueA": "Uniquement en A",
     "verdictUniqueB": "Uniquement en B"
+  },
+  "Account": {
+    "title": "Compte",
+    "loginPrompt": "Connectez-vous pour gérer votre compte",
+    "backHome": "← Retour à Redline",
+    "signedInAs": "Connecté en tant que <strong>{email}</strong>",
+    "exportHeading": "Exporter vos données",
+    "exportBody": "Téléchargez une copie de tout ce que Redline conserve à votre sujet — votre enregistrement de compte et chacune de vos analyses enregistrées, y compris celles qui ont expiré et ne figurent plus dans votre historique.",
+    "exportAction": "Exporter mes données",
+    "exportPreparing": "Préparation…",
+    "exportFailedFallback": "Échec de l'exportation",
+    "deleteHeading": "Supprimer votre compte",
+    "deleteBody": "Cette action supprime définitivement votre compte et toutes les analyses enregistrées. Vous recevrez un e-mail de confirmation. La suppression est irréversible.",
+    "deleteAction": "Supprimer mon compte"
+  },
+  "DeleteAccountModal": {
+    "title": "Supprimer votre compte",
+    "body": "Cette action supprime définitivement votre compte et toutes les analyses enregistrées. Elle est irréversible.",
+    "typeToConfirm": "Saisissez <strong>{email}</strong> pour confirmer.",
+    "cancel": "Annuler",
+    "confirm": "Supprimer mon compte",
+    "deleting": "Suppression en cours…",
+    "failedFallback": "La suppression a échoué. Veuillez réessayer."
   }
 }

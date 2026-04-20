@@ -5,10 +5,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { AnalysisLocalePicker } from "@/components/AnalysisLocalePicker";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
 import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
+import { useAnalysisLocale } from "@/contexts/AnalysisLocaleContext";
 import { DE_SAAS_DPA_TEXT, DE_SAAS_DPA_UPLOAD } from "@/data/sample-contracts/de-saas-dpa";
 import { ES_SAAS_SERVICES_TEXT, ES_SAAS_SERVICES_UPLOAD } from "@/data/sample-contracts/es-saas-services";
 import { FR_EMPLOYMENT_TEXT, FR_EMPLOYMENT_UPLOAD } from "@/data/sample-contracts/fr-employment";
@@ -46,7 +48,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const streaming = useStreamingAnalysis();
+  const { analysisLocale } = useAnalysisLocale();
+  const streaming = useStreamingAnalysis(analysisLocale);
 
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -308,8 +311,13 @@ export default function Home() {
             error={error}
           />
 
-          {/* Analysis mode toggle */}
+          {/* SP-7 Phase 5 — analysis-output language (independent of UI locale) */}
           <div className="mx-auto mt-5 flex max-w-[540px] items-center justify-center">
+            <AnalysisLocalePicker />
+          </div>
+
+          {/* Analysis mode toggle */}
+          <div className="mx-auto mt-3 flex max-w-[540px] items-center justify-center">
             <div className="inline-flex rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-1">
               <button
                 type="button"

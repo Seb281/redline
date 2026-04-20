@@ -10,7 +10,7 @@
 
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { ReactNode } from "react";
-import { render, act } from "@testing-library/react";
+import { cleanup, render, act } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import enMessages from "../../messages/en.json";
 import {
@@ -74,6 +74,7 @@ describe("AnalysisLocaleContext", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 

@@ -609,5 +609,8 @@
     "nl": "Neerlandés",
     "es": "Español",
     "it": "Italiano"
+  },
+  "AnalysisLocalePicker": {
+    "label": "Idioma del análisis"
   }
 }

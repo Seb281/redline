@@ -9,7 +9,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AnalyzeResponse } from "@/types";
@@ -33,10 +33,14 @@ export function ChatPanel({
   onInitialQuestionConsumed,
 }: ChatPanelProps) {
   const t = useTranslations("ChatPanel");
+  // SP-7 Layer B' — forward the UI locale in every chat POST so the
+  // route can resolve it into an effective analysis locale (subject to
+  // `ANALYSIS_LOCALE_OVERRIDE` on the server).
+  const locale = useLocale();
   const { messages, sendMessage, status, stop, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { analysis },
+      body: { analysis, locale },
     }),
   });
 

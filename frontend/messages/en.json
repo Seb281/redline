@@ -421,7 +421,7 @@
     "whoWeAreBody": "Redline is operated by Sebastian Giupana, an individual developer. For privacy inquiries, contact <email></email>.",
     "whatDataTitle": "What data we process",
     "contractTextLabel": "Contract text",
-    "contractTextBody": "When you upload a contract (PDF or DOCX), the extracted text is sent to a third-party AI provider for analysis. See \"Third-party processors\" below.",
+    "contractTextBody": "When you upload a contract (PDF or DOCX), the extracted text is sent to a third-party AI provider for analysis. When your interface is in a language other than English, the analysis instructions themselves are also localised — Mistral is multilingual and runs in the EU, so no machine-translation service is in the path. See \"Third-party processors\" below.",
     "themePrefLabel": "Theme preference",
     "themePrefBody": "Your dark/light mode choice is stored in your browser's <code>localStorage</code> under the key <code>redline-theme</code>.",
     "cookieDismissLabel": "Cookie banner dismissal",
@@ -477,7 +477,7 @@
     "optionalTitle": "Optional data flows",
     "optionalDesc": "These processors only come into play when a specific feature — saved history, magic-link sign-in, or the non-default LLM rollback — is enabled by the operator.",
     "configNote": "This page is rendered directly from the typed <code>frontend/src/lib/data-flows.ts</code> config so it tracks the live configuration without manual drift.",
-    "i18nNote": "UI chrome is translated to English, French, German, Dutch, Spanish, and Italian. Analysis output (clause summaries, risk explanations, chat answers) is generated in English regardless of UI language — machine-translating legal text risks altering meaning, so we keep it under human-reviewed, English-only review for now.",
+    "i18nNote": "UI chrome is translated to English, French, German, Dutch, Spanish, and Italian. Analysis output (clause summaries, risk explanations, chat answers) is produced natively by Mistral — no intermediate machine-translation service touches the contract text. Each locale is enabled only after a native speaker reviews the prompts; locales still pending review fall back to English analysis so no user sees unreviewed LLM legal prose in their language.",
     "data": "Data",
     "legalBasis": "Legal basis",
     "notes": "Notes",
@@ -488,9 +488,10 @@
       "mistral": {
         "purpose": "LLM contract analysis — overview, clause extraction, risk assessment, chat responses.",
         "dataCategories": [
-          "Pattern-redacted contract text (PII replaced with ⟦KIND_N⟧ tokens before leaving the browser)"
+          "Pattern-redacted contract text (PII replaced with ⟦KIND_N⟧ tokens before leaving the browser)",
+          "Analysis prompts in the user's selected UI language (EN, FR, DE, NL, ES, IT) — Mistral is multilingual by training and processes every supported locale natively; no translation service is involved"
         ],
-        "notes": "Default LLM provider. Model pinned to mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme runs in the EU, no transfer outside the EU/EEA for the analysis step."
+        "notes": "Default LLM provider. Model pinned to mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme runs in the EU, no transfer outside the EU/EEA for either the contract text or the analysis prompts, regardless of the UI language the user has selected."
       },
       "vercel": {
         "purpose": "Frontend hosting and edge delivery of the Next.js app.",
@@ -565,7 +566,14 @@
     "unpin": "Unpin",
     "pinForever": "Pin forever",
     "pinFailed": "Pin failed",
-    "extendFailed": "Extend failed"
+    "extendFailed": "Extend failed",
+    "savedLocaleBadge": "Saved analysis in {language}",
+    "savedLocaleEnglish": "English",
+    "savedLocaleFrench": "French",
+    "savedLocaleGerman": "German",
+    "savedLocaleDutch": "Dutch",
+    "savedLocaleSpanish": "Spanish",
+    "savedLocaleItalian": "Italian"
   },
   "AuthVerify": {
     "verifying": "Verifying your login...",

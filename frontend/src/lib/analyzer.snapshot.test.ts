@@ -30,6 +30,15 @@ import { PL_DISTRIBUTION_TEXT } from "@/data/sample-contracts/pl-distribution";
 const HAS_KEY = Boolean(process.env.MISTRAL_API_KEY);
 const describeIfKey = HAS_KEY ? describe : describe.skip;
 
+// SP-7 Layer B' Phase 2 — locale-specific runs are opt-in. Each locale
+// is a full pipeline run, so the default CI/PR gate only exercises the
+// EN path (the `describeIfKey` block above). Set `SNAPSHOT_LOCALE_TEST=1`
+// alongside `MISTRAL_API_KEY` to run the per-locale harness — used
+// manually before flipping a locale live in production.
+const RUN_LOCALE_SNAPSHOTS =
+  HAS_KEY && process.env.SNAPSHOT_LOCALE_TEST === "1";
+const describeIfLocaleRun = RUN_LOCALE_SNAPSHOTS ? describe : describe.skip;
+
 // Long timeout — each test is a full three-pass pipeline run against a
 // real LLM. 180s gives headroom for transient provider slowness.
 const TIMEOUT_MS = 180_000;
@@ -300,6 +309,140 @@ describeIfKey("snapshot harness — Mistral provider", () => {
       }
 
       expect(result.provenance.provider).toBe("mistral");
+    },
+    TIMEOUT_MS,
+  );
+});
+
+/**
+ * SP-7 Layer B' Phase 2 — locale-specific structural harness.
+ *
+ * Default-skipped. Opt-in with `SNAPSHOT_LOCALE_TEST=1` alongside a
+ * Mistral key. Purpose: verify the pipeline keeps its enum invariants
+ * (risk_level, category, source_type, statute codes) when the system
+ * prompt is issued in a non-EN locale. Prose fluency is a qualitative
+ * quality gate the human reviewer still owns — these tests only guard
+ * against *structural* regressions from locale injection.
+ *
+ * Phase 2 ships ES + DE (user self-review). FR/IT/NL remain parked
+ * until external native-speaker sign-off (see roadmap §12). Adding
+ * them here later is mechanical: copy one of these blocks and pass
+ * the matching locale code.
+ */
+const VALID_RISK_LEVELS = new Set([
+  "informational",
+  "low",
+  "medium",
+  "high",
+]);
+const VALID_CATEGORIES = new Set([
+  "non_compete",
+  "liability",
+  "termination",
+  "ip_assignment",
+  "confidentiality",
+  "governing_law",
+  "indemnification",
+  "data_protection",
+  "payment_terms",
+  "limitation_of_liability",
+  "force_majeure",
+  "dispute_resolution",
+  "other",
+]);
+const VALID_SOURCE_TYPES = new Set(["statute_cited", "general_principle"]);
+
+describeIfLocaleRun("snapshot harness — locale-injected prompts (Phase 2)", () => {
+  const provider = getProvider("mistral");
+
+  it(
+    "ES locale: enum fields stay English, citations stay ES/EU, analysis_locale='es'",
+    async () => {
+      const result = await analyzeContract(
+        ES_SAAS_SERVICES_TEXT,
+        "fast",
+        true,
+        "Cliente",
+        provider,
+        "es",
+      );
+
+      // Provenance locale round-trip
+      expect(result.provenance.analysis_locale).toBe("es");
+      expect(result.provenance.provider).toBe("mistral");
+
+      // Jurisdiction + clause count band unchanged by locale injection
+      expect(result.overview.jurisdiction_evidence?.country).toBe("ES");
+      expect(result.clauses.length).toBeGreaterThanOrEqual(8);
+
+      // Enum invariants — every clause must keep machine-code values
+      // in English regardless of the prose locale. A translated
+      // risk_level or category would hard-fail Zod upstream, but we
+      // re-check here as a defense-in-depth gate against future
+      // schema relaxation.
+      for (const c of result.clauses) {
+        expect(VALID_CATEGORIES.has(c.category)).toBe(true);
+        expect(VALID_RISK_LEVELS.has(c.risk_level)).toBe(true);
+        if (c.applicable_law) {
+          expect(VALID_SOURCE_TYPES.has(c.applicable_law.source_type)).toBe(
+            true,
+          );
+        }
+      }
+
+      // Citation allowlist + no-leak — same guard as the EN harness.
+      const codes = result.clauses.flatMap(
+        (c) => c.applicable_law?.citations?.map((cit) => cit.code) ?? [],
+      );
+      for (const code of codes) {
+        expect(["ES", "EU"]).toContain(code.split("_")[0]);
+      }
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "DE locale: enum fields stay English, citations stay DE/EU, analysis_locale='de'",
+    async () => {
+      const result = await analyzeContract(
+        DE_SAAS_DPA_TEXT,
+        "fast",
+        true,
+        "Kunde",
+        provider,
+        "de",
+      );
+
+      expect(result.provenance.analysis_locale).toBe("de");
+      expect(result.provenance.provider).toBe("mistral");
+
+      expect(result.overview.jurisdiction_evidence?.country).toBe("DE");
+      expect(result.clauses.length).toBeGreaterThanOrEqual(8);
+
+      for (const c of result.clauses) {
+        expect(VALID_CATEGORIES.has(c.category)).toBe(true);
+        expect(VALID_RISK_LEVELS.has(c.risk_level)).toBe(true);
+        if (c.applicable_law) {
+          expect(VALID_SOURCE_TYPES.has(c.applicable_law.source_type)).toBe(
+            true,
+          );
+        }
+      }
+
+      // DE DPA fixture must still ground at least one clause on GDPR
+      // (EU statute) after locale injection — catches the scenario
+      // where a German-language prompt inadvertently drops citations.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
+
+      const codes = result.clauses.flatMap(
+        (c) => c.applicable_law?.citations?.map((cit) => cit.code) ?? [],
+      );
+      for (const code of codes) {
+        expect(["DE", "EU"]).toContain(code.split("_")[0]);
+      }
     },
     TIMEOUT_MS,
   );

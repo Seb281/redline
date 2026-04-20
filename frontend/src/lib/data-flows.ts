@@ -59,6 +59,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "LLM contract analysis — overview, clause extraction, risk assessment, chat responses.",
     dataCategories: [
       "Pattern-redacted contract text (PII replaced with ⟦KIND_N⟧ tokens before leaving the browser)",
+      "Analysis prompts in the user's selected UI language (EN, FR, DE, NL, ES, IT) — Mistral is multilingual by training and processes every supported locale natively; no translation service is involved",
     ],
     region: "EU — Paris, France",
     legalBasis: "GDPR Art. 6(1)(b) — performance of a contract",
@@ -66,7 +67,7 @@ export const DATA_FLOWS: DataFlow[] = [
     privacyPolicyUrl: "https://mistral.ai/terms/#privacy-policy",
     dpaUrl: "https://mistral.ai/terms/#data-processing-agreement",
     notes:
-      "Default LLM provider. Model pinned to mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme runs in the EU, no transfer outside the EU/EEA for the analysis step.",
+      "Default LLM provider. Model pinned to mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme runs in the EU, no transfer outside the EU/EEA for either the contract text or the analysis prompts, regardless of the UI language the user has selected.",
   },
   {
     translationKey: "vercel",

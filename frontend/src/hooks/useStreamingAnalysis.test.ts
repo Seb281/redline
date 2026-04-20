@@ -12,6 +12,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useStreamingAnalysis } from "./useStreamingAnalysis";
+import { IntlWrapper } from "@/test-fixtures/i18n";
+
+// SP-7 Layer B' — the hook now reads `useLocale()` so it can forward
+// the UI locale to `/api/analyze/*`. Every `renderHook` call must be
+// wrapped in `NextIntlClientProvider`, otherwise `useLocale()` throws
+// "No intl context found". The wrapper defaults to locale="en" so the
+// existing fetch-body assertions keep passing.
+const hookOptions = { wrapper: IntlWrapper };
 
 /** Helper: create a ReadableStream from NDJSON lines. */
 function createNdjsonStream(events: object[]): ReadableStream<Uint8Array> {
@@ -83,7 +91,7 @@ describe("useStreamingAnalysis", () => {
   });
 
   it("starts in idle state", () => {
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     expect(result.current.status).toBe("idle");
     expect(result.current.overview).toBeNull();
     expect(result.current.clauses).toEqual([]);
@@ -94,7 +102,7 @@ describe("useStreamingAnalysis", () => {
       mockJsonResponse({ overview: fakeOverview }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
 
     await act(async () => {
       await result.current.runOverview("contract text");
@@ -139,7 +147,7 @@ describe("useStreamingAnalysis", () => {
         mockStreamResponse(createNdjsonStream(streamEvents)),
       );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
 
     await act(async () => {
       await result.current.runOverview("text");
@@ -172,7 +180,7 @@ describe("useStreamingAnalysis", () => {
         mockStreamResponse(createNdjsonStream(streamEvents)),
       );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
 
     await act(async () => {
       await result.current.runOverview("text");
@@ -191,7 +199,7 @@ describe("useStreamingAnalysis", () => {
       mockJsonResponse({ detail: "Server error" }, 500),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
 
     await act(async () => {
       await result.current.runOverview("text");
@@ -221,7 +229,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview(
         "ACME Corp, email dpo@acme.eu, agrees to terms.",
@@ -255,7 +263,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview("Short plain text with nothing to redact.");
     });
@@ -283,7 +291,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview("ACME Corp signed dpo@acme.eu");
     });
@@ -306,7 +314,7 @@ describe("useStreamingAnalysis", () => {
       mockJsonResponse({ overview: fakeOverview }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
 
     await act(async () => {
       await result.current.runOverview("text");
@@ -341,7 +349,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview("ACME Corp and Beta LLC agree.");
     });
@@ -368,7 +376,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview("Landlord Co rents to Tenant Co.");
     });
@@ -399,7 +407,7 @@ describe("useStreamingAnalysis", () => {
       }),
     );
 
-    const { result } = renderHook(() => useStreamingAnalysis());
+    const { result } = renderHook(() => useStreamingAnalysis(), hookOptions);
     await act(async () => {
       await result.current.runOverview("ACME Corp and Beta LLC agree.");
     });

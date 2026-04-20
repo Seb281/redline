@@ -250,10 +250,38 @@ export const batchAnalysisSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Locale plumbing
+// ---------------------------------------------------------------------------
+
+/**
+ * SP-7 Layer B' — supported analysis locales.
+ *
+ * Mirrors `src/i18n/routing.ts#locales`. Kept as a local Record so this
+ * module stays independent of the routing config (prompt builders run in
+ * API routes that already validate the locale against routing before
+ * calling here — we only need a map from code to language name).
+ *
+ * The map is deliberately exhaustive for the routing locale set;
+ * anything outside falls back to English so a hostile or malformed
+ * `locale` body field never leaks into the system prompt as raw input.
+ */
+export function localeToLanguageName(locale: string): string {
+  const map: Record<string, string> = {
+    en: "English",
+    fr: "French",
+    de: "German",
+    nl: "Dutch",
+    es: "Spanish",
+    it: "Italian",
+  };
+  return map[locale] ?? "English";
+}
+
+// ---------------------------------------------------------------------------
 // System prompts
 // ---------------------------------------------------------------------------
 
-export const EXTRACTION_SYSTEM_PROMPT = `\
+const EXTRACTION_SYSTEM_PROMPT_EN = `\
 You are a legal document analyzer. Your task is to extract the exact text of \
 every clause listed in the provided clause inventory.
 
@@ -267,6 +295,32 @@ Rules:
 - If a clause spans multiple paragraphs, include the full text as one clause.
 - Return exactly one extracted clause per inventory item, in the same order.
 - Do NOT skip any inventory item and do NOT add clauses not in the inventory.`;
+
+/**
+ * Build the extraction system prompt for a given locale.
+ *
+ * Pass 1 returns `clause_text` (verbatim contract text — never translated)
+ * and `section_reference` (structural). The locale directive is only a
+ * defensive guard: if the model decides to add any prose of its own, it
+ * should stay in the target locale so a downstream reader running in that
+ * UI language is not confronted with a stray English sentence.
+ *
+ * For `locale === "en"` the output is byte-identical to the pre-Layer-B'
+ * `EXTRACTION_SYSTEM_PROMPT` constant — enforced by unit regression test
+ * so Phase 1 plumbing is a no-op for English users.
+ */
+export function buildExtractionSystemPrompt(locale: string): string {
+  if (locale === "en") return EXTRACTION_SYSTEM_PROMPT_EN;
+  const language = localeToLanguageName(locale);
+  return `LANGUAGE: Respond in ${language}. Any prose you produce (which should be minimal — this task is verbatim text extraction) must be written in ${language}.\n\n${EXTRACTION_SYSTEM_PROMPT_EN}`;
+}
+
+/**
+ * @deprecated Prefer {@link buildExtractionSystemPrompt}. Retained as a
+ * named export for call-sites that were written before Layer B' and
+ * haven't been migrated yet.
+ */
+export const EXTRACTION_SYSTEM_PROMPT = EXTRACTION_SYSTEM_PROMPT_EN;
 
 const CATEGORIES = [
   "non_compete",
@@ -303,6 +357,7 @@ export function buildAnalysisSystemPrompt(
   userRole?: string | null,
   jurisdiction?: string | null,
   jurisdictionEvidence?: JurisdictionEvidence | null,
+  locale: string = "en",
 ): string {
   const citationsSection = withCitations
     ? `\
@@ -387,8 +442,32 @@ explicitly when it helps clarity.`
     : `You assess contract clauses from the perspective of the weaker/\
 non-drafting party — the freelancer, employee, or smaller company.`;
 
+  const localeDirective = (() => {
+    if (locale === "en") return "";
+    const language = localeToLanguageName(locale);
+    return `\
+LANGUAGE DIRECTIVE: You must respond in ${language}. All explanatory prose \
+(plain_english, risk_explanation, negotiation_suggestion, unusual_explanation, \
+applicable_law.observation) must be written in fluent, professional ${language} \
+with formal legal register.
+
+CRITICAL: The following fields MUST remain in English exactly as specified:
+- category: one of: ${CATEGORIES}
+- risk_level: one of: informational, low, medium, high
+- applicable_law.source_type: one of: statute_cited, general_principle
+- applicable_law.citations[].code: exactly a code from the provided \
+  whitelist — no translation, no paraphrase
+- title: a short English descriptive title (3-6 words), used as a UI key \
+  and not surfaced as prose to the reader
+
+The instructions below are in English so enum values read precisely; only \
+your OUTPUT prose fields are in ${language}.
+
+`;
+  })();
+
   return `\
-You are a legal risk analyst. ${perspectiveLine}
+${localeDirective}You are a legal risk analyst. ${perspectiveLine}
 
 For each clause, provide:
 1. A category from: ${CATEGORIES}
@@ -440,7 +519,7 @@ ${citationsSection}`;
  */
 export const ANALYSIS_SYSTEM_PROMPT = buildAnalysisSystemPrompt(true);
 
-export const OVERVIEW_SYSTEM_PROMPT = `\
+const OVERVIEW_SYSTEM_PROMPT_EN = `\
 You are a legal document analyst. Your task is to extract high-level metadata \
 from a contract AND inventory every distinct clause it contains.
 
@@ -555,6 +634,60 @@ PII entities (pii_entities):
                   reference numbers). Use sparingly.
 - Return an empty array when the contract contains no such data.`;
 
+/**
+ * Build the overview system prompt for a given locale.
+ *
+ * Pass 0 extracts structural contract metadata plus `key_terms[]` which
+ * is the only prose-facing field. Everything else (`contract_type`,
+ * `role_label`, `jurisdiction_evidence.source_type`,
+ * `jurisdiction_evidence.country`, PII entity kinds, statute codes
+ * downstream) is an enum or defined-term that downstream code branches
+ * on and MUST stay in English — non-EN values would break role
+ * heuristics, sample-contract matchers, and the statute allowlist.
+ *
+ * For `locale === "en"` the output is byte-identical to the pre-Layer-B'
+ * `OVERVIEW_SYSTEM_PROMPT` constant — verified by unit regression test
+ * so Phase 1 is a no-op for English users.
+ */
+export function buildOverviewSystemPrompt(locale: string): string {
+  if (locale === "en") return OVERVIEW_SYSTEM_PROMPT_EN;
+  const language = localeToLanguageName(locale);
+  return `\
+LANGUAGE DIRECTIVE: You must respond in ${language}. Prose output \
+(specifically the \`key_terms[]\` array) must be written in fluent, \
+professional ${language}.
+
+CRITICAL: The following fields MUST remain in English exactly as specified, \
+even though your prose is in ${language}:
+- contract_type: plain English only (e.g. "Freelance Services Agreement", \
+  "Employment Contract", "SaaS Agreement"). This field is used by \
+  downstream pattern matching and any non-English value breaks the UI.
+- jurisdiction_evidence.source_type: one of stated, inferred, unknown.
+- jurisdiction_evidence.country: an ISO-2 EU code (DE, NL, FR, ...) or null.
+- pii_entities[].kind: enum values PERSON, ADDRESS, POSTCODE, PHONE, \
+  EMAIL, IBAN, VAT, ID_NUMBER, DOB, BANK, COMPANY_REG, URL, OTHER.
+
+role_label is a special case: it must be the VERBATIM defined term from \
+the contract (e.g. "Prestataire", "Vermieter", "Locatario") — do not \
+translate it to English and do not translate it to ${language}. Copy it \
+exactly as the contract wrote it.
+
+pii_entities[].text: VERBATIM substring from the contract — never \
+translated, never paraphrased.
+
+The instructions below are in English so enum values read precisely; only \
+your OUTPUT prose fields are in ${language}.
+
+${OVERVIEW_SYSTEM_PROMPT_EN}`;
+}
+
+/**
+ * @deprecated Prefer {@link buildOverviewSystemPrompt}. Retained as a
+ * named export for call-sites that were written before Layer B' and
+ * haven't been migrated yet.
+ */
+export const OVERVIEW_SYSTEM_PROMPT = OVERVIEW_SYSTEM_PROMPT_EN;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -630,7 +763,7 @@ export function reconcileJurisdiction<
  * Part of the AI Act provenance record — auditors use it to correlate
  * stored analyses back to the prompt contract they were produced under.
  */
-export const PROMPT_TEMPLATE_VERSION = "1.1";
+export const PROMPT_TEMPLATE_VERSION = "1.2";
 
 /**
  * Sentinel `provider` value for the legacy-provenance placeholder. The
@@ -666,6 +799,9 @@ export function legacyProvenance(): AnalysisProvenance {
     },
     prompt_template_version: "0.0",
     timestamp: new Date(0).toISOString(),
+    // analysis_locale intentionally omitted: pre-Layer-B' rows have no
+    // recorded locale; the saved-analysis read path treats an absent
+    // value as "unknown" and skips the language-mismatch badge.
   };
 }
 
@@ -682,7 +818,10 @@ export function legacyProvenance(): AnalysisProvenance {
  * assembling the final response), not when the request came in, so
  * auditors reading the saved analysis see when it was produced.
  */
-export function buildProvenance(provider: LLMProvider): AnalysisProvenance {
+export function buildProvenance(
+  provider: LLMProvider,
+  analysisLocale: string = "en",
+): AnalysisProvenance {
   const model = provider.name === "mistral" ? "mistral-small-4" : "gpt-4.1-nano";
   return {
     provider: provider.name,
@@ -698,6 +837,7 @@ export function buildProvenance(provider: LLMProvider): AnalysisProvenance {
     prompt_template_version: PROMPT_TEMPLATE_VERSION,
     timestamp: new Date().toISOString(),
     redaction_location: "client",
+    analysis_locale: analysisLocale,
   };
 }
 
@@ -838,6 +978,7 @@ export async function analyzeContract(
   withCitations: boolean = true,
   userRole?: string | null,
   provider: LLMProvider = getProvider(),
+  locale: string = "en",
 ): Promise<AnalyzeResponse> {
   // Pass 0 — overview (low reasoning effort).
   // temperature=0 + fixed seed pin the output as tightly as the provider
@@ -848,7 +989,7 @@ export async function analyzeContract(
   const { object: rawOverview } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
-    system: OVERVIEW_SYSTEM_PROMPT,
+    system: buildOverviewSystemPrompt(locale),
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
     temperature: 0,
     seed: OVERVIEW_SEED,
@@ -876,6 +1017,7 @@ export async function analyzeContract(
     userRole,
     overview.governing_jurisdiction,
     overview.jurisdiction_evidence,
+    locale,
   );
 
   // Pass 1 — extraction (medium effort)
@@ -883,7 +1025,7 @@ export async function analyzeContract(
   const { object: extraction } = await generateObject({
     model: provider.model("medium"),
     schema: extractionResultSchema,
-    system: EXTRACTION_SYSTEM_PROMPT,
+    system: buildExtractionSystemPrompt(locale),
     prompt: buildExtractionPrompt(text, overview.clause_inventory),
   });
   logPass("extraction", {
@@ -970,6 +1112,6 @@ export async function analyzeContract(
     overview,
     summary,
     clauses: analyzedClauses,
-    provenance: buildProvenance(provider),
+    provenance: buildProvenance(provider, locale),
   };
 }

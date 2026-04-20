@@ -266,6 +266,17 @@ export interface AnalysisProvenance {
    * OCR'd, "hybrid" = mix.
    */
   text_source?: "native" | "ocr" | "hybrid";
+  /**
+   * SP-7 Layer B' — locale the analysis prompts were issued in, i.e.
+   * the language the prose fields (plain_english, risk_explanation,
+   * negotiation_suggestion, unusual_explanation,
+   * applicable_law.observation, key_terms, top_risks) are written in.
+   * ISO 639-1 lowercase (en/fr/de/nl/es/it). Optional so pre-Layer-B'
+   * saved analyses deserialize unchanged — the `/history/[id]` page
+   * treats an absent value as "unknown" and skips the language badge
+   * rather than guessing.
+   */
+  analysis_locale?: string;
 }
 
 /** Full response from POST /api/analyze. */

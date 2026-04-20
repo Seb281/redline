@@ -27,8 +27,8 @@ import {
   extractionResultSchema,
   analyzedClauseSchema,
   OVERVIEW_SEED,
-  OVERVIEW_SYSTEM_PROMPT,
-  EXTRACTION_SYSTEM_PROMPT,
+  buildOverviewSystemPrompt,
+  buildExtractionSystemPrompt,
   buildAnalysisSystemPrompt,
   buildExtractionPrompt,
   buildProvenance,
@@ -69,6 +69,7 @@ function encode(event: AnalysisEvent): Uint8Array {
 export async function generateOverview(
   text: string,
   provider: LLMProvider = getProvider(),
+  locale: string = "en",
 ): Promise<ContractOverview> {
   const start = Date.now();
   // temperature=0 + fixed seed pin the output as tightly as the provider
@@ -78,7 +79,7 @@ export async function generateOverview(
   const { object } = await generateObject({
     model: provider.model("low"),
     schema: contractOverviewSchema,
-    system: OVERVIEW_SYSTEM_PROMPT,
+    system: buildOverviewSystemPrompt(locale),
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
     temperature: 0,
     seed: OVERVIEW_SEED,
@@ -127,13 +128,16 @@ export function streamExtractAndAnalyze(
   jurisdiction?: string | null,
   jurisdictionEvidence?: JurisdictionEvidence | null,
   provider: LLMProvider = getProvider(),
+  locale: string = "en",
 ): ReadableStream<Uint8Array> {
   const analysisSystemPrompt = buildAnalysisSystemPrompt(
     withCitations,
     userRole,
     jurisdiction,
     jurisdictionEvidence ?? null,
+    locale,
   );
+  const extractionSystemPrompt = buildExtractionSystemPrompt(locale);
   // SP-1.6: redaction moved to the client. `text` arrives already
   // scrubbed — ⟦PARTY_A⟧, ⟦EMAIL_1⟧, … tokens in place of real PII.
   // The server never sees the tokenMap, never rehydrates. Streamed
@@ -148,7 +152,7 @@ export function streamExtractAndAnalyze(
         const { object: extraction } = await generateObject({
           model: provider.model("medium"),
           schema: extractionResultSchema,
-          system: EXTRACTION_SYSTEM_PROMPT,
+          system: extractionSystemPrompt,
           prompt: buildExtractionPrompt(text, clauseInventory),
         });
         logPass("extraction", {
@@ -251,7 +255,7 @@ export function streamExtractAndAnalyze(
         controller.enqueue(
           encode({
             type: "complete",
-            data: { ...summary, provenance: buildProvenance(provider) },
+            data: { ...summary, provenance: buildProvenance(provider, locale) },
           }),
         );
       } catch (err) {

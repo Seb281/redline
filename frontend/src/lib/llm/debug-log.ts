@@ -13,7 +13,12 @@
 
 const MAX_STRING_LEN = 40;
 
-export type Pass = "overview" | "redact" | "extraction" | "pass2";
+export type Pass =
+  | "overview"
+  | "redact"
+  | "extraction"
+  | "pass2"
+  | "locale_resolved";
 
 export type MetricValue = number | boolean | string;
 

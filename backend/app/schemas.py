@@ -311,6 +311,15 @@ class ProvenanceModel(BaseModel):
     # SP-1.5: text extraction source. Optional so pre-SP-1.5 payloads
     # deserialize unchanged; ``None`` means "unknown / legacy".
     text_source: Literal["native", "ocr", "hybrid"] | None = None
+    # SP-7 Layer B': locale the analysis prompts were issued in, i.e.
+    # the language the prose fields are written in. Optional so
+    # pre-Layer-B' payloads deserialize unchanged; ``None`` means the
+    # analysis predates locale tracking and its prose language is
+    # unspecified (the frontend skips the language-mismatch badge in
+    # that case). Kept as a plain string (not a Literal enum) so adding
+    # a new routing locale doesn't require a backend migration; the
+    # frontend is the source of truth for the enabled locale set.
+    analysis_locale: str | None = None
 
     @field_validator("provider")
     @classmethod

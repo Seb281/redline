@@ -7,6 +7,7 @@
     "hideRealNames": "Echte namen verbergen",
     "showNames": "Namen weergeven",
     "hideNames": "Namen verbergen",
+    "account": "Account",
     "logOut": "Uitloggen",
     "switchToDark": "Schakel over naar de donkere modus",
     "switchToLight": "Schakel over naar de lichte modus",
@@ -491,8 +492,8 @@
     "rightPortability": "Gegevensoverdraagbaarheid",
     "rightObject": "Bezwaar maken tegen de verwerking",
     "rightComplain": "Dien een klacht in bij een toezichthoudende autoriteit",
-    "rightsNoStorage": "Aangezien wij geen persoonsgegevens op onze servers opslaan, zijn de meeste van deze rechten standaard al gewaarborgd — er is niets om in te zien, te corrigeren of te verwijderen. Je gegevens op <code>localStorage</code> vallen volledig onder jouw controle in je browser.",
-    "rightsContact": "Neem voor vragen contact<email></email> op met .",
+    "rightsNoStorage": "Als je ingelogd bent, kun je je recht op inzage (art. 15) en het recht op wissing (art. 17) rechtstreeks uitoefenen via je <link>accountpagina</link>. \"Mijn gegevens exporteren\" levert één JSON-bestand op met je accountgegevens en elke opgeslagen analyse. \"Mijn account verwijderen\" verwijdert je account en alle bijbehorende gegevens definitief na een getypte bevestiging. Voor anonieme bezoekers is er niets op onze servers om in te zien of te verwijderen — je gegevens op <code>localStorage</code> vallen volledig onder jouw controle in je browser.",
+    "rightsContact": "Neem voor overige vragen contact op met <email></email>.",
     "changesTitle": "Wijzigingen in dit beleid",
     "changesBody": "We kunnen dit beleid van tijd tot tijd aanpassen. De datum onder ‘Laatst bijgewerkt’ bovenaan de pagina geeft de meest recente herziening weer. Bij belangrijke wijzigingen wordt de datum aangepast."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Zelfde niveau",
     "verdictUniqueA": "Alleen in A",
     "verdictUniqueB": "Alleen in B"
+  },
+  "Account": {
+    "title": "Account",
+    "loginPrompt": "Log in om je account te beheren",
+    "backHome": "← Terug naar Redline",
+    "signedInAs": "Ingelogd als <strong>{email}</strong>",
+    "exportHeading": "Exporteer je gegevens",
+    "exportBody": "Download een kopie van alles wat Redline over je bewaart — je accountgegevens en elke opgeslagen analyse, inclusief verlopen analyses die niet meer zichtbaar zijn in je geschiedenis.",
+    "exportAction": "Mijn gegevens exporteren",
+    "exportPreparing": "Voorbereiden…",
+    "exportFailedFallback": "Exporteren mislukt",
+    "deleteHeading": "Verwijder je account",
+    "deleteBody": "Hiermee worden je account en elke opgeslagen analyse definitief verwijderd. Je ontvangt een bevestigingsmail. Deze verwijdering kan niet ongedaan worden gemaakt.",
+    "deleteAction": "Mijn account verwijderen"
+  },
+  "DeleteAccountModal": {
+    "title": "Verwijder je account",
+    "body": "Hiermee worden je account en elke opgeslagen analyse definitief verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "typeToConfirm": "Typ <strong>{email}</strong> om te bevestigen.",
+    "cancel": "Annuleren",
+    "confirm": "Mijn account verwijderen",
+    "deleting": "Bezig met verwijderen…",
+    "failedFallback": "Verwijdering mislukt. Probeer het opnieuw."
   }
 }

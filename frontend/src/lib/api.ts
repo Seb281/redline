@@ -307,3 +307,60 @@ export async function extendAnalysis(id: string): Promise<RetentionState> {
 
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Account (SP-6 — DSAR)
+// ---------------------------------------------------------------------------
+
+/**
+ * Download the authenticated user's full DSAR bundle as JSON.
+ *
+ * GDPR Art 15 (access). The backend sets
+ * `Content-Disposition: attachment`, so the simplest correct UX is a
+ * programmatic anchor click on an object URL built from the response
+ * blob. Filename is derived from the response header when present so
+ * the saved file matches what the backend names it.
+ */
+export async function exportAccount(): Promise<void> {
+  const res = await backendFetch("/api/account/export");
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Export failed"));
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const filename =
+    filenameMatch?.[1] ??
+    `redline-export-${new Date().toISOString().slice(0, 10)}.json`;
+
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(objectUrl);
+}
+
+/**
+ * Permanently delete the authenticated user's account.
+ *
+ * GDPR Art 17 (erasure). The backend requires a typed confirmation
+ * matching the user's email — case-insensitive. On success the server
+ * wipes the user and cascades to analyses / sessions / magic_links,
+ * then clears the session cookie.
+ */
+export async function deleteAccount(confirm: string): Promise<void> {
+  const res = await backendFetch("/api/account", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Account deletion failed"));
+  }
+}

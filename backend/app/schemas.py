@@ -411,3 +411,49 @@ class UpdateAnalysisRequest(BaseModel):
     """
 
     pinned: bool | None = None
+
+
+# --- SP-6 DSAR schemas ---
+
+
+class DeleteAccountRequest(BaseModel):
+    """Typed-confirmation body for DELETE /api/account.
+
+    ``confirm`` must match the authenticated user's email address
+    (case-insensitive) before the server deletes anything. A typed
+    confirmation keeps the destructive endpoint safe from fat-finger
+    requests in a way that a plain "yes" button cannot.
+    """
+
+    confirm: str = Field(min_length=3, max_length=254)
+
+
+class UserExportInfo(BaseModel):
+    """User metadata included in the DSAR export bundle.
+
+    Mirrors the ``users`` table shape but stays JSON-friendly —
+    timestamps are ISO strings so the bundle drops straight into any
+    viewer the user picks.
+    """
+
+    id: str
+    email: str
+    created_at: str
+    last_login_at: str | None = None
+
+
+class DataExportBundle(BaseModel):
+    """GDPR Art 15 (access) — portable JSON bundle for the current user.
+
+    ``schema_version`` bumps whenever the shape changes so downstream
+    consumers can version-gate. ``analyses`` is the full
+    :class:`SavedAnalysisResponse` shape for every row, including
+    expired-unpinned ones that the history UI hides — Art 15 gives a
+    right of access to anything still in the database.
+    """
+
+    schema_version: int
+    exported_at: str
+    user: UserExportInfo
+    analyses: list[SavedAnalysisResponse]
+    retention_policy_days: int

@@ -7,6 +7,7 @@
     "hideRealNames": "Echte Namen verbergen",
     "showNames": "Namen anzeigen",
     "hideNames": "Namen ausblenden",
+    "account": "Konto",
     "logOut": "Abmelden",
     "switchToDark": "Zum Dunkelmodus wechseln",
     "switchToLight": "Zum hellen Modus wechseln",
@@ -491,8 +492,8 @@
     "rightPortability": "Datenübertragbarkeit",
     "rightObject": "Widerspruch gegen die Verarbeitung",
     "rightComplain": "Eine Beschwerde bei einer Aufsichtsbehörde einreichen",
-    "rightsNoStorage": "Da wir keine personenbezogenen Daten auf unseren Servern speichern, sind die meisten dieser Rechte standardmäßig erfüllt – es gibt nichts, worauf zugegriffen, was korrigiert oder was gelöscht werden könnte. Ihre Daten unter <code>localStorage</code> unterliegen vollständig Ihrer Kontrolle in Ihrem Browser.",
-    "rightsContact": "Bei Fragen wenden Sie sich bitte an <email></email>.",
+    "rightsNoStorage": "Wenn Sie angemeldet sind, können Sie die Rechte auf Auskunft (Art. 15) und Löschung (Art. 17) direkt über Ihre <link>Kontoseite</link> ausüben. „Meine Daten exportieren“ gibt ein einzelnes JSON-Bundle zurück, das Ihren Kontodatensatz und jede gespeicherte Analyse enthält. „Mein Konto löschen“ entfernt Ihr Konto und alle zugehörigen Daten nach einer getippten Bestätigung dauerhaft. Für anonyme Besucher gibt es auf unseren Servern nichts, worauf zugegriffen oder was gelöscht werden könnte – Ihre Daten unter <code>localStorage</code> unterliegen vollständig Ihrer Kontrolle in Ihrem Browser.",
+    "rightsContact": "Für sonstige Anfragen wenden Sie sich bitte an <email></email>.",
     "changesTitle": "Änderungen an dieser Richtlinie",
     "changesBody": "Wir behalten uns vor, diese Richtlinie von Zeit zu Zeit zu aktualisieren. Das Datum unter „Zuletzt aktualisiert“ oben auf der Seite gibt den Stand der letzten Überarbeitung wieder. Wesentliche Änderungen werden durch ein aktualisiertes Datum kenntlich gemacht."
   },
@@ -697,5 +698,28 @@
     "verdictSame": "Gleiches Niveau",
     "verdictUniqueA": "Nur in A",
     "verdictUniqueB": "Nur in B"
+  },
+  "Account": {
+    "title": "Konto",
+    "loginPrompt": "Melden Sie sich an, um Ihr Konto zu verwalten",
+    "backHome": "← Zurück zu Redline",
+    "signedInAs": "Angemeldet als <strong>{email}</strong>",
+    "exportHeading": "Ihre Daten exportieren",
+    "exportBody": "Laden Sie eine Kopie aller Daten herunter, die Redline über Sie speichert — Ihren Kontodatensatz und jede gespeicherte Analyse, einschließlich abgelaufener Analysen, die in Ihrem Verlauf nicht mehr sichtbar sind.",
+    "exportAction": "Meine Daten exportieren",
+    "exportPreparing": "Wird vorbereitet…",
+    "exportFailedFallback": "Export fehlgeschlagen",
+    "deleteHeading": "Ihr Konto löschen",
+    "deleteBody": "Dadurch werden Ihr Konto und jede gespeicherte Analyse dauerhaft gelöscht. Sie erhalten eine Bestätigungs-E-Mail. Die Löschung kann nicht rückgängig gemacht werden.",
+    "deleteAction": "Mein Konto löschen"
+  },
+  "DeleteAccountModal": {
+    "title": "Ihr Konto löschen",
+    "body": "Dadurch werden Ihr Konto und jede gespeicherte Analyse dauerhaft gelöscht. Es kann nicht rückgängig gemacht werden.",
+    "typeToConfirm": "Geben Sie <strong>{email}</strong> ein, um zu bestätigen.",
+    "cancel": "Abbrechen",
+    "confirm": "Mein Konto löschen",
+    "deleting": "Wird gelöscht…",
+    "failedFallback": "Löschung fehlgeschlagen. Bitte erneut versuchen."
   }
 }

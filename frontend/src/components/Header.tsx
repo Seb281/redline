@@ -70,12 +70,18 @@ export function Header() {
             {rehydrate ? t("hideNames") : t("showNames")}
           </button>
 
-          {/* User info + logout — only when authenticated */}
+          {/* User info + account + logout — only when authenticated */}
           {!isLoading && isAuthenticated && (
             <>
               <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
                 {user?.email}
               </span>
+              <Link
+                href="/account"
+                className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
+              >
+                {t("account")}
+              </Link>
               <button
                 type="button"
                 onClick={() => logout()}

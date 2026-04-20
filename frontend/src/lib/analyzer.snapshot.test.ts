@@ -315,7 +315,7 @@ describeIfKey("snapshot harness — Mistral provider", () => {
 });
 
 /**
- * SP-7 Layer B' Phase 2 — locale-specific structural harness.
+ * SP-7 Layer B' — locale-specific structural harness.
  *
  * Default-skipped. Opt-in with `SNAPSHOT_LOCALE_TEST=1` alongside a
  * Mistral key. Purpose: verify the pipeline keeps its enum invariants
@@ -324,10 +324,9 @@ describeIfKey("snapshot harness — Mistral provider", () => {
  * quality gate the human reviewer still owns — these tests only guard
  * against *structural* regressions from locale injection.
  *
- * Phase 2 ships ES + DE (user self-review). FR/IT/NL remain parked
- * until external native-speaker sign-off (see roadmap §12). Adding
- * them here later is mechanical: copy one of these blocks and pass
- * the matching locale code.
+ * Coverage: ES + DE (Phase 2) + FR + IT + NL (Phase 4). The six-locale
+ * routing set is now fully covered on the machine-check side; live
+ * qualitative review per locale is still the maintainer's job.
  */
 const VALID_RISK_LEVELS = new Set([
   "informational",
@@ -352,7 +351,7 @@ const VALID_CATEGORIES = new Set([
 ]);
 const VALID_SOURCE_TYPES = new Set(["statute_cited", "general_principle"]);
 
-describeIfLocaleRun("snapshot harness — locale-injected prompts (Phase 2)", () => {
+describeIfLocaleRun("snapshot harness — locale-injected prompts", () => {
   const provider = getProvider("mistral");
 
   it(
@@ -442,6 +441,140 @@ describeIfLocaleRun("snapshot harness — locale-injected prompts (Phase 2)", ()
       );
       for (const code of codes) {
         expect(["DE", "EU"]).toContain(code.split("_")[0]);
+      }
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "FR locale: enum fields stay English, citations stay FR/EU, analysis_locale='fr'",
+    async () => {
+      const result = await analyzeContract(
+        FR_EMPLOYMENT_TEXT,
+        "fast",
+        true,
+        "Salarié",
+        provider,
+        "fr",
+      );
+
+      expect(result.provenance.analysis_locale).toBe("fr");
+      expect(result.provenance.provider).toBe("mistral");
+
+      expect(result.overview.jurisdiction_evidence?.country).toBe("FR");
+      expect(result.clauses.length).toBeGreaterThanOrEqual(8);
+
+      for (const c of result.clauses) {
+        expect(VALID_CATEGORIES.has(c.category)).toBe(true);
+        expect(VALID_RISK_LEVELS.has(c.risk_level)).toBe(true);
+        if (c.applicable_law) {
+          expect(VALID_SOURCE_TYPES.has(c.applicable_law.source_type)).toBe(
+            true,
+          );
+        }
+      }
+
+      // FR employment fixture is the non-compete-without-contrepartie
+      // case — the FR_CODE_TRAVAIL_NONCOMPETE citation must still fire
+      // under a French-language prompt.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
+
+      const codes = result.clauses.flatMap(
+        (c) => c.applicable_law?.citations?.map((cit) => cit.code) ?? [],
+      );
+      for (const code of codes) {
+        expect(["FR", "EU"]).toContain(code.split("_")[0]);
+      }
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "IT locale: enum fields stay English, citations stay IT/EU, analysis_locale='it'",
+    async () => {
+      const result = await analyzeContract(
+        IT_EMPLOYMENT_TEXT,
+        "fast",
+        true,
+        "Lavoratrice",
+        provider,
+        "it",
+      );
+
+      expect(result.provenance.analysis_locale).toBe("it");
+      expect(result.provenance.provider).toBe("mistral");
+
+      expect(result.overview.jurisdiction_evidence?.country).toBe("IT");
+      expect(result.clauses.length).toBeGreaterThanOrEqual(8);
+
+      for (const c of result.clauses) {
+        expect(VALID_CATEGORIES.has(c.category)).toBe(true);
+        expect(VALID_RISK_LEVELS.has(c.risk_level)).toBe(true);
+        if (c.applicable_law) {
+          expect(VALID_SOURCE_TYPES.has(c.applicable_law.source_type)).toBe(
+            true,
+          );
+        }
+      }
+
+      const codes = result.clauses.flatMap(
+        (c) => c.applicable_law?.citations?.map((cit) => cit.code) ?? [],
+      );
+      // At least one IT citation is expected for an IT employment fixture;
+      // guards against a locale-injected prompt accidentally degrading to
+      // general_principle for every clause.
+      const itCodes = codes.filter((code) => code.startsWith("IT_"));
+      expect(itCodes.length).toBeGreaterThan(0);
+      for (const code of codes) {
+        expect(["IT", "EU"]).toContain(code.split("_")[0]);
+      }
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "NL locale: enum fields stay English, citations stay NL/EU, analysis_locale='nl'",
+    async () => {
+      const result = await analyzeContract(
+        NL_TEXT,
+        "fast",
+        true,
+        "Contractor",
+        provider,
+        "nl",
+      );
+
+      expect(result.provenance.analysis_locale).toBe("nl");
+      expect(result.provenance.provider).toBe("mistral");
+
+      expect(result.overview.jurisdiction_evidence?.country).toBe("NL");
+      expect(result.clauses.length).toBeGreaterThanOrEqual(8);
+
+      for (const c of result.clauses) {
+        expect(VALID_CATEGORIES.has(c.category)).toBe(true);
+        expect(VALID_RISK_LEVELS.has(c.risk_level)).toBe(true);
+        if (c.applicable_law) {
+          expect(VALID_SOURCE_TYPES.has(c.applicable_law.source_type)).toBe(
+            true,
+          );
+        }
+      }
+
+      // NL freelance fixture has a stated-jurisdiction clause, so at
+      // least one citation should survive locale injection.
+      const hasStatute = result.clauses.some(
+        (c) => c.applicable_law?.source_type === "statute_cited",
+      );
+      expect(hasStatute).toBe(true);
+
+      const codes = result.clauses.flatMap(
+        (c) => c.applicable_law?.citations?.map((cit) => cit.code) ?? [],
+      );
+      for (const code of codes) {
+        expect(["NL", "EU"]).toContain(code.split("_")[0]);
       }
     },
     TIMEOUT_MS,

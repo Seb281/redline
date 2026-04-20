@@ -467,8 +467,6 @@
     "processorsIntro": "For a per-provider breakdown — including region, data categories, and legal basis — see the <link>data residency page</link>.",
     "mistralLabel": "Mistral AI",
     "mistralBody": "(<code>mistral-small-latest</code>) — Contract text is sent to Mistral La Plateforme for clause extraction and risk analysis. Mistral is a French company; the La Plateforme API is hosted in the European Union (Paris region). Mistral processes this data under their <dpa>Data Processing Addendum</dpa> and <privacy>Privacy Policy</privacy>.",
-    "openaiLabel": "OpenAI",
-    "openaiBody": "(<code>gpt-4.1-nano</code>) — Kept as a rollback target, activated only when the operator sets <code>LLM_PROVIDER=openai</code>. In the default configuration, no contract text is sent to OpenAI. When the rollback is active, OpenAI processes the data under their <dpa>Data Processing Addendum</dpa> and <privacy>Privacy Policy</privacy>.",
     "vercelLabel": "Vercel",
     "vercelBody": "— Frontend hosting. <privacy>Privacy Policy</privacy>.",
     "railwayLabel": "Railway",
@@ -481,8 +479,6 @@
     "retentionLocalLabel": "localStorage data",
     "retentionLocalBody": "Persists in your browser until you clear it. No server-side copy exists.",
     "transfersTitle": "International data transfers",
-    "transfersDefault": "In the default configuration, contract text is processed by Mistral La Plateforme within the European Union (Paris). No transfer outside the EU/EEA occurs for the AI analysis step.",
-    "transfersRollback": "If the operator has activated the OpenAI rollback, contract text is processed in the United States under OpenAI's Data Processing Addendum, which includes Standard Contractual Clauses (SCCs) as the transfer mechanism. Vercel and Railway may process operational metadata outside the EU under their respective data processing agreements.",
     "rightsTitle": "Your rights",
     "rightsIntro": "Under GDPR, you have the right to:",
     "rightAccess": "Access your personal data",
@@ -495,7 +491,9 @@
     "rightsNoStorage": "If you are signed in, you can exercise the rights of access (Art. 15) and erasure (Art. 17) directly from your <link>account page</link>. \"Export my data\" returns a single JSON bundle containing your account record and every saved analysis. \"Delete my account\" permanently removes your account and all associated data after a typed confirmation. For anonymous visitors, there is nothing on our servers to access or delete — your <code>localStorage</code> data is entirely under your control in your browser.",
     "rightsContact": "For any other requests, contact <email></email>.",
     "changesTitle": "Changes to this policy",
-    "changesBody": "We may update this policy from time to time. The \"Last updated\" date at the top of the page reflects the most recent revision. Material changes will be reflected by an updated date."
+    "changesBody": "We may update this policy from time to time. The \"Last updated\" date at the top of the page reflects the most recent revision. Material changes will be reflected by an updated date.",
+    "transfersAI": "Contract text is processed by Mistral La Plateforme within the European Union (Paris). No transfer outside the EU/EEA occurs for the AI analysis step.",
+    "transfersOperational": "Vercel and Railway may process operational metadata (request headers, IP addresses during a request) outside the EU under their respective data processing agreements. No contract text leaves the EU."
   },
   "DataResidency": {
     "metaTitle": "Data residency — Redline",
@@ -506,7 +504,7 @@
     "defaultTitle": "Default data flows",
     "defaultDesc": "These processors are involved every time you use Redline.",
     "optionalTitle": "Optional data flows",
-    "optionalDesc": "These processors only come into play when a specific feature — saved history, magic-link sign-in, or the non-default LLM rollback — is enabled by the operator.",
+    "optionalDesc": "These processors only come into play when a specific feature — saved history or magic-link sign-in — is enabled by the operator.",
     "configNote": "This page is rendered directly from the typed <code>frontend/src/lib/data-flows.ts</code> config so it tracks the live configuration without manual drift.",
     "i18nNote": "UI chrome is translated to English, French, German, Dutch, Spanish, and Italian. Analysis output (clause summaries, risk explanations, chat answers) is produced natively by Mistral — no intermediate machine-translation service touches the contract text. Each locale is enabled only after a native speaker reviews the prompts; locales still pending review fall back to English analysis so no user sees unreviewed LLM legal prose in their language.",
     "data": "Data",
@@ -538,13 +536,6 @@
           "Extracted contract text before redaction (server-side parser only)"
         ],
         "notes": "Contract text is held in memory during the upload → parse → return cycle and then discarded. Not logged, not stored on disk beyond the request lifecycle."
-      },
-      "openai": {
-        "purpose": "Rollback LLM provider — only active when LLM_PROVIDER=openai.",
-        "dataCategories": [
-          "Pattern-redacted contract text (same shape as the Mistral flow)"
-        ],
-        "notes": "Inactive by default. Only enabled by the operator during a Mistral incident. International transfer relies on OpenAI's Standard Contractual Clauses (SCCs)."
       },
       "neon": {
         "purpose": "Managed Postgres for saved analyses, magic-link sessions, and clause embeddings.",

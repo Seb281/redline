@@ -129,12 +129,9 @@ describe("buildProvenance", () => {
     expect(prov.region).toBe("eu-west-paris");
   });
 
-  it("derives model id from provider name", () => {
+  it("records the Mistral model identifier on provenance", () => {
     expect(buildProvenance(fakeProvider({ name: "mistral" })).model).toBe(
       "mistral-small-4",
-    );
-    expect(buildProvenance(fakeProvider({ name: "openai" })).model).toBe(
-      "gpt-4.1-nano",
     );
   });
 

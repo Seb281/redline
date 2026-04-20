@@ -6,7 +6,7 @@
  */
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
-import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
+import { getProvider } from "@/lib/llm/provider";
 import { resolveAnalysisLocale } from "@/lib/analysis-locale";
 import { logPass } from "@/lib/llm/debug-log";
 import type { AnalysisMode, JurisdictionEvidence } from "@/types";
@@ -54,14 +54,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Dev-only `?provider=` override; ignored in production.
-  const url = new URL(request.url);
-  const overrideRaw = url.searchParams.get("provider");
-  const override =
-    isOverrideAllowed() && (overrideRaw === "openai" || overrideRaw === "mistral")
-      ? (overrideRaw as ProviderName)
-      : undefined;
-  const provider = getProvider(override);
+  const provider = getProvider();
 
   // SP-7 Layer B' — resolve analysis locale (validated + override-aware).
   const { effective, requested, overridden } = resolveAnalysisLocale(body.locale);

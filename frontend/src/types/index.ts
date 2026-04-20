@@ -233,7 +233,7 @@ export type ReasoningEffortLabel = "low" | "medium" | "high";
 
 /** Per-analysis provenance metadata for EU AI Act transparency + auditability. */
 export interface AnalysisProvenance {
-  /** Provider name as configured at runtime, e.g. "mistral" or "openai". */
+  /** Provider name as configured at runtime (currently always "mistral"). */
   provider: string;
   /** Logical model identifier, e.g. "mistral-small-4". */
   model: string;

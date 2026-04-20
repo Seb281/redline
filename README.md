@@ -19,7 +19,7 @@ Contract (PDF/DOCX)
        │
   Extracted text
        │
-  [ Frontend LLM Pipeline ]  ─── Vercel AI SDK + OpenAI (streaming)
+  [ Frontend LLM Pipeline ]  ─── Vercel AI SDK + Mistral (Paris, EU — streaming)
        │
   Pass 0: Overview ──── metadata, parties, jurisdiction, clause inventory
        │
@@ -66,7 +66,7 @@ Monorepo with two independent apps:
 
 ### Frontend
 
-All LLM analysis runs in the frontend via Vercel AI SDK + OpenAI. The frontend manages a state machine (`idle → analyzing_overview → awaiting_role → analyzing → complete`) and streams results into the UI as they arrive.
+All LLM analysis runs in the frontend via the Vercel AI SDK against Mistral La Plateforme (Paris, EU). The frontend manages a state machine (`idle → analyzing_overview → awaiting_role → analyzing → complete`) and streams results into the UI as they arrive.
 
 ### Backend
 

@@ -7,7 +7,7 @@
  */
 
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
+import { getProvider } from "@/lib/llm/provider";
 import { buildChatContext } from "@/lib/chat-context";
 import { redact } from "@/lib/redaction";
 import { heuristicLabels, normalizeLabel, disambiguateLabels } from "@/lib/redaction/role-heuristics";
@@ -50,15 +50,7 @@ export async function POST(request: Request) {
   const messages: UIMessage[] = body.messages ?? [];
   const analysis: AnalyzeResponse | null = body.analysis ?? null;
 
-  // Dev-only `?provider=` override: lets local testing swap providers
-  // without restarting the server. Gate keeps this off in production.
-  const url = new URL(request.url);
-  const overrideRaw = url.searchParams.get("provider");
-  const override =
-    isOverrideAllowed() && (overrideRaw === "openai" || overrideRaw === "mistral")
-      ? (overrideRaw as ProviderName)
-      : undefined;
-  const provider = getProvider(override);
+  const provider = getProvider();
 
   // Enforce message limit
   if (messages.length > MAX_MESSAGES) {

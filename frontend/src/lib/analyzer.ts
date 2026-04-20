@@ -446,19 +446,21 @@ non-drafting party — the freelancer, employee, or smaller company.`;
     if (locale === "en") return "";
     const language = localeToLanguageName(locale);
     return `\
-LANGUAGE DIRECTIVE: You must respond in ${language}. All explanatory prose \
-(plain_english, risk_explanation, negotiation_suggestion, unusual_explanation, \
-applicable_law.observation) must be written in fluent, professional ${language} \
-with formal legal register.
+LANGUAGE DIRECTIVE: You must respond in ${language}. All user-facing prose \
+(title, plain_english, risk_explanation, negotiation_suggestion, \
+unusual_explanation, applicable_law.observation) must be written in fluent, \
+professional ${language} with formal legal register. The title field is \
+rendered as a heading to the end user — localise it, do not leave it in \
+English.
 
-CRITICAL: The following fields MUST remain in English exactly as specified:
+CRITICAL: The following machine fields MUST remain in English exactly as \
+specified (they are enum values / codes consumed by downstream UI and \
+validators — translation breaks them):
 - category: one of: ${CATEGORIES}
 - risk_level: one of: informational, low, medium, high
 - applicable_law.source_type: one of: statute_cited, general_principle
 - applicable_law.citations[].code: exactly a code from the provided \
   whitelist — no translation, no paraphrase
-- title: a short English descriptive title (3-6 words), used as a UI key \
-  and not surfaced as prose to the reader
 
 The instructions below are in English so enum values read precisely; only \
 your OUTPUT prose fields are in ${language}.

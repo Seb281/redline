@@ -58,6 +58,7 @@ function useFilteredClauses(
 export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave }: ReportViewProps) {
   const t = useTranslations("ReportView");
   const tExport = useTranslations("Export");
+  const tCat = useTranslations("ClauseCategory");
 
   /**
    * Resolve all Markdown export labels into a plain object. The
@@ -100,7 +101,22 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       low: tExport("riskLevel.low"),
       informational: tExport("riskLevel.informational"),
     },
-  }), [tExport]);
+    categoryLabel: {
+      non_compete: tCat("non_compete"),
+      liability: tCat("liability"),
+      termination: tCat("termination"),
+      ip_assignment: tCat("ip_assignment"),
+      confidentiality: tCat("confidentiality"),
+      governing_law: tCat("governing_law"),
+      indemnification: tCat("indemnification"),
+      data_protection: tCat("data_protection"),
+      payment_terms: tCat("payment_terms"),
+      limitation_of_liability: tCat("limitation_of_liability"),
+      force_majeure: tCat("force_majeure"),
+      dispute_resolution: tCat("dispute_resolution"),
+      other: tCat("other"),
+    },
+  }), [tExport, tCat]);
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ClauseCategory | "all">("all");

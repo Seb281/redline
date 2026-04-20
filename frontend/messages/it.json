@@ -129,6 +129,21 @@
     "originalText": "Testo originale della clausola",
     "askAbout": "Chiedi maggiori informazioni su questa clausola →"
   },
+  "ClauseCategory": {
+    "non_compete": "Clausola di non concorrenza",
+    "liability": "Responsabilità",
+    "termination": "Cessazione",
+    "ip_assignment": "Cessione di diritti di proprietà intellettuale",
+    "confidentiality": "Riservatezza",
+    "governing_law": "Legge applicabile",
+    "indemnification": "Indennizzo",
+    "data_protection": "Protezione dei dati",
+    "payment_terms": "Condizioni di pagamento",
+    "limitation_of_liability": "Limitazione di responsabilità",
+    "force_majeure": "Forza maggiore",
+    "dispute_resolution": "Risoluzione delle controversie",
+    "other": "Altro"
+  },
   "ClauseFilters": {
     "allRisks": "Tutti i rischi",
     "high": "Alto",
@@ -136,21 +151,6 @@
     "low": "Basso",
     "info": "Informazioni",
     "allCategories": "Tutte le categorie",
-    "cat": {
-      "Non-Compete": "Clausola di non concorrenza",
-      "Liability": "Responsabilità",
-      "Termination": "Cessazione",
-      "IP Assignment": "Cessione di diritti di proprietà intellettuale",
-      "Confidentiality": "Riservatezza",
-      "Governing Law": "Legge applicabile",
-      "Indemnification": "Indennizzo",
-      "Data Protection": "Protezione dei dati",
-      "Payment Terms": "Condizioni di pagamento",
-      "Limitation of Liability": "Limitazione di responsabilità",
-      "Force Majeure": "Forza maggiore",
-      "Dispute Resolution": "Risoluzione delle controversie",
-      "Other": "Altro"
-    },
     "sortRiskHighLow": "Rischio: alto → basso",
     "sortRiskLowHigh": "Rischio: Basso → Alto",
     "sortCategory": "Categoria",

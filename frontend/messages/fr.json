@@ -639,5 +639,56 @@
   },
   "AnalysisLocalePicker": {
     "label": "Langage d'analyse"
+  },
+  "Compare": {
+    "pageTitle": "Compare contracts",
+    "pageSubtitle": "Drop two analysed contracts side by side. See which one leans riskier, where they differ, and what's unique to each.",
+    "slotAHeading": "Contract A",
+    "slotBHeading": "Contract B",
+    "slotRemove": "Remove",
+    "slotLoading": "Analysing {label}…",
+    "slotTryAgain": "Try again",
+    "pickerSamplesHeading": "Pick a sample",
+    "pickerSavedShow": "Or load a saved analysis",
+    "pickerSavedHide": "Hide saved analyses",
+    "pickerSavedLoading": "Loading saved analyses…",
+    "pickerSavedEmpty": "No saved analyses yet.",
+    "pickerLoginToUseSaved": "Log in to load one of your saved analyses.",
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "statRiskierIn": "Riskier in {label}",
+    "statUniqueToOne": "Unique to one",
+    "statSameRisk": "Same risk level",
+    "leanA": "Overall: {label} leans riskier",
+    "leanB": "Overall: {label} leans riskier",
+    "leanComparable": "Overall: comparable risk",
+    "jurisdictionPair": "{a} vs {b}",
+    "jurisdictionUnknown": "—",
+    "filterAll": "All",
+    "filterDifferences": "Differences",
+    "filterHigherIn": "Higher in {label}",
+    "filterUnique": "Unique",
+    "filterGroupLabel": "Filter comparison rows",
+    "noMatchingClause": "No matching clause",
+    "noMatchingFilter": "No rows match this filter.",
+    "samples": {
+      "nl_freelance": "NL — Freelance agreement",
+      "fr_employment": "FR — Employment contract",
+      "de_saas_dpa": "DE — SaaS + DPA",
+      "es_saas_services": "ES — SaaS / services agreement",
+      "it_employment": "IT — Employment contract",
+      "pl_distribution": "PL — Distribution agreement"
+    },
+    "errors": {
+      "sampleFailed": "Sample analysis failed",
+      "savedFailed": "Could not load saved analysis",
+      "savedListFailed": "Could not load saved analyses"
+    }
+  },
+  "CompareClauseRow": {
+    "verdictHigherA": "Higher in A",
+    "verdictHigherB": "Higher in B",
+    "verdictSame": "Same level",
+    "verdictUniqueA": "Only in A",
+    "verdictUniqueB": "Only in B"
   }
 }

@@ -1,5 +1,8 @@
 /** Color-coded risk level badge using CSS variable risk tokens. */
 
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { RiskLevel } from "@/types";
 
 const STYLES: Record<RiskLevel, string> = {
@@ -15,11 +18,12 @@ interface RiskBadgeProps {
 
 /** Renders a small colored badge indicating risk level. */
 export function RiskBadge({ level }: RiskBadgeProps) {
+  const t = useTranslations("RiskBadge");
   return (
     <span
       className={`inline-block rounded px-2.5 py-1 text-sm font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
     >
-      {level === "informational" ? "info" : `${level} risk`}
+      {level === "informational" ? t("info") : t("level", { level })}
     </span>
   );
 }

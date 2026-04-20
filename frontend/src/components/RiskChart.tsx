@@ -1,5 +1,8 @@
 /** Mini donut chart showing risk level distribution. */
 
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { RiskBreakdown } from "@/types";
 
 interface RiskChartProps {
@@ -9,6 +12,7 @@ interface RiskChartProps {
 /** SVG donut chart for risk distribution — renders inline at 80x80.
  *  Uses CSS variables for stroke colors so dark mode adapts automatically. */
 export function RiskChart({ breakdown }: RiskChartProps) {
+  const t = useTranslations("RiskChart");
   const info = breakdown.informational ?? 0;
   const total = breakdown.high + breakdown.medium + breakdown.low + info;
   if (total === 0) return null;
@@ -33,7 +37,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="90" height="90" viewBox="0 0 80 80" role="img" aria-label={`Risk distribution: ${breakdown.high} high, ${breakdown.medium} medium, ${breakdown.low} low, ${info} informational`}>
+      <svg width="90" height="90" viewBox="0 0 80 80" role="img" aria-label={t("ariaLabel", { high: breakdown.high, medium: breakdown.medium, low: breakdown.low, info })}>
         <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
         {/* Informational (gray) — drawn first (bottom layer) */}
         {infoPct > 0 && (
@@ -83,7 +87,7 @@ export function RiskChart({ breakdown }: RiskChartProps) {
           {total}
         </text>
       </svg>
-      <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">clauses</p>
+      <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">{t("clauses", { count: total })}</p>
     </div>
   );
 }

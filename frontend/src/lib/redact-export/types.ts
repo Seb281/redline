@@ -145,10 +145,28 @@ export type RedactStatus =
   | "complete"
   | "error";
 
-/** Normalised pipeline error surfaced to the UI. */
+/**
+ * Normalised pipeline error surfaced to the UI.
+ *
+ * `code` is a stable machine-readable identifier; the consumer picks
+ * the localized copy via `t(\`errors.${code}\`)`. `detail` carries a
+ * free-form message from a nested failure (e.g. pdfjs parse error)
+ * that the UI can optionally append after the translated headline —
+ * it is not itself translated.
+ */
+export type PipelineErrorCode =
+  | "NON_PDF"
+  | "FILE_TOO_LARGE"
+  | "SCANNED_PDF"
+  | "EXTRACT_FAILED"
+  | "OVERVIEW_UNAVAILABLE"
+  | "BUILD_FAILED";
+
 export interface PipelineError {
   stage: "upload" | "extract" | "overview" | "redact" | "build";
-  message: string;
+  code: PipelineErrorCode;
+  /** Untranslated diagnostic string from a nested exception. Optional. */
+  detail?: string;
   /** If true, the `/redact` flow stays usable and can retry; otherwise requires "Start over". */
   recoverable: boolean;
 }

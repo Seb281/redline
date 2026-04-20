@@ -3,6 +3,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -23,6 +24,7 @@ export function FileUpload({
   isUploading,
   error,
 }: FileUploadProps) {
+  const t = useTranslations("FileUpload");
   const [isDragging, setIsDragging] = useState(false);
   // Default ON: citations are the headline feature of the report, so the
   // toggle lets power users opt out for cheaper/faster runs instead of
@@ -85,10 +87,10 @@ export function FileUpload({
         </div>
 
         <p className="mb-1.5 text-lg font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-          Drop your contract here
+          {t("dropHere")}
         </p>
         <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          PDF or DOCX — up to 10 MB
+          {t("accepted")}
         </p>
 
         {isUploading ? (
@@ -96,7 +98,7 @@ export function FileUpload({
             <div className="mb-2.5 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
               <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style={{ width: "60%" }} />
             </div>
-            <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">Uploading...</p>
+            <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">{t("uploading")}</p>
           </div>
         ) : (
           <>
@@ -105,7 +107,7 @@ export function FileUpload({
               onClick={() => inputRef.current?.click()}
               className="rounded bg-[var(--text-primary)] px-7 py-3 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
             >
-              Browse files
+              {t("browseFiles")}
             </button>
 
             {/* Analysis toggle */}
@@ -128,11 +130,11 @@ export function FileUpload({
                       }`}
                     />
                   </button>
-                  Citations
+                  {t("citations")}
                 </label>
                 {/* Tooltip */}
                 <div className="pointer-events-none absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3.5 py-2 text-[15px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
-                  Quote verbatim clause text in footnotes (slower, costlier)
+                  {t("citationsTooltip")}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--text-primary)]" />
                 </div>
               </div>

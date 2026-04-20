@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { screen, cleanup } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { ApplicableLawCite } from "./ApplicableLawCite";
 
 describe("ApplicableLawCite", () => {

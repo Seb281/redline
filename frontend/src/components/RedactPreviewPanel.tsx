@@ -15,6 +15,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { TokenKind, TokenRange } from "@/lib/redact-export/types";
 
 interface RedactPreviewPanelProps {
@@ -26,44 +27,6 @@ interface RedactPreviewPanelProps {
   onConfirm: (disabledKinds: Set<TokenKind>) => void;
   /** Fires when the user backs out — resets the hook to idle. */
   onCancel: () => void;
-}
-
-/** Human-readable plural label per kind. */
-function kindLabel(kind: TokenKind): string {
-  switch (kind) {
-    case "PERSON":
-      return "People";
-    case "ORG":
-      return "Organisations";
-    case "EMAIL":
-      return "Email addresses";
-    case "PHONE":
-      return "Phone numbers";
-    case "IBAN":
-      return "IBANs";
-    case "VAT":
-      return "VAT numbers";
-    case "ADDRESS":
-      return "Addresses";
-    case "POSTCODE":
-      return "Postcodes";
-    case "ID_NUMBER":
-      return "ID numbers";
-    case "DOB":
-      return "Dates of birth";
-    case "BANK":
-      return "Bank details";
-    case "COMPANY_REG":
-      return "Company registrations";
-    case "URL":
-      return "URLs";
-    case "DATE":
-      return "Dates";
-    case "MONEY":
-      return "Amounts";
-    default:
-      return "Other";
-  }
 }
 
 interface KindGroup {
@@ -125,6 +88,8 @@ export function RedactPreviewPanel({
   onConfirm,
   onCancel,
 }: RedactPreviewPanelProps) {
+  const t = useTranslations("RedactPreviewPanel");
+  const kindLabel = (kind: TokenKind): string => t(`kinds.${kind}`);
   // Disabled = kinds that the user has turned OFF (their tokens will NOT be
   // redacted). Default is all kinds enabled (nothing disabled).
   const [disabledKinds, setDisabledKinds] = useState<Set<TokenKind>>(
@@ -157,20 +122,20 @@ export function RedactPreviewPanel({
       data-testid="redact-preview-panel"
     >
       <p className="mb-1 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-        Review what will be redacted
+        {t("label")}
       </p>
       <h3 className="mb-2 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-        Before building your redacted PDF
+        {t("heading")}
       </h3>
       <p className="mb-5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        Toggle a category to remove it from redaction. All categories are on by default.
+        {t("description")}
       </p>
 
       {/* Kind-level toggle rows */}
       <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] divide-y divide-[var(--border-primary)]">
         {groups.length === 0 && (
           <p className="px-4 py-4 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-            No sensitive entities detected in this document.
+            {t("noEntities")}
           </p>
         )}
         {groups.map(({ kind, tokens: kindTokens }) => {
@@ -238,22 +203,26 @@ export function RedactPreviewPanel({
         onClick={() => setShowInline((v) => !v)}
         className="mt-4 text-[13px] text-[var(--text-tertiary)] underline-offset-2 hover:underline"
       >
-        {showInline ? "▾" : "▸"} {showInline ? "Hide" : "Show"} preview
+        {showInline ? t("hidePreview") : t("showPreview")}
       </button>
       {showInline && (
         <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
           {scrubbed}
           {fullText.length > 800 && (
             <span className="italic text-[var(--text-muted)]">
-              {"\n"}… (first 800 chars shown)
+              {"\n"}
+              {t("truncNote")}
             </span>
           )}
         </pre>
       )}
 
       <p className="mt-4 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        {activeCount} of {totalCount} matches will be redacted ·{" "}
-        {totalCount - activeCount} skipped
+        {t("countText", {
+          active: activeCount,
+          total: totalCount,
+          skipped: totalCount - activeCount,
+        })}
       </p>
 
       <div className="mt-5 flex items-center justify-between">
@@ -262,14 +231,14 @@ export function RedactPreviewPanel({
           onClick={onCancel}
           className="rounded px-4 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
         >
-          Cancel
+          {t("cancel")}
         </button>
         <button
           type="button"
           onClick={() => onConfirm(new Set(disabledKinds))}
           className="rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90"
         >
-          Redact → Build PDF
+          {t("buildPdf")}
         </button>
       </div>
     </div>

@@ -9,6 +9,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AnalyzeResponse } from "@/types";
@@ -31,6 +32,7 @@ export function ChatPanel({
   initialQuestion,
   onInitialQuestionConsumed,
 }: ChatPanelProps) {
+  const t = useTranslations("ChatPanel");
   const { messages, sendMessage, status, stop, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -101,13 +103,13 @@ export function ChatPanel({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
           <h2 className="text-[17px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-            Ask about this contract
+            {t("heading")}
           </h2>
           <button
             type="button"
             onClick={onToggle}
             className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-            aria-label="Close chat"
+            aria-label={t("close")}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -120,12 +122,12 @@ export function ChatPanel({
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <p className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] mb-3">
-                Ask follow-up questions about your contract
+                {t("empty")}
               </p>
               <div className="space-y-2 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-                <p>&ldquo;Is the non-compete clause enforceable?&rdquo;</p>
-                <p>&ldquo;What should I negotiate first?&rdquo;</p>
-                <p>&ldquo;Summarize the key risks&rdquo;</p>
+                <p>&ldquo;{t("example1")}&rdquo;</p>
+                <p>&ldquo;{t("example2")}&rdquo;</p>
+                <p>&ldquo;{t("example3")}&rdquo;</p>
               </div>
             </div>
           )}
@@ -147,7 +149,7 @@ export function ChatPanel({
             <textarea
               ref={inputRef}
               rows={1}
-              placeholder={messages.length >= 10 ? "Chat limit reached" : "Ask a question..."}
+              placeholder={messages.length >= 10 ? t("placeholderLimit") : t("placeholder")}
               disabled={messages.length >= 10}
               onKeyDown={handleKeyDown}
               className="flex-1 resize-none rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none theme-transition"
@@ -157,12 +159,12 @@ export function ChatPanel({
               disabled={status !== "ready" || messages.length >= 10}
               className="rounded bg-[var(--accent)] px-4 py-2.5 text-[15px] font-medium text-white font-[var(--font-body)] transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send
+              {t("send")}
             </button>
           </form>
           {messages.length >= 10 && (
             <p className="mt-2 text-[13px] text-[var(--accent)] font-[var(--font-body)]">
-              Chat limit reached. Start a new analysis to continue.
+              {t("limitReached")}
             </p>
           )}
           {status === "streaming" && (
@@ -171,7 +173,7 @@ export function ChatPanel({
               onClick={() => stop()}
               className="mt-2 text-[13px] text-[var(--text-muted)] font-[var(--font-body)] hover:underline"
             >
-              Stop generating
+              {t("stopGenerating")}
             </button>
           )}
           {messages.length > 0 && status === "ready" && (
@@ -180,7 +182,7 @@ export function ChatPanel({
               onClick={() => setMessages([])}
               className="mt-2 text-[13px] text-[var(--text-muted)] font-[var(--font-body)] hover:underline"
             >
-              Clear chat
+              {t("clearChat")}
             </button>
           )}
         </div>

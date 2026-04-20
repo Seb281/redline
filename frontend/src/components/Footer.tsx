@@ -1,15 +1,27 @@
-/** Minimal site footer with privacy policy link. */
+/**
+ * Minimal site footer with privacy policy link.
+ *
+ * Server component — relies on the parent `[locale]` layout having
+ * called `setRequestLocale(locale)` so `getTranslations()` resolves
+ * without an explicit `locale` argument. If this component is ever
+ * mounted outside the `[locale]` segment (or in a route that skips
+ * `setRequestLocale`), translations will fall back to the default
+ * locale instead of the requested one.
+ */
 
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 
-export function Footer() {
+export async function Footer() {
+  const t = await getTranslations("Footer");
+
   return (
     <footer className="mx-auto mt-12 max-w-4xl border-t border-[var(--border-primary)] px-5 py-5 text-center sm:px-7">
       <p className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-        Redline{" "}
+        {t("brand")}{" "}
         <span className="mx-1">&middot;</span>{" "}
         <Link href="/privacy" className="hover:text-[var(--text-secondary)] hover:underline">
-          Privacy Policy
+          {t("privacyPolicy")}
         </Link>
         <span className="mx-1">&middot;</span>{" "}
         <a
@@ -18,7 +30,7 @@ export function Footer() {
           rel="noopener noreferrer"
           className="hover:text-[var(--text-secondary)] hover:underline"
         >
-          Portfolio
+          {t("portfolio")}
         </a>
       </p>
     </footer>

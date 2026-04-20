@@ -12,6 +12,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ApplicableLaw } from "@/types";
 import { STATUTE_LABELS } from "@/lib/applicable-law";
 
@@ -31,18 +32,19 @@ function pillClass(sourceType: "statute_cited" | "general_principle"): string {
 }
 
 export function ApplicableLawCite({ applicableLaw }: Props) {
+  const t = useTranslations("ApplicableLawCite");
   const hasCites = applicableLaw.citations.length > 0;
   return (
     <div className="mt-2.5">
       <p>
-        <strong className="text-amber-600 dark:text-amber-400">Jurisdiction:</strong>{" "}
+        <strong className="text-amber-600 dark:text-amber-400">{t("jurisdiction")}</strong>{" "}
         {applicableLaw.observation}
         <span
           className={`ml-2 inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[1px] ${pillClass(applicableLaw.source_type)}`}
         >
           {applicableLaw.source_type === "statute_cited"
-            ? "Statute cited"
-            : "General principle"}
+            ? t("statuteCited")
+            : t("generalPrinciple")}
         </span>
         {hasCites &&
           applicableLaw.citations.map((_, i) => (

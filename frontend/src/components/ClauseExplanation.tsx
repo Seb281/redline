@@ -8,6 +8,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useCitationNav } from "@/contexts/CitationNavContext";
 import { parseExplanation } from "@/lib/citations";
 import type { AnalyzedClause } from "@/types";
@@ -32,6 +33,7 @@ export function ClauseExplanation({
   clauseText,
   cardId,
 }: ClauseExplanationProps) {
+  const t = useTranslations("ClauseExplanation");
   const { originId, setOrigin, clearOrigin } = useCitationNav();
 
   const segments = (() => {
@@ -90,7 +92,7 @@ export function ClauseExplanation({
                 type="button"
                 onClick={() => handleMarkerClick(seg.id, markerId)}
                 className="rounded px-0.5 text-[var(--accent)] font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                aria-label={`Jump to citation ${seg.id}`}
+                aria-label={t("jumpToCitation", { id: seg.id })}
               >
                 [{seg.id}]
               </button>
@@ -109,10 +111,10 @@ export function ClauseExplanation({
                   key={footId}
                   id={footId}
                   className="opacity-60"
-                  title="No citation was provided for this marker"
+                  title={t("noCitationTitle")}
                 >
                   <span className="mr-1 font-semibold">[{seg.id}]</span>
-                  (no citation provided)
+                  {t("noCitation")}
                 </li>
               );
             }
@@ -122,7 +124,7 @@ export function ClauseExplanation({
                   key={footId}
                   id={footId}
                   className="opacity-60"
-                  title="Quote not found in clause text"
+                  title={t("quoteNotFound")}
                 >
                   <span className="mr-1 font-semibold">[{seg.id}]</span>
                   <span className="italic">&ldquo;{seg.quotedText}&rdquo;</span>
@@ -139,8 +141,8 @@ export function ClauseExplanation({
                     type="button"
                     onClick={handleReturn}
                     className="rounded px-1 text-[var(--accent)] hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                    aria-label="Return to marker"
-                    title="Return to where you were"
+                    aria-label={t("returnToMarker")}
+                    title={t("returnToMarker")}
                   >
                     &#8617;
                   </button>

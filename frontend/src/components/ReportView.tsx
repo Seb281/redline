@@ -3,7 +3,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { AnalyzedClause, AnalyzeResponse, ClauseCategory, RiskLevel } from "@/types";
 import { AnalysisFooter } from "@/components/AnalysisFooter";
 import { ClauseCard } from "@/components/ClauseCard";
@@ -15,7 +16,7 @@ import { RiskChart } from "@/components/RiskChart";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
-import { downloadMarkdown, downloadPdf } from "@/lib/export";
+import { downloadMarkdown, downloadPdf, type MarkdownLabels } from "@/lib/export";
 
 interface ReportViewProps {
   data: AnalyzeResponse;
@@ -55,6 +56,51 @@ function useFilteredClauses(
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
 export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave }: ReportViewProps) {
+  const t = useTranslations("ReportView");
+  const tExport = useTranslations("Export");
+
+  /**
+   * Resolve all Markdown export labels into a plain object. The
+   * exporter is a pure function so we snapshot translations here
+   * rather than passing `t` through. `useMemo` keeps the object
+   * identity stable across renders when only unrelated state changes.
+   */
+  const markdownLabels = useMemo<MarkdownLabels>(() => ({
+    title: tExport("title"),
+    disclaimerLabel: tExport("disclaimerLabel"),
+    disclaimerBody: tExport("disclaimerBody"),
+    contractOverview: tExport("contractOverview"),
+    type: tExport("type"),
+    parties: tExport("parties"),
+    effectiveDate: tExport("effectiveDate"),
+    duration: tExport("duration"),
+    value: tExport("value"),
+    jurisdiction: tExport("jurisdiction"),
+    keyTerms: tExport("keyTerms"),
+    summary: tExport("summary"),
+    totalClauses: tExport("totalClauses"),
+    highRisk: tExport("highRisk"),
+    mediumRisk: tExport("mediumRisk"),
+    lowRisk: tExport("lowRisk"),
+    informational: tExport("informational"),
+    topRisks: tExport("topRisks"),
+    unusualClauses: tExport("unusualClauses"),
+    atypicalDefault: tExport("atypicalDefault"),
+    atypicalGeneric: tExport("atypicalGeneric"),
+    clauses: tExport("clauses"),
+    riskSuffix: tExport("riskSuffix"),
+    atypicalBadge: tExport("atypicalBadge"),
+    risk: tExport("risk"),
+    suggestion: tExport("suggestion"),
+    cited: tExport("cited"),
+    originalClauseText: tExport("originalClauseText"),
+    riskLevel: {
+      high: tExport("riskLevel.high"),
+      medium: tExport("riskLevel.medium"),
+      low: tExport("riskLevel.low"),
+      informational: tExport("riskLevel.informational"),
+    },
+  }), [tExport]);
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ClauseCategory | "all">("all");
@@ -90,9 +136,9 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       setSaveState("saved");
     } catch (err) {
       setSaveState("error");
-      setSaveError(err instanceof Error ? err.message : "Save failed");
+      setSaveError(err instanceof Error ? err.message : t("save"));
     }
-  }, [isAuthenticated, onSave]);
+  }, [isAuthenticated, onSave, t]);
 
   const { summary, clauses } = data;
   const filteredClauses = useFilteredClauses(clauses, riskFilter, categoryFilter, sort);
@@ -102,7 +148,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
     try {
       await downloadPdf(data);
     } catch {
-      alert("PDF export failed. Please try again.");
+      alert(t("pdfExportFailed"));
     } finally {
       setExporting(false);
     }
@@ -121,25 +167,25 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
             <p className="text-[36px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
               {summary.risk_breakdown.high}
             </p>
-            <p className="text-sm text-[var(--risk-high)] opacity-70 font-[var(--font-body)]">High Risk</p>
+            <p className="text-sm text-[var(--risk-high)] opacity-70 font-[var(--font-body)]">{t("highRisk")}</p>
           </div>
           <div className="rounded border border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)] p-5 text-center theme-transition">
             <p className="text-[36px] font-bold text-[var(--risk-medium)] font-[var(--font-body)]">
               {summary.risk_breakdown.medium}
             </p>
-            <p className="text-sm text-[var(--risk-medium)] opacity-70 font-[var(--font-body)]">Medium Risk</p>
+            <p className="text-sm text-[var(--risk-medium)] opacity-70 font-[var(--font-body)]">{t("mediumRisk")}</p>
           </div>
           <div className="rounded border border-[var(--risk-low-border)] bg-[var(--risk-low-bg)] p-5 text-center theme-transition">
             <p className="text-[36px] font-bold text-[var(--risk-low)] font-[var(--font-body)]">
               {summary.risk_breakdown.low}
             </p>
-            <p className="text-sm text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">Low Risk</p>
+            <p className="text-sm text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">{t("lowRisk")}</p>
           </div>
           <div className="rounded border border-[var(--risk-info-border)] bg-[var(--risk-info-bg)] p-5 text-center theme-transition">
             <p className="text-[36px] font-bold text-[var(--risk-info)] font-[var(--font-body)]">
               {summary.risk_breakdown.informational}
             </p>
-            <p className="text-sm text-[var(--risk-info)] opacity-70 font-[var(--font-body)]">Info</p>
+            <p className="text-sm text-[var(--risk-info)] opacity-70 font-[var(--font-body)]">{t("info")}</p>
           </div>
         </div>
         <RiskChart breakdown={summary.risk_breakdown} />
@@ -149,7 +195,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       {summary.top_risks.length > 0 && (
         <div className="mb-7 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-5 py-3.5 theme-transition">
           <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            Top Risks
+            {t("topRisks")}
           </p>
           <ul className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
             {summary.top_risks.map((risk, i) => (
@@ -185,7 +231,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
         ))}
         {filteredClauses.length === 0 && (
           <p className="py-9 text-center text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
-            No clauses match the current filters.
+            {t("noClauses")}
           </p>
         )}
       </div>
@@ -203,7 +249,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
         {/* Login prompt — slides in above buttons when save requires auth */}
         {saveState === "login" && (
           <div className="mx-auto max-w-4xl px-5 pt-3 sm:px-7">
-            <LoginPrompt message="Log in to save your analysis" />
+            <LoginPrompt message={t("loginToSave")} />
           </div>
         )}
 
@@ -217,7 +263,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
                     href="/history"
                     className="rounded border border-green-500/30 bg-green-500/10 px-5 py-2.5 text-[15px] font-medium text-green-600 no-underline transition-colors hover:bg-green-500/20 font-[var(--font-body)] dark:text-green-400"
                   >
-                    Saved
+                    {t("saved")}
                   </Link>
                 ) : (
                   <button
@@ -226,7 +272,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
                     disabled={saveState === "saving"}
                     className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
                   >
-                    {saveState === "saving" ? "Saving..." : "Save"}
+                    {saveState === "saving" ? t("saving") : t("save")}
                   </button>
                 )}
                 {saveState === "error" && saveError && (
@@ -238,10 +284,10 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
             )}
             <button
               type="button"
-              onClick={() => downloadMarkdown(data)}
+              onClick={() => downloadMarkdown(data, markdownLabels)}
               className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
             >
-              Export Markdown
+              {t("exportMd")}
             </button>
             <button
               type="button"
@@ -249,14 +295,14 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
               disabled={exporting}
               className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
             >
-              {exporting ? "Generating..." : "Export PDF"}
+              {exporting ? t("generating") : t("exportPdf")}
             </button>
             <button
               type="button"
               onClick={onReset}
               className="rounded px-5 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
             >
-              New Contract
+              {t("newContract")}
             </button>
           </div>
           <div className="flex items-center gap-3">
@@ -266,10 +312,10 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
                 onClick={onOpenChat}
                 className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white"
               >
-                Ask AI
+                {t("askAi")}
               </button>
             )}
-            <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">Not legal advice</span>
+            <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("notLegalAdvice")}</span>
           </div>
         </div>
       </div>

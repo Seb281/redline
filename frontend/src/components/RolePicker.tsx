@@ -14,6 +14,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Party } from "@/types";
 import { useRehydrate } from "@/contexts/RehydrateContext";
 
@@ -40,6 +41,7 @@ function titleCase(label: string): string {
 
 /** Inline card shown while `status === "awaiting_role"`. */
 export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
+  const t = useTranslations("RolePicker");
   const { rehydrate } = useRehydrate();
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherValue, setOtherValue] = useState("");
@@ -53,14 +55,13 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
   return (
     <div className="mb-7 rounded border border-[var(--accent)] bg-[var(--accent-subtle)] px-6 py-5 theme-transition">
       <p className="mb-1 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-        One quick question
+        {t("label")}
       </p>
       <h3 className="mb-4 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-        Which party are you in this contract?
+        {t("heading")}
       </h3>
       <p className="mb-5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        Risk is framed from your perspective — pick yourself, type in a
-        different role, or skip for a neutral weaker-party analysis.
+        {t("description")}
       </p>
 
       {/* One button per party — label-first, with optional legal-name sub-label
@@ -68,7 +69,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
       <div className="flex flex-wrap gap-2.5">
         {parties.map((party, i) => {
           const label = labels[i] ?? "PARTY";
-          const pretty = titleCase(label) || "Party";
+          const pretty = titleCase(label) || t("defaultPartyName");
           return (
             <button
               key={`${label}-${i}`}
@@ -76,7 +77,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
               onClick={() => onPick(label)}
               className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2.5 text-left text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]"
             >
-              <span>I&apos;m the {pretty}</span>
+              <span>{t("imThe", { role: pretty })}</span>
               {rehydrate && (
                 <span className="block text-[12px] font-normal text-[var(--text-muted)]">
                   {party.name}
@@ -92,7 +93,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
             onClick={() => setOtherOpen(true)}
             className="rounded border border-dashed border-[var(--border-secondary)] bg-transparent px-4 py-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:border-[var(--text-muted)] hover:text-[var(--text-secondary)]"
           >
-            Other…
+            {t("other")}
           </button>
         )}
       </div>
@@ -110,7 +111,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
                 handleOtherConfirm();
               }
             }}
-            placeholder="e.g. Subcontractor, Buyer, Lessee"
+            placeholder={t("otherPlaceholder")}
             className="min-w-[220px] flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3.5 py-2.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-muted)] font-[var(--font-body)] focus:border-[var(--accent)] focus:outline-none"
           />
           <button
@@ -119,7 +120,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
             disabled={otherValue.trim().length === 0}
             className="rounded bg-[var(--text-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Confirm
+            {t("confirm")}
           </button>
         </div>
       )}
@@ -131,7 +132,7 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
           onClick={() => onPick(null)}
           className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] hover:text-[var(--text-secondary)] hover:underline"
         >
-          Skip — use default (weaker party)
+          {t("skipNeutral")}
         </button>
       </div>
     </div>

@@ -5,7 +5,8 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { RolePicker } from "./RolePicker";
 import { RehydrateProvider, useRehydrate } from "@/contexts/RehydrateContext";
 

@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ClauseCategory, RiskLevel } from "@/types";
 
 export type SortOption = "risk-desc" | "risk-asc" | "category";
@@ -17,36 +18,63 @@ interface ClauseFiltersProps {
   filteredCount: number;
 }
 
-const RISK_OPTIONS: { value: RiskLevel | "all"; label: string }[] = [
-  { value: "all", label: "All risks" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-  { value: "informational", label: "Info" },
+const RISK_VALUES: (RiskLevel | "all")[] = [
+  "all",
+  "high",
+  "medium",
+  "low",
+  "informational",
 ];
 
-const CATEGORY_OPTIONS: { value: ClauseCategory | "all"; label: string }[] = [
-  { value: "all", label: "All categories" },
-  { value: "non_compete", label: "Non-Compete" },
-  { value: "liability", label: "Liability" },
-  { value: "termination", label: "Termination" },
-  { value: "ip_assignment", label: "IP Assignment" },
-  { value: "confidentiality", label: "Confidentiality" },
-  { value: "governing_law", label: "Governing Law" },
-  { value: "indemnification", label: "Indemnification" },
-  { value: "data_protection", label: "Data Protection" },
-  { value: "payment_terms", label: "Payment Terms" },
-  { value: "limitation_of_liability", label: "Limitation of Liability" },
-  { value: "force_majeure", label: "Force Majeure" },
-  { value: "dispute_resolution", label: "Dispute Resolution" },
-  { value: "other", label: "Other" },
+const RISK_KEY: Record<RiskLevel | "all", string> = {
+  all: "allRisks",
+  high: "high",
+  medium: "medium",
+  low: "low",
+  informational: "info",
+};
+
+const CATEGORY_VALUES: (ClauseCategory | "all")[] = [
+  "all",
+  "non_compete",
+  "liability",
+  "termination",
+  "ip_assignment",
+  "confidentiality",
+  "governing_law",
+  "indemnification",
+  "data_protection",
+  "payment_terms",
+  "limitation_of_liability",
+  "force_majeure",
+  "dispute_resolution",
+  "other",
 ];
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "risk-desc", label: "Risk: High → Low" },
-  { value: "risk-asc", label: "Risk: Low → High" },
-  { value: "category", label: "Category" },
-];
+const CATEGORY_KEY: Record<ClauseCategory | "all", string> = {
+  all: "",
+  non_compete: "Non-Compete",
+  liability: "Liability",
+  termination: "Termination",
+  ip_assignment: "IP Assignment",
+  confidentiality: "Confidentiality",
+  governing_law: "Governing Law",
+  indemnification: "Indemnification",
+  data_protection: "Data Protection",
+  payment_terms: "Payment Terms",
+  limitation_of_liability: "Limitation of Liability",
+  force_majeure: "Force Majeure",
+  dispute_resolution: "Dispute Resolution",
+  other: "Other",
+};
+
+const SORT_VALUES: SortOption[] = ["risk-desc", "risk-asc", "category"];
+
+const SORT_KEY: Record<SortOption, string> = {
+  "risk-desc": "sortRiskHighLow",
+  "risk-asc": "sortRiskLowHigh",
+  category: "sortCategory",
+};
 
 const selectClasses =
   "rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3.5 py-2 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition focus:border-[var(--accent)] focus:outline-none";
@@ -62,16 +90,17 @@ export function ClauseFilters({
   totalCount,
   filteredCount,
 }: ClauseFiltersProps) {
+  const t = useTranslations("ClauseFilters");
   return (
     <div className="mb-5 flex flex-wrap items-center gap-3.5">
       <select
         value={riskFilter}
         onChange={(e) => onRiskFilterChange(e.target.value as RiskLevel | "all")}
         className={selectClasses}
-        aria-label="Filter by risk level"
+        aria-label={t("filterByRisk")}
       >
-        {RISK_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+        {RISK_VALUES.map((v) => (
+          <option key={v} value={v}>{t(RISK_KEY[v])}</option>
         ))}
       </select>
 
@@ -79,10 +108,12 @@ export function ClauseFilters({
         value={categoryFilter}
         onChange={(e) => onCategoryFilterChange(e.target.value as ClauseCategory | "all")}
         className={selectClasses}
-        aria-label="Filter by category"
+        aria-label={t("filterByCategory")}
       >
-        {CATEGORY_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+        {CATEGORY_VALUES.map((v) => (
+          <option key={v} value={v}>
+            {v === "all" ? t("allCategories") : t(`cat.${CATEGORY_KEY[v]}`)}
+          </option>
         ))}
       </select>
 
@@ -90,16 +121,16 @@ export function ClauseFilters({
         value={sort}
         onChange={(e) => onSortChange(e.target.value as SortOption)}
         className={selectClasses}
-        aria-label="Sort clauses"
+        aria-label={t("sortClauses")}
       >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+        {SORT_VALUES.map((v) => (
+          <option key={v} value={v}>{t(SORT_KEY[v])}</option>
         ))}
       </select>
 
       {filteredCount !== totalCount && (
         <span className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {filteredCount} of {totalCount} clauses
+          {t("countOf", { filtered: filteredCount, total: totalCount })}
         </span>
       )}
     </div>

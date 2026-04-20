@@ -18,6 +18,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Party } from "@/types";
 
 interface RedactionPreviewProps {
@@ -43,51 +44,7 @@ interface GroupedEntity {
 
 interface KindGroup {
   kind: string;
-  label: string;
   entities: GroupedEntity[];
-}
-
-/**
- * Map the internal kind code to a human-friendly plural label.
- * NOTE: "PARTY" is intentionally absent — semantic party labels
- * (PROVIDER, TENANT, etc.) are rendered in the dedicated parties block
- * above the groups list and should not appear here.
- */
-function kindLabel(kind: string): string {
-  switch (kind) {
-    case "EMAIL":
-      return "Emails";
-    case "PHONE":
-      return "Phones";
-    case "IBAN":
-      return "IBANs";
-    case "VAT":
-      return "VATs";
-    case "FR_SSN":
-      return "French SSN";
-    case "DE_TAX_ID":
-      return "German tax ID";
-    case "PERSON":
-      return "People";
-    case "ADDRESS":
-      return "Addresses";
-    case "POSTCODE":
-      return "Postal codes";
-    case "ID_NUMBER":
-      return "ID numbers";
-    case "DOB":
-      return "Dates of birth";
-    case "BANK":
-      return "Bank details";
-    case "COMPANY_REG":
-      return "Company registrations";
-    case "URL":
-      return "URLs";
-    case "OTHER":
-      return "Other";
-    default:
-      return kind;
-  }
 }
 
 /**
@@ -113,7 +70,6 @@ function groupByKind(tokenMap: Map<string, string>): KindGroup[] {
   }
   return Array.from(buckets.entries()).map(([kind, entities]) => ({
     kind,
-    label: kindLabel(kind),
     entities,
   }));
 }
@@ -127,6 +83,8 @@ export function RedactionPreview({
   onConfirm,
   onCancel,
 }: RedactionPreviewProps) {
+  const t = useTranslations("RedactionPreview");
+  const kindLabel = (kind: string): string => t(`kinds.${kind}`);
   const groups = useMemo(() => groupByKind(tokenMap), [tokenMap]);
   const [disabled, setDisabled] = useState<Set<string>>(new Set());
   const [expandedKinds, setExpandedKinds] = useState<Set<string>>(new Set());
@@ -187,25 +145,20 @@ export function RedactionPreview({
       data-testid="redaction-preview"
     >
       <p className="mb-1 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-        Review what will be masked
+        {t("label")}
       </p>
       <h3 className="mb-2 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-        Before deeper analysis
+        {t("heading")}
       </h3>
       <p className="mb-5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        These values will be replaced with tokens like{" "}
-        <code className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-[var(--font-mono)] text-[13px]">
-          &#x27E6;PARTY_A&#x27E7;
-        </code>{" "}
-        before the contract is sent to the model. Click a row to keep an
-        entity visible.
+        {t("description")}
       </p>
 
       {/* Parties block — one editable label input per party */}
       {parties.length > 0 && (
         <div className="mb-4 rounded border border-[var(--border-primary)] bg-[var(--bg-card)]">
           <p className="px-4 pt-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-[var(--text-secondary)] font-[var(--font-body)]">
-            Parties ({parties.length})
+            {t("parties", { count: parties.length })}
           </p>
           <ul className="divide-y divide-[var(--border-primary)]">
             {parties.map((party, i) => {
@@ -222,7 +175,7 @@ export function RedactionPreview({
                     value={label}
                     onChange={(e) => onEditLabel(i, e.target.value)}
                     className="w-44 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2 py-1.5 font-mono text-[13px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                    aria-label={`Label for ${party.name}`}
+                    aria-label={t("aria.labelFor", { name: party.name })}
                   />
                   <span aria-hidden="true">→</span>
                   <span className="flex-1 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">{party.name}</span>
@@ -231,7 +184,7 @@ export function RedactionPreview({
                   </code>
                   {isDuplicate && (
                     <span className="ml-2 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
-                      Distinguished from row above
+                      {t("duplicateWarning")}
                     </span>
                   )}
                 </li>
@@ -240,7 +193,7 @@ export function RedactionPreview({
           </ul>
           {hasEmpty && (
             <p className="px-4 pb-3 text-[12px] text-[var(--risk-medium)] font-[var(--font-body)]">
-              Label required — every party must have a label before continuing.
+              {t("labelRequired")}
             </p>
           )}
         </div>
@@ -267,7 +220,7 @@ export function RedactionPreview({
               >
                 <span className="flex items-baseline gap-3">
                   <span className="text-[12px] font-semibold uppercase tracking-[1.5px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                    {group.label}
+                    {kindLabel(group.kind)}
                   </span>
                   <span className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
                     · {group.entities.length}
@@ -291,7 +244,7 @@ export function RedactionPreview({
                           <button
                             type="button"
                             onClick={() => toggleEntity(ent.token)}
-                            aria-label={`${isDisabled ? "Re-enable" : "Disable"} ${ent.original}`}
+                            aria-label={t(isDisabled ? "aria.reEnableEntity" : "aria.disableEntity", { text: ent.original })}
                             className={`w-full text-left font-[var(--font-mono)] text-[13px] transition-opacity ${
                               isDisabled
                                 ? "opacity-50 line-through"
@@ -316,13 +269,14 @@ export function RedactionPreview({
         onClick={() => setShowInline((v) => !v)}
         className="mt-4 text-[13px] text-[var(--text-tertiary)] underline-offset-2 hover:underline"
       >
-        {showInline ? "\u25BE" : "\u25B8"} {showInline ? "Hide" : "Show"} inline text
+        {showInline ? "\u25BE " : "\u25B8 "}
+        {showInline ? t("hideInline") : t("showInline")}
       </button>
       {showInline && (
         <>
           {parties.length > 0 && (
             <p className="mt-2 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
-              Party tokens below reflect the initial scan — your label edits take effect on Confirm.
+              {t("partyNote")}
             </p>
           )}
           <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
@@ -332,11 +286,11 @@ export function RedactionPreview({
       )}
 
       <p className="mt-4 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        {activeCount} items will be masked · {disabled.size} unredacted
+        {t("activeCount", { active: activeCount, disabled: disabled.size })}
       </p>
       {allDisabled && (
         <p className="mt-2 rounded border border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)] px-3 py-2 text-[13px] text-[var(--risk-medium)] font-[var(--font-body)]">
-          No redactions active — raw contract text will be sent to the model.
+          {t("noRedactions")}
         </p>
       )}
 
@@ -346,7 +300,7 @@ export function RedactionPreview({
           onClick={onCancel}
           className="rounded px-4 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
         >
-          Cancel
+          {t("cancel")}
         </button>
         <button
           type="button"
@@ -354,7 +308,7 @@ export function RedactionPreview({
           disabled={!canConfirm}
           className="rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Confirm → Next
+          {t("confirmNext")}
         </button>
       </div>
     </div>

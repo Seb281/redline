@@ -2,13 +2,16 @@
 
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRehydrate } from "@/contexts/RehydrateContext";
 import { useTheme } from "@/hooks/useTheme";
+import { LanguagePicker } from "@/components/LanguagePicker";
 
 /** Top bar shown on every screen. */
 export function Header() {
+  const t = useTranslations("Header");
   const { theme, toggle } = useTheme();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const { rehydrate, setRehydrate } = useRehydrate();
@@ -30,7 +33,7 @@ export function Header() {
             href="/redact"
             className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
           >
-            Redact
+            {t("redact")}
           </Link>
 
           {/* History link — always visible, page handles auth state */}
@@ -38,7 +41,7 @@ export function Header() {
             href="/history"
             className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
           >
-            History
+            {t("history")}
           </Link>
 
           {/* Session-only toggle — "Show real names" swaps role labels back to
@@ -48,15 +51,15 @@ export function Header() {
             type="button"
             onClick={() => setRehydrate(!rehydrate)}
             aria-pressed={rehydrate}
-            aria-label={rehydrate ? "Hide real names" : "Show real names"}
-            title={rehydrate ? "Hide real names" : "Show real names"}
+            aria-label={rehydrate ? t("hideRealNames") : t("showRealNames")}
+            title={rehydrate ? t("hideRealNames") : t("showRealNames")}
             className={`rounded px-2 py-1 text-sm font-[var(--font-body)] transition-colors ${
               rehydrate
                 ? "text-[var(--accent)] hover:text-[var(--text-primary)]"
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             }`}
           >
-            {rehydrate ? "Hide names" : "Show names"}
+            {rehydrate ? t("hideNames") : t("showNames")}
           </button>
 
           {/* User info + logout — only when authenticated */}
@@ -70,16 +73,19 @@ export function Header() {
                 onClick={() => logout()}
                 className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--text-primary)]"
               >
-                Log out
+                {t("logOut")}
               </button>
             </>
           )}
+
+          {/* Language picker */}
+          <LanguagePicker />
 
           {/* Theme toggle */}
           <button
             type="button"
             onClick={toggle}
-            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            aria-label={theme === "light" ? t("switchToDark") : t("switchToLight")}
             className="rounded p-2.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
           >
             {theme === "light" ? (

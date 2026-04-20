@@ -3,6 +3,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { AnalyzedClause } from "@/types";
 import { RiskBadge } from "@/components/RiskBadge";
 import { ClauseExplanation } from "@/components/ClauseExplanation";
@@ -22,6 +23,7 @@ interface ClauseCardProps {
 
 /** Renders a single clause with risk badge, category, and expandable details. */
 export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
+  const t = useTranslations("ClauseCard");
   const [expanded, setExpanded] = useState(false);
   const cardId = useId().replace(/:/g, "-");
   const categoryLabel = clause.category.replace(/_/g, " ").toUpperCase();
@@ -39,7 +41,7 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
         </span>
         {clause.is_unusual && (
           <span className="rounded border border-[var(--risk-unusual-border)] bg-[var(--risk-unusual-bg)] px-2.5 py-0.5 text-sm font-semibold text-[var(--risk-unusual)] font-[var(--font-body)]">
-            ATYPICAL
+            {t("atypical")}
           </span>
         )}
       </div>
@@ -61,25 +63,25 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
           onClick={() => setExpanded(!expanded)}
           className="mt-2.5 text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
         >
-          {expanded ? "Hide details" : "Show details"}
+          {expanded ? t("hideDetails") : t("showDetails")}
         </button>
       )}
 
       {expanded && (
         <div className="mt-3.5 rounded bg-[var(--bg-secondary)] p-3.5 text-[15px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
           <p>
-            <strong className="text-[var(--accent)]">Risk:</strong>{" "}
+            <strong className="text-[var(--accent)]">{t("risk")}</strong>{" "}
             {clause.risk_explanation}
           </p>
           {clause.negotiation_suggestion && (
             <p className="mt-2.5">
-              <strong className="text-blue-600 dark:text-blue-400">Suggestion:</strong>{" "}
+              <strong className="text-blue-600 dark:text-blue-400">{t("suggestion")}</strong>{" "}
               {clause.negotiation_suggestion}
             </p>
           )}
           {clause.unusual_explanation && (
             <p className="mt-2.5">
-              <strong className="text-[var(--risk-unusual)]">Unusual:</strong>{" "}
+              <strong className="text-[var(--risk-unusual)]">{t("unusual")}</strong>{" "}
               {clause.unusual_explanation}
             </p>
           )}
@@ -88,7 +90,7 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
           )}
           <details className="mt-2.5">
             <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
-              Original clause text
+              {t("originalText")}
             </summary>
             <p className="mt-1.5 whitespace-pre-wrap font-mono text-sm text-[var(--text-tertiary)]">
               {clause.clause_text}
@@ -100,7 +102,7 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
               onClick={() => onAskAbout(clause)}
               className="mt-3 text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
             >
-              Ask about this clause →
+              {t("askAbout")}
             </button>
           )}
         </div>

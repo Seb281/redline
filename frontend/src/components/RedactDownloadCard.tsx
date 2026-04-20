@@ -16,6 +16,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 // Note: useState retained for the `reviewed` checkbox state below.
 import type { SkippedMatch, TokenKind } from "@/lib/redact-export/types";
 import { SENSITIVE_KINDS } from "@/lib/redact-export/types";
@@ -47,42 +48,6 @@ const KIND_ORDER: TokenKind[] = [
   "OTHER",
 ];
 
-function kindLabel(kind: TokenKind): string {
-  switch (kind) {
-    case "PERSON":
-      return "People";
-    case "ORG":
-      return "Organisations";
-    case "EMAIL":
-      return "Emails";
-    case "IBAN":
-      return "IBANs";
-    case "PHONE":
-      return "Phone numbers";
-    case "VAT":
-      return "VAT numbers";
-    case "ADDRESS":
-      return "Addresses";
-    case "POSTCODE":
-      return "Postcodes";
-    case "ID_NUMBER":
-      return "ID numbers";
-    case "DOB":
-      return "Dates of birth";
-    case "BANK":
-      return "Bank details";
-    case "COMPANY_REG":
-      return "Company registrations";
-    case "URL":
-      return "URLs";
-    case "DATE":
-      return "Dates";
-    case "MONEY":
-      return "Amounts";
-    default:
-      return "Other";
-  }
-}
 
 /** Download card shown after the redacted PDF has been built. */
 export function RedactDownloadCard({
@@ -92,6 +57,8 @@ export function RedactDownloadCard({
   skipped,
   onStartOver,
 }: RedactDownloadCardProps) {
+  const t = useTranslations("RedactDownloadCard");
+  const kindLabel = (k: TokenKind): string => t(`kinds.${k}`);
   // Blob URL lives in a ref so we can revoke on unmount without triggering
   // a re-render (URL.createObjectURL is an external side-effect, not state).
   // We create it eagerly on component mount via useMemo-equivalent ref init.
@@ -162,10 +129,10 @@ export function RedactDownloadCard({
         </div>
         <div>
           <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-            Redacted PDF ready
+            {t("ready")}
           </p>
           <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-            {totalMatches} item{totalMatches !== 1 ? "s" : ""} redacted
+            {t("count", { count: totalMatches })}
           </p>
         </div>
       </div>
@@ -206,16 +173,14 @@ export function RedactDownloadCard({
                 : "text-[var(--risk-medium)]"
             }`}
           >
-            {hasSensitiveSkips
-              ? "Warning: some sensitive tokens could not be located in the PDF layout"
-              : "Note: some low-sensitivity tokens were not matched in the PDF layout"}
+            {hasSensitiveSkips ? t("warnUnmatched") : t("noteLowSensitivity")}
           </p>
           {hasSensitiveSkips && (
             <p className="mt-1 text-[12px] text-[var(--text-secondary)] font-[var(--font-body)]">
-              Affected categories:{" "}
-              {sensitiveSkippedKinds.map(kindLabel).join(", ")}. These may
-              appear unredacted in the output. This is caused by custom font
-              encoding in the source PDF.
+              {t("affectedCategories", {
+                kinds: sensitiveSkippedKinds.map(kindLabel).join(", "),
+              })}{" "}
+              {t("warnReason")}
             </p>
           )}
           {/* Gate checkbox — only when sensitive kinds skipped */}
@@ -229,8 +194,7 @@ export function RedactDownloadCard({
                 className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
               />
               <span className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                I have reviewed this and understand the file may contain
-                unredacted sensitive data
+                {t("reviewed")}
               </span>
             </label>
           )}
@@ -244,7 +208,7 @@ export function RedactDownloadCard({
           onClick={onStartOver}
           className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:text-[var(--text-secondary)]"
         >
-          Start over
+          {t("startOver")}
         </button>
         <button
           type="button"
@@ -268,7 +232,7 @@ export function RedactDownloadCard({
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Download redacted PDF
+          {t("download")}
         </button>
       </div>
     </div>

@@ -1,7 +1,8 @@
 /** Tests for AnalysisProgress — verifies step rendering per status. */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { screen, cleanup } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { AnalysisProgress } from "./AnalysisProgress";
 
 describe("AnalysisProgress", () => {

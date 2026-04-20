@@ -26,7 +26,20 @@
 
 export type DataFlowGroup = "default" | "optional";
 
+/**
+ * `translationKey` identifies the per-flow namespace under
+ * `messages/<locale>.json → DataResidency.flows`. The rendered page
+ * pulls `purpose`, `notes`, and `dataCategories` from that namespace
+ * so they localize; `region` and `legalBasis` stay on this config
+ * because they are factual (city/country + GDPR article numbers) and
+ * render identically across locales.
+ *
+ * The EN strings below are the authoritative source — they are also
+ * what `messages/en.json` must mirror. The `mergeMessages` fallback
+ * means a locale that omits a flow namespace silently reuses EN.
+ */
 export interface DataFlow {
+  translationKey: string;
   provider: string;
   purpose: string;
   dataCategories: string[];
@@ -40,6 +53,7 @@ export interface DataFlow {
 
 export const DATA_FLOWS: DataFlow[] = [
   {
+    translationKey: "mistral",
     provider: "Mistral AI",
     purpose:
       "LLM contract analysis — overview, clause extraction, risk assessment, chat responses.",
@@ -55,6 +69,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "Default LLM provider. Model pinned to mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme runs in the EU, no transfer outside the EU/EEA for the analysis step.",
   },
   {
+    translationKey: "vercel",
     provider: "Vercel",
     purpose: "Frontend hosting and edge delivery of the Next.js app.",
     dataCategories: [
@@ -69,6 +84,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "Edge hosting only. Contract text is never persisted by Vercel — analysis calls are forwarded to Mistral and responses stream back through the same request.",
   },
   {
+    translationKey: "railway",
     provider: "Railway",
     purpose: "Backend hosting (FastAPI) for file upload, OCR, and PDF export.",
     dataCategories: [
@@ -84,6 +100,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "Contract text is held in memory during the upload → parse → return cycle and then discarded. Not logged, not stored on disk beyond the request lifecycle.",
   },
   {
+    translationKey: "openai",
     provider: "OpenAI",
     purpose: "Rollback LLM provider — only active when LLM_PROVIDER=openai.",
     dataCategories: [
@@ -98,6 +115,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "Inactive by default. Only enabled by the operator during a Mistral incident. International transfer relies on OpenAI's Standard Contractual Clauses (SCCs).",
   },
   {
+    translationKey: "neon",
     provider: "Neon",
     purpose:
       "Managed Postgres for saved analyses, magic-link sessions, and clause embeddings.",
@@ -116,6 +134,7 @@ export const DATA_FLOWS: DataFlow[] = [
       "Only used when the backend DATABASE_URL env var is set. In the zero-backend-state configuration Redline runs without Neon and no personal data is persisted. Saved analyses are auto-deleted after 30 days (SP-5 retention) unless the user pins them.",
   },
   {
+    translationKey: "resend",
     provider: "Resend",
     purpose: "Transactional email — magic-link sign-in.",
     dataCategories: ["User email address", "One-time sign-in link"],

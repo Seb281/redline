@@ -1,7 +1,8 @@
 /** Tests for AnalysisFooter — transparency colophon per EU AI Act. */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { screen, cleanup, fireEvent } from "@testing-library/react";
+import { renderWithIntl as render } from "@/test-fixtures/i18n";
 import { AnalysisFooter } from "./AnalysisFooter";
 import { LEGACY_PROVENANCE_PROVIDER } from "@/lib/analyzer";
 import type { AnalysisProvenance } from "@/types";

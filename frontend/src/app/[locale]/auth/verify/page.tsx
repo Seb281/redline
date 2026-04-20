@@ -4,18 +4,20 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { verifyToken } from "@/lib/api";
 
 type VerifyState = "verifying" | "success" | "error";
 
 /** Loading spinner shown while Suspense resolves search params. */
 function VerifyLoading() {
+  const t = useTranslations("AuthVerify");
   return (
     <div className="flex flex-col items-center">
       <div className="mb-6 h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
       <p className="text-[17px] text-[var(--text-primary)] font-[var(--font-body)]">
-        Verifying your login...
+        {t("verifying")}
       </p>
     </div>
   );
@@ -29,11 +31,12 @@ function VerifyLoading() {
  * session.
  */
 function VerifyContent() {
+  const t = useTranslations("AuthVerify");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [state, setState] = useState<VerifyState>(token ? "verifying" : "error");
   const [error, setError] = useState<string | null>(
-    token ? null : "No verification token found.",
+    token ? null : t("noToken"),
   );
 
   useEffect(() => {
@@ -44,10 +47,10 @@ function VerifyContent() {
       .catch((err) => {
         setState("error");
         setError(
-          err instanceof Error ? err.message : "Verification failed",
+          err instanceof Error ? err.message : t("genericFailure"),
         );
       });
-  }, [token]);
+  }, [token, t]);
 
   if (state === "verifying") {
     return <VerifyLoading />;
@@ -73,16 +76,16 @@ function VerifyContent() {
           </svg>
         </div>
         <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          You&apos;re logged in
+          {t("loggedIn")}
         </h1>
         <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          You can close this tab and return to your analysis.
+          {t("closeTab")}
         </p>
         <Link
           href="/"
           className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
         >
-          Go to Redline
+          {t("goHome")}
         </Link>
       </>
     );
@@ -91,16 +94,16 @@ function VerifyContent() {
   return (
     <>
       <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-        Verification failed
+        {t("failed")}
       </h1>
       <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {error ?? "The link may have expired or already been used."}
+        {error ?? t("expiredLink")}
       </p>
       <Link
         href="/"
         className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
       >
-        Go to Redline
+        {t("goHome")}
       </Link>
     </>
   );

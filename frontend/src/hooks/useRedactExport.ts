@@ -134,12 +134,11 @@ export function useRedactExport(): UseRedactExportApi {
       setStatus("error");
       setError({
         stage: "overview",
-        message:
-          err instanceof Error && err.name === "SmartOverviewError"
-            ? "AI role labels unavailable. Try again in a moment."
-            : err instanceof Error
-              ? err.message
-              : "AI role labels unavailable.",
+        code: "OVERVIEW_UNAVAILABLE",
+        detail:
+          err instanceof Error && err.name !== "SmartOverviewError"
+            ? err.message
+            : undefined,
         recoverable: true,
       });
     }
@@ -162,7 +161,7 @@ export function useRedactExport(): UseRedactExportApi {
         setStatus("error");
         setError({
           stage: "upload",
-          message: "Only native PDFs are supported. Convert DOCX first.",
+          code: "NON_PDF",
           recoverable: true,
         });
         return;
@@ -171,7 +170,7 @@ export function useRedactExport(): UseRedactExportApi {
         setStatus("error");
         setError({
           stage: "upload",
-          message: "File too large (max 10 MB).",
+          code: "FILE_TOO_LARGE",
           recoverable: true,
         });
         return;
@@ -186,10 +185,8 @@ export function useRedactExport(): UseRedactExportApi {
         setStatus("error");
         setError({
           stage: "extract",
-          message:
-            err instanceof Error
-              ? err.message
-              : "Could not read PDF structure. File may be corrupted.",
+          code: "EXTRACT_FAILED",
+          detail: err instanceof Error ? err.message : undefined,
           recoverable: true,
         });
         return;
@@ -199,8 +196,7 @@ export function useRedactExport(): UseRedactExportApi {
         setStatus("error");
         setError({
           stage: "extract",
-          message:
-            "This PDF looks scanned. Layout-preserving redaction needs selectable text.",
+          code: "SCANNED_PDF",
           recoverable: true,
         });
         return;
@@ -264,10 +260,8 @@ export function useRedactExport(): UseRedactExportApi {
         setStatus("error");
         setError({
           stage: "build",
-          message:
-            err instanceof Error
-              ? err.message
-              : "Could not build redacted PDF. Please retry or use a different file.",
+          code: "BUILD_FAILED",
+          detail: err instanceof Error ? err.message : undefined,
           recoverable: true,
         });
       }

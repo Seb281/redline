@@ -225,8 +225,8 @@ export const analyzedClauseSchema = z.object({
       "Structured legal grounding for this clause, or null when no canonical " +
         "statute applies and there is no general principle worth flagging.",
     ),
-  // Required (not optional) because OpenAI's strict structured-output mode
-  // forces every property into `required`. Emit an empty array when no
+  // Required (not optional) because strict structured-output modes
+  // force every property into `required`. Emit an empty array when no
   // factual claim has verbatim support.
   citations: z
     .array(
@@ -344,8 +344,8 @@ const CATEGORIES = [
  * When `withCitations` is true, the model is instructed to emit inline
  * `[^N]` markers and a populated `citations` array for every clause. When
  * false, it must always emit `citations: []` and no markers — the schema
- * field remains required (OpenAI strict mode demands it) but stays empty,
- * which skips the downstream rendering of the footnote UI.
+ * field remains required (strict structured-output mode demands it)
+ * but stays empty, which skips the downstream rendering of the footnote UI.
  *
  * When `userRole` is a non-empty string, the analyst is instructed to frame
  * risk from that party's perspective (e.g. "Tenant", "Landlord", "ACME
@@ -824,7 +824,7 @@ export function buildProvenance(
   provider: LLMProvider,
   analysisLocale: string = "en",
 ): AnalysisProvenance {
-  const model = provider.name === "mistral" ? "mistral-small-4" : "gpt-4.1-nano";
+  const model = "mistral-small-4";
   return {
     provider: provider.name,
     model,

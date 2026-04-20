@@ -16,9 +16,9 @@
  * - `legalBasis` — GDPR Art. 6 basis, quoted verbatim where possible.
  * - `group` — `"default"` flows happen on every request in the
  *   out-of-the-box config. `"optional"` flows only happen when a
- *   specific feature (DB auth, magic-link email, OpenAI rollback) is
- *   enabled by the operator. Grouping lets the page lead with the
- *   EU-only default story.
+ *   specific feature (DB auth, magic-link email) is enabled by the
+ *   operator. Grouping lets the page lead with the EU-only default
+ *   story.
  * - `privacyPolicyUrl` — always populated.
  * - `dpaUrl` — optional; include when the provider publishes one.
  * - `notes` — free-form caveats, e.g. activation flags.
@@ -99,21 +99,6 @@ export const DATA_FLOWS: DataFlow[] = [
     dpaUrl: "https://railway.com/legal/dpa",
     notes:
       "Contract text is held in memory during the upload → parse → return cycle and then discarded. Not logged, not stored on disk beyond the request lifecycle.",
-  },
-  {
-    translationKey: "openai",
-    provider: "OpenAI",
-    purpose: "Rollback LLM provider — only active when LLM_PROVIDER=openai.",
-    dataCategories: [
-      "Pattern-redacted contract text (same shape as the Mistral flow)",
-    ],
-    region: "United States",
-    legalBasis: "GDPR Art. 6(1)(b) — performance of a contract",
-    group: "optional",
-    privacyPolicyUrl: "https://openai.com/policies/row-privacy-policy/",
-    dpaUrl: "https://openai.com/policies/data-processing-addendum/",
-    notes:
-      "Inactive by default. Only enabled by the operator during a Mistral incident. International transfer relies on OpenAI's Standard Contractual Clauses (SCCs).",
   },
   {
     translationKey: "neon",

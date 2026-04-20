@@ -51,11 +51,15 @@ describe("DATA_FLOWS", () => {
     expect(mistral?.region).toMatch(/EU/);
   });
 
-  it("flags OpenAI as optional — rollback only (US transfer)", () => {
-    const openai = DATA_FLOWS.find((f) => f.provider === "OpenAI");
-    expect(openai).toBeDefined();
-    expect(openai?.group).toBe("optional");
-    expect(openai?.region).toMatch(/United States/i);
+  it("never ships a non-EU LLM flow — every LLM default is EU-hosted", () => {
+    const llmFlows = DATA_FLOWS.filter((f) =>
+      /LLM/i.test(f.purpose),
+    );
+    expect(llmFlows.length).toBeGreaterThan(0);
+    for (const flow of llmFlows) {
+      expect(flow.region).toMatch(/EU/);
+      expect(flow.group).toBe("default");
+    }
   });
 
   it("has unique provider names (the page keys by provider)", () => {

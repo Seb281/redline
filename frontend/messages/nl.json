@@ -467,8 +467,6 @@
     "processorsIntro": "Voor een uitsplitsing per aanbieder — inclusief regio, gegevenscategorieën en rechtsgrondslag — zie de <link>pagina over gegevensopslag</link>.",
     "mistralLabel": "Mistral AI",
     "mistralBody": "(<code>mistral-small-latest</code>) — De contracttekst wordt naar Mistral La Plateforme gestuurd voor het extraheren van clausules en het uitvoeren van een risicoanalyse. Mistral is een Frans bedrijf; de La Plateforme-API wordt gehost in de Europese Unie (regio Parijs). Mistral verwerkt deze gegevens in overeenstemming met hun <dpa>aanvullende overeenkomst inzake gegevensverwerking</dpa> en <privacy>hun privacybeleid</privacy>.",
-    "openaiLabel": "OpenAI",
-    "openaiBody": "(<code>gpt-4.1-nano</code>) — Wordt bewaard als terugvaloptie en wordt alleen geactiveerd wanneer de gebruiker de optie ‘<code>LLM_PROVIDER=openai</code>’ inschakelt. In de standaardconfiguratie wordt er geen contracttekst naar OpenAI verzonden. Wanneer de terugvaloptie actief is, verwerkt OpenAI de gegevens volgens hun <dpa>aanvullende bepalingen inzake gegevensverwerking</dpa> en <privacy>hun privacybeleid</privacy>.",
     "vercelLabel": "Vercel",
     "vercelBody": "— Frontend-hosting. <privacy>Privacybeleid</privacy>.",
     "railwayLabel": "Spoorweg",
@@ -481,8 +479,6 @@
     "retentionLocalLabel": "localStorage-gegevens",
     "retentionLocalBody": "Blijft in je browser staan totdat je deze wist. Er bestaat geen kopie op de server.",
     "transfersTitle": "Internationale gegevensoverdracht",
-    "transfersDefault": "In de standaardconfiguratie wordt de contracttekst door Mistral La Plateforme binnen de Europese Unie (Parijs) verwerkt. Voor de AI-analyse vindt er geen doorgifte buiten de EU/EER plaats.",
-    "transfersRollback": "Als de exploitant de OpenAI-rollback heeft geactiveerd, wordt de contracttekst in de Verenigde Staten verwerkt op grond van het gegevensverwerkingsaddendum van OpenAI, waarin de modelcontractbepalingen (SCC’s) als overdrachtsmechanisme zijn opgenomen. Vercel en Railway kunnen operationele metagegevens buiten de EU verwerken op grond van hun respectieve gegevensverwerkingsovereenkomsten.",
     "rightsTitle": "Uw rechten",
     "rightsIntro": "Op grond van de AVG hebt u het recht om:",
     "rightAccess": "Toegang tot uw persoonsgegevens",
@@ -495,7 +491,9 @@
     "rightsNoStorage": "Als je ingelogd bent, kun je je recht op inzage (art. 15) en het recht op wissing (art. 17) rechtstreeks uitoefenen via je <link>accountpagina</link>. \"Mijn gegevens exporteren\" levert één JSON-bestand op met je accountgegevens en elke opgeslagen analyse. \"Mijn account verwijderen\" verwijdert je account en alle bijbehorende gegevens definitief na een getypte bevestiging. Voor anonieme bezoekers is er niets op onze servers om in te zien of te verwijderen — je gegevens op <code>localStorage</code> vallen volledig onder jouw controle in je browser.",
     "rightsContact": "Neem voor overige vragen contact op met <email></email>.",
     "changesTitle": "Wijzigingen in dit beleid",
-    "changesBody": "We kunnen dit beleid van tijd tot tijd aanpassen. De datum onder ‘Laatst bijgewerkt’ bovenaan de pagina geeft de meest recente herziening weer. Bij belangrijke wijzigingen wordt de datum aangepast."
+    "changesBody": "We kunnen dit beleid van tijd tot tijd aanpassen. De datum onder ‘Laatst bijgewerkt’ bovenaan de pagina geeft de meest recente herziening weer. Bij belangrijke wijzigingen wordt de datum aangepast.",
+    "transfersAI": "De contracttekst wordt door Mistral La Plateforme binnen de Europese Unie (Parijs) verwerkt. Voor de AI-analyse vindt er geen doorgifte buiten de EU/EER plaats.",
+    "transfersOperational": "Vercel en Railway kunnen operationele metadata (verzoekheaders, IP-adressen tijdens een verzoek) buiten de EU verwerken op grond van hun respectievelijke gegevensverwerkingsovereenkomsten. Er verlaat geen contracttekst de EU."
   },
   "DataResidency": {
     "metaTitle": "Gegevensopslag — Redline",
@@ -506,7 +504,7 @@
     "defaultTitle": "Standaardgegevensstromen",
     "defaultDesc": "Deze processors worden telkens ingeschakeld wanneer je Redline gebruikt.",
     "optionalTitle": "Optionele gegevensstromen",
-    "optionalDesc": "Deze processors worden alleen ingeschakeld wanneer een specifieke functie — opgeslagen geschiedenis, inloggen via Magic Link of het terugdraaien van de standaard-LLM — door de beheerder is ingeschakeld.",
+    "optionalDesc": "Deze processors worden alleen ingeschakeld wanneer een specifieke functie — opgeslagen geschiedenis of inloggen via Magic Link — door de beheerder is ingeschakeld.",
     "configNote": "Deze pagina wordt rechtstreeks gegenereerd op basis van de getypte configuratie in `<code>frontend/src/lib/data-flows.ts</code>`, zodat deze de actuele configuratie volgt zonder dat er handmatig wijzigingen hoeven te worden aangebracht.",
     "i18nNote": "De gebruikersinterface van Chrome is vertaald naar het Engels, Frans, Duits, Nederlands, Spaans en Italiaans. De analyse-uitvoer (samenvattingen van clausules, risico-uitleg, chatantwoorden) wordt rechtstreeks door Mistral gegenereerd — er komt geen tussenliggende machinevertaaldienst aan de contracttekst. Elke taalversie wordt pas ingeschakeld nadat een moedertaalspreker de prompts heeft gecontroleerd; taalversies die nog in behandeling zijn, vallen terug op de Engelse analyse, zodat geen enkele gebruiker ongecontroleerde juridische teksten van het LLM in zijn of haar eigen taal te zien krijgt.",
     "data": "Gegevens",
@@ -538,13 +536,6 @@
           "Uitgepakte contracttekst vóór bewerking (alleen server-side parser)"
         ],
         "notes": "De contracttekst wordt tijdens de cyclus van uploaden → parseren → retourneren in het geheugen bewaard en vervolgens verwijderd. Deze wordt niet gelogd en na afloop van de levenscyclus van het verzoek niet op de schijf opgeslagen."
-      },
-      "openai": {
-        "purpose": "LLM-provider terugzetten — alleen actief wanneer LLM_PROVIDER=openai.",
-        "dataCategories": [
-          "Contracttekst met weggelaten patronen (in dezelfde opmaak als de Mistral-stroom)"
-        ],
-        "notes": "Standaard uitgeschakeld. Wordt alleen door de operator ingeschakeld tijdens een Mistral-incident. Internationale gegevensoverdracht vindt plaats op basis van de standaardcontractbepalingen (SCC’s) van OpenAI."
       },
       "neon": {
         "purpose": "Managed Postgres voor opgeslagen analyses, Magic-Link-sessies en clausule-inbeddingen.",

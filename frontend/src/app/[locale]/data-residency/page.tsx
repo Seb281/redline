@@ -6,10 +6,9 @@
  *
  * The page leads with the default EU-only story (Mistral + Vercel +
  * Railway), then shows the optional flows that only activate when the
- * operator enables a specific feature (DB auth, email magic-link, or
- * the OpenAI rollback). Grouping matters — "we don't send your data
- * to the US by default" is a trust statement, and burying it in a
- * flat list would weaken that claim.
+ * operator enables a specific feature (DB auth, email magic-link).
+ * Grouping matters — "contract text stays in the EU" is a trust
+ * statement, and burying it in a flat list would weaken that claim.
  */
 
 import type { Metadata } from "next";

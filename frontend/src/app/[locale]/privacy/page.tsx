@@ -119,20 +119,6 @@ export default async function PrivacyPage({
             })}
           </li>
           <li>
-            <strong>{t("openaiLabel")}</strong>{" "}
-            {t.rich("openaiBody", {
-              code,
-              dpa: (chunks) => (
-                <ExtLink href="https://openai.com/policies/data-processing-addendum">
-                  {chunks}
-                </ExtLink>
-              ),
-              privacy: (chunks) => (
-                <ExtLink href="https://openai.com/privacy">{chunks}</ExtLink>
-              ),
-            })}
-          </li>
-          <li>
             <strong>{t("vercelLabel")}</strong>{" "}
             {t.rich("vercelBody", {
               privacy: (chunks) => (
@@ -173,8 +159,8 @@ export default async function PrivacyPage({
       </Section>
 
       <Section title={t("transfersTitle")}>
-        <p>{t("transfersDefault")}</p>
-        <p className="mt-3">{t("transfersRollback")}</p>
+        <p>{t("transfersAI")}</p>
+        <p className="mt-3">{t("transfersOperational")}</p>
       </Section>
 
       <Section title={t("rightsTitle")}>

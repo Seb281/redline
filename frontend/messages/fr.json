@@ -467,8 +467,6 @@
     "processorsIntro": "Pour obtenir une ventilation par fournisseur — incluant la région, les catégories de données et la base juridique —, consultez la <link>page consacrée à la localisation des données</link>.",
     "mistralLabel": "Mistral AI",
     "mistralBody": "(<code>mistral-small-latest</code>) — Le texte du contrat est transmis à Mistral La Plateforme à des fins d'extraction de clauses et d'analyse des risques. Mistral est une entreprise française ; l'API La Plateforme est hébergée dans l'Union européenne (région parisienne). Mistral traite ces données conformément à son <dpa>avenant relatif au traitement des données</dpa> et à <privacy>sa politique de confidentialité</privacy>.",
-    "openaiLabel": "OpenAI",
-    "openaiBody": "(<code>gpt-4.1-nano</code>) — Conservé comme cible de restauration, activé uniquement lorsque l'opérateur définit l'option « <code>LLM_PROVIDER=openai</code> ». Dans la configuration par défaut, aucun texte de contrat n'est envoyé à OpenAI. Lorsque la restauration est active, OpenAI traite les données conformément à son <dpa>avenant sur le traitement des données</dpa> et à sa <privacy>politique de confidentialité</privacy>.",
     "vercelLabel": "Vercel",
     "vercelBody": "— Hébergement du site. <privacy>Politique de confidentialité</privacy>.",
     "railwayLabel": "Chemin de fer",
@@ -481,8 +479,6 @@
     "retentionLocalLabel": "données de localStorage",
     "retentionLocalBody": "Il reste dans votre navigateur jusqu'à ce que vous l'effaciez. Il n'existe aucune copie sur le serveur.",
     "transfersTitle": "Transferts internationaux de données",
-    "transfersDefault": "Dans la configuration par défaut, le texte du contrat est traité par Mistral La Plateforme au sein de l'Union européenne (à Paris). Aucun transfert hors de l'UE/EEE n'a lieu lors de l'étape d'analyse par IA.",
-    "transfersRollback": "Si l'opérateur a activé la fonctionnalité de restauration d'OpenAI, le texte du contrat est traité aux États-Unis conformément à l'avenant relatif au traitement des données d'OpenAI, qui prévoit les clauses contractuelles types (SCC) comme mécanisme de transfert. Vercel et Railway peuvent traiter des métadonnées opérationnelles en dehors de l'UE en vertu de leurs accords respectifs relatifs au traitement des données.",
     "rightsTitle": "Vos droits",
     "rightsIntro": "En vertu du RGPD, vous avez le droit de :",
     "rightAccess": "Accéder à vos données personnelles",
@@ -495,7 +491,9 @@
     "rightsNoStorage": "Si vous êtes connecté, vous pouvez exercer vos droits d'accès (art. 15) et d'effacement (art. 17) directement depuis votre <link>page de compte</link>. « Exporter mes données » renvoie une archive JSON unique contenant votre enregistrement de compte et chacune de vos analyses enregistrées. « Supprimer mon compte » efface définitivement votre compte et toutes les données associées après confirmation saisie. Pour les visiteurs anonymes, il n'y a rien sur nos serveurs à consulter ou à supprimer — vos données sur <code>localStorage</code> sont entièrement sous votre contrôle dans votre navigateur.",
     "rightsContact": "Pour toute autre demande, veuillez contacter <email></email>.",
     "changesTitle": "Modifications apportées à la présente politique",
-    "changesBody": "Nous pouvons être amenés à mettre à jour la présente politique de temps à autre. La date de « Dernière mise à jour » indiquée en haut de la page correspond à la dernière révision. Toute modification importante sera signalée par une mise à jour de cette date."
+    "changesBody": "Nous pouvons être amenés à mettre à jour la présente politique de temps à autre. La date de « Dernière mise à jour » indiquée en haut de la page correspond à la dernière révision. Toute modification importante sera signalée par une mise à jour de cette date.",
+    "transfersAI": "Le texte du contrat est traité par Mistral La Plateforme au sein de l'Union européenne (à Paris). Aucun transfert hors de l'UE/EEE n'a lieu lors de l'étape d'analyse par IA.",
+    "transfersOperational": "Vercel et Railway peuvent traiter des métadonnées opérationnelles (en-têtes de requête, adresses IP pendant une requête) en dehors de l'UE, conformément à leurs accords de traitement des données respectifs. Aucun texte contractuel ne quitte l'UE."
   },
   "DataResidency": {
     "metaTitle": "Localisation des données — Redline",
@@ -506,7 +504,7 @@
     "defaultTitle": "Flux de données par défaut",
     "defaultDesc": "Ces processeurs interviennent à chaque fois que vous utilisez Redline.",
     "optionalTitle": "Flux de données facultatifs",
-    "optionalDesc": "Ces processeurs n'interviennent que lorsqu'une fonctionnalité spécifique — l'historique enregistré, la connexion via un lien magique ou la restauration du LLM par défaut — est activée par l'opérateur.",
+    "optionalDesc": "Ces processeurs n'interviennent que lorsqu'une fonctionnalité spécifique — l'historique enregistré ou la connexion via un lien magique — est activée par l'opérateur.",
     "configNote": "Cette page est générée directement à partir du fichier de configuration <code>frontend/src/lib/data-flows.ts</code> saisi, ce qui permet de suivre la configuration en temps réel sans décalage manuel.",
     "i18nNote": "L'interface utilisateur de Chrome est traduite en anglais, français, allemand, néerlandais, espagnol et italien. Les résultats d'analyse (résumés des clauses, explications des risques, réponses au chat) sont générés en mode natif par Mistral : aucun service de traduction automatique intermédiaire n'intervient sur le texte du contrat. Chaque version linguistique n'est activée qu'après révision des invites par un locuteur natif ; les versions en attente de révision reviennent à l'analyse en anglais, de sorte qu'aucun utilisateur ne voit s'afficher dans sa langue des textes juridiques générés par un modèle de langage de grande envergure (LLM) qui n'ont pas été révisés.",
     "data": "Données",
@@ -538,13 +536,6 @@
           "Texte du contrat extrait avant expurgation (analyseur côté serveur uniquement)"
         ],
         "notes": "Le texte du contrat est conservé en mémoire pendant le cycle « chargement → analyse → renvoi », puis supprimé. Il n'est ni consigné ni stocké sur le disque au-delà du cycle de vie de la requête."
-      },
-      "openai": {
-        "purpose": "Fournisseur LLM de repli — actif uniquement lorsque LLM_PROVIDER=openai.",
-        "dataCategories": [
-          "Texte du contrat dont les éléments sensibles ont été masqués (structure identique à celle du flux Mistral)"
-        ],
-        "notes": "Désactivé par défaut. Activé uniquement par l'opérateur en cas d'incident Mistral. Les transferts internationaux s'appuient sur les clauses contractuelles types (SCC) d'OpenAI."
       },
       "neon": {
         "purpose": "Postgres géré pour les analyses enregistrées, les sessions « magic-link » et l'intégration de clauses.",

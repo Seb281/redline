@@ -184,6 +184,18 @@
       "informational": "Informatif"
     }
   },
+  "RiskRadar": {
+    "ariaLabel": "Risk by category: {categories, plural, one {# category} other {# categories}} across {clauses, plural, one {# clause} other {# clauses}}",
+    "spokeAriaLabel": "Filter by {category}: {count, plural, one {# clause} other {# clauses}}, max risk {maxRisk}",
+    "tooltipClauses": "{count, plural, one {# clause} other {# clauses}}",
+    "tooltipMaxRisk": "Max risk: {maxRisk}",
+    "riskLevel": {
+      "informational": "Informational",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  },
   "UnusualClausesCallout": {
     "heading": "Clauses inhabituelles"
   },

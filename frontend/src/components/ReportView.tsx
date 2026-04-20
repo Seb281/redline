@@ -13,6 +13,7 @@ import { ContractOverview } from "@/components/ContractOverview";
 import { Disclaimer } from "@/components/Disclaimer";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { RiskChart } from "@/components/RiskChart";
+import { RiskRadar } from "@/components/RiskRadar";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
@@ -176,9 +177,10 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
       {/* Contract overview */}
       <ContractOverview overview={data.overview} />
 
-      {/* Risk summary — cards + chart */}
-      <div className="mb-7 flex gap-5">
-        <div className="grid flex-1 grid-cols-4 gap-4">
+      {/* Risk summary — stat cards + radar + donut */}
+      <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-start">
+        {/* Stat cards — 4 up, span full width on mobile, flex column on desktop */}
+        <div className="grid grid-cols-4 gap-4 md:flex-1">
           <div className="rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] p-5 text-center theme-transition">
             <p className="text-[36px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
               {summary.risk_breakdown.high}
@@ -204,7 +206,23 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
             <p className="text-sm text-[var(--risk-info)] opacity-70 font-[var(--font-body)]">{t("info")}</p>
           </div>
         </div>
-        <RiskChart breakdown={summary.risk_breakdown} />
+
+        {/* Charts — stacked on mobile, side-by-side on desktop */}
+        <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
+          {/* Radar takes dominant width (~2× donut); max-w caps growth on huge screens */}
+          <div className="w-full max-w-[200px] md:w-[200px]">
+            <RiskRadar
+              clauses={clauses}
+              activeCategory={categoryFilter}
+              onSpokeClick={(cat) => setCategoryFilter(cat)}
+            />
+          </div>
+          <RiskChart
+            breakdown={summary.risk_breakdown}
+            activeRisk={riskFilter}
+            onSegmentClick={(risk) => setRiskFilter(risk)}
+          />
+        </div>
       </div>
 
       {/* Top risks callout */}

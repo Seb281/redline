@@ -16,6 +16,7 @@ import { notFound } from "next/navigation";
 import { Lora, DM_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
+import { AnalysisLocaleProvider } from "@/contexts/AnalysisLocaleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RehydrateProvider } from "@/contexts/RehydrateContext";
 import { CookieBanner } from "@/components/CookieBanner";
@@ -68,10 +69,12 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <RehydrateProvider>
-              <Header />
-              {children}
-              <Footer />
-              <CookieBanner />
+              <AnalysisLocaleProvider>
+                <Header />
+                {children}
+                <Footer />
+                <CookieBanner />
+              </AnalysisLocaleProvider>
             </RehydrateProvider>
           </AuthProvider>
         </NextIntlClientProvider>

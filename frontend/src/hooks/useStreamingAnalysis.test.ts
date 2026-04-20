@@ -384,6 +384,37 @@ describe("useStreamingAnalysis", () => {
     expect(result.current.editableLabels).toEqual(["LANDLORD", "TENANT"]);
   });
 
+  it("forwards explicit analysisLocale to the overview POST body (SP-7 Phase 5)", async () => {
+    // When the caller passes an analysisLocale arg, the hook must send
+    // that value on `/api/analyze/overview` instead of the UI locale.
+    const fetchMock = fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse({
+        overview: {
+          contract_type: "NDA",
+          parties: [],
+          effective_date: null,
+          duration: null,
+          total_value: null,
+          governing_jurisdiction: null,
+          key_terms: [],
+          clause_inventory: [],
+        },
+      }),
+    );
+
+    // IntlWrapper mounts locale="en"; arg overrides it to "fr".
+    const { result } = renderHook(() => useStreamingAnalysis("fr"), hookOptions);
+    await act(async () => {
+      await result.current.runOverview("contract text");
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.locale).toBe("fr");
+  });
+
   it("confirmRedaction writes edited labels back to overview.parties[].role_label", async () => {
     // Regression guard: ReportView (final report) renders ContractOverview
     // without a labels prop, so it falls back to deriveLabels() which reads

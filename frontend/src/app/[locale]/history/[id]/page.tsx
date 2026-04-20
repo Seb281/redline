@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
-import { ReportView } from "@/components/ReportView";
+import { SavedAnalysisReport } from "@/components/SavedAnalysisReport";
 import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
 import { legacyProvenance } from "@/lib/analyzer";
 import { getRetentionStatus } from "@/lib/retention";
@@ -211,7 +211,7 @@ export default function HistoryDetailPage() {
         </div>
       </div>
 
-      <ReportView
+      <SavedAnalysisReport
         data={analyzeResponse}
         onReset={handleReset}
         onOpenChat={() => setChatOpen(true)}

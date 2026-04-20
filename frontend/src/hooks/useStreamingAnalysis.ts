@@ -108,15 +108,21 @@ const INITIAL_STATE: StreamingAnalysisState = {
  * incrementally as each NDJSON event arrives. Overview is fetched
  * separately via /api/analyze/overview so the UI can pause between the
  * two for role selection.
+ *
+ * SP-7 Layer B' Phase 5 — callers may pass an explicit `analysisLocale`
+ * (typically sourced from {@link AnalysisLocaleContext}) to decouple the
+ * analysis output language from the UI locale. When omitted, the hook
+ * falls back to `useLocale()` so the legacy call sites keep working.
  */
-export function useStreamingAnalysis() {
+export function useStreamingAnalysis(analysisLocale?: string) {
   const [state, setState] = useState<StreamingAnalysisState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
-  // SP-7 Layer B' — UI locale is forwarded on every pipeline POST so the
-  // API route can resolve it into an effective analysis locale (subject
-  // to `ANALYSIS_LOCALE_OVERRIDE` on the server). Read from next-intl
-  // so the hook does not require plumbing through from consumer pages.
-  const locale = useLocale();
+  // SP-7 Layer B' — locale forwarded on every pipeline POST so the API
+  // route can resolve it into an effective analysis locale (subject to
+  // `ANALYSIS_LOCALE_OVERRIDE` on the server). Explicit arg wins; else
+  // fall back to the UI locale via next-intl.
+  const uiLocale = useLocale();
+  const locale = analysisLocale ?? uiLocale;
   // Mirrored here so runAnalysis can read the overview without depending
   // on stale closure state from the last render.
   const overviewRef = useRef<ContractOverview | null>(null);

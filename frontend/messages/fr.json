@@ -173,7 +173,16 @@
   },
   "RiskChart": {
     "ariaLabel": "Répartition des risques : {high} élevé, {medium} moyen, {low} faible, {info} à titre informatif",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Niveau de risque : {label}, {count} clauses, {percentage}%",
+    "tooltipPercent": "{percentage}%",
+    "clearFilter": "Effacer le filtre",
+    "labels": {
+      "high": "Élevé",
+      "medium": "Moyen",
+      "low": "Faible",
+      "informational": "Informatif"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Clauses inhabituelles"

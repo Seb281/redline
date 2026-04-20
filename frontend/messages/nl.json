@@ -173,7 +173,16 @@
   },
   "RiskChart": {
     "ariaLabel": "Risicoclassificatie: {high} hoog, {medium} gemiddeld, {low} laag, {info} informatief",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Risiconiveau: {label}, {count} clausules, {percentage}%",
+    "tooltipPercent": "{percentage}%",
+    "clearFilter": "Filter wissen",
+    "labels": {
+      "high": "Hoog",
+      "medium": "Gemiddeld",
+      "low": "Laag",
+      "informational": "Informatief"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Ongebruikelijke bepalingen"

@@ -173,7 +173,16 @@
   },
   "RiskChart": {
     "ariaLabel": "Risikoeinstufung: {high} hoch, {medium} mittel, {low} niedrig, {info} informativ",
-    "clauses": "{count, plural, one {# clause} other {# clauses}}"
+    "clauses": "{count, plural, one {# clause} other {# clauses}}",
+    "segmentAriaLabel": "Risikostufe: {label}, {count} Klauseln, {percentage}%",
+    "tooltipPercent": "{percentage}%",
+    "clearFilter": "Filter löschen",
+    "labels": {
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig",
+      "informational": "Informativ"
+    }
   },
   "UnusualClausesCallout": {
     "heading": "Ungewöhnliche Klauseln"

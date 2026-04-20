@@ -129,6 +129,21 @@
     "originalText": "Original clause text",
     "askAbout": "Ask about this clause →"
   },
+  "ClauseCategory": {
+    "non_compete": "Non-Compete",
+    "liability": "Liability",
+    "termination": "Termination",
+    "ip_assignment": "IP Assignment",
+    "confidentiality": "Confidentiality",
+    "governing_law": "Governing Law",
+    "indemnification": "Indemnification",
+    "data_protection": "Data Protection",
+    "payment_terms": "Payment Terms",
+    "limitation_of_liability": "Limitation of Liability",
+    "force_majeure": "Force Majeure",
+    "dispute_resolution": "Dispute Resolution",
+    "other": "Other"
+  },
   "ClauseFilters": {
     "allRisks": "All risks",
     "high": "High",
@@ -136,21 +151,6 @@
     "low": "Low",
     "info": "Info",
     "allCategories": "All categories",
-    "cat": {
-      "Non-Compete": "Non-Compete",
-      "Liability": "Liability",
-      "Termination": "Termination",
-      "IP Assignment": "IP Assignment",
-      "Confidentiality": "Confidentiality",
-      "Governing Law": "Governing Law",
-      "Indemnification": "Indemnification",
-      "Data Protection": "Data Protection",
-      "Payment Terms": "Payment Terms",
-      "Limitation of Liability": "Limitation of Liability",
-      "Force Majeure": "Force Majeure",
-      "Dispute Resolution": "Dispute Resolution",
-      "Other": "Other"
-    },
     "sortRiskHighLow": "Risk: High → Low",
     "sortRiskLowHigh": "Risk: Low → High",
     "sortCategory": "Category",

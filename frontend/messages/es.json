@@ -129,6 +129,21 @@
     "originalText": "Texto original de la cláusula",
     "askAbout": "Pregunta sobre esta cláusula →"
   },
+  "ClauseCategory": {
+    "non_compete": "Cláusula de no competencia",
+    "liability": "Responsabilidad",
+    "termination": "Rescisión",
+    "ip_assignment": "Cesión de derechos de propiedad intelectual",
+    "confidentiality": "Confidencialidad",
+    "governing_law": "Legislación aplicable",
+    "indemnification": "Indemnización",
+    "data_protection": "Protección de datos",
+    "payment_terms": "Condiciones de pago",
+    "limitation_of_liability": "Limitación de responsabilidad",
+    "force_majeure": "Fuerza mayor",
+    "dispute_resolution": "Resolución de litigios",
+    "other": "Otros"
+  },
   "ClauseFilters": {
     "allRisks": "A todo riesgo",
     "high": "Alto",
@@ -136,21 +151,6 @@
     "low": "Bajo",
     "info": "Información",
     "allCategories": "Todas las categorías",
-    "cat": {
-      "Non-Compete": "Cláusula de no competencia",
-      "Liability": "Responsabilidad",
-      "Termination": "Rescisión",
-      "IP Assignment": "Cesión de derechos de propiedad intelectual",
-      "Confidentiality": "Confidencialidad",
-      "Governing Law": "Legislación aplicable",
-      "Indemnification": "Indemnización",
-      "Data Protection": "Protección de datos",
-      "Payment Terms": "Condiciones de pago",
-      "Limitation of Liability": "Limitación de responsabilidad",
-      "Force Majeure": "Fuerza mayor",
-      "Dispute Resolution": "Resolución de litigios",
-      "Other": "Otros"
-    },
     "sortRiskHighLow": "Riesgo: Alto → Bajo",
     "sortRiskLowHigh": "Riesgo: Bajo → Alto",
     "sortCategory": "Categoría",

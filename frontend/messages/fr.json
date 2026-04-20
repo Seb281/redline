@@ -129,6 +129,21 @@
     "originalText": "Texte original de la clause",
     "askAbout": "Renseignez-vous sur cette clause →"
   },
+  "ClauseCategory": {
+    "non_compete": "Clause de non-concurrence",
+    "liability": "Responsabilité",
+    "termination": "Résiliation",
+    "ip_assignment": "Cession de droits de propriété intellectuelle",
+    "confidentiality": "Confidentialité",
+    "governing_law": "Loi applicable",
+    "indemnification": "Indemnisation",
+    "data_protection": "Protection des données",
+    "payment_terms": "Conditions de paiement",
+    "limitation_of_liability": "Limitation de responsabilité",
+    "force_majeure": "Force majeure",
+    "dispute_resolution": "Règlement des litiges",
+    "other": "Autres"
+  },
   "ClauseFilters": {
     "allRisks": "Tous risques",
     "high": "Élevé",
@@ -136,21 +151,6 @@
     "low": "Faible",
     "info": "Informations",
     "allCategories": "Toutes les catégories",
-    "cat": {
-      "Non-Compete": "Clause de non-concurrence",
-      "Liability": "Responsabilité",
-      "Termination": "Résiliation",
-      "IP Assignment": "Cession de droits de propriété intellectuelle",
-      "Confidentiality": "Confidentialité",
-      "Governing Law": "Loi applicable",
-      "Indemnification": "Indemnisation",
-      "Data Protection": "Protection des données",
-      "Payment Terms": "Conditions de paiement",
-      "Limitation of Liability": "Limitation de responsabilité",
-      "Force Majeure": "Force majeure",
-      "Dispute Resolution": "Règlement des litiges",
-      "Other": "Autres"
-    },
     "sortRiskHighLow": "Risque : Élevé → Faible",
     "sortRiskLowHigh": "Risque : Faible → Élevé",
     "sortCategory": "Catégorie",

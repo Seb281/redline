@@ -129,6 +129,21 @@
     "originalText": "Ursprünglicher Wortlaut der Klausel",
     "askAbout": "Fragen Sie nach dieser Klausel →"
   },
+  "ClauseCategory": {
+    "non_compete": "Wettbewerbsverbot",
+    "liability": "Haftung",
+    "termination": "Kündigung",
+    "ip_assignment": "IP-Zuweisung",
+    "confidentiality": "Vertraulichkeit",
+    "governing_law": "Anwendbares Recht",
+    "indemnification": "Haftungsfreistellung",
+    "data_protection": "Datenschutz",
+    "payment_terms": "Zahlungsbedingungen",
+    "limitation_of_liability": "Haftungsbeschränkung",
+    "force_majeure": "Höhere Gewalt",
+    "dispute_resolution": "Streitbeilegung",
+    "other": "Sonstiges"
+  },
   "ClauseFilters": {
     "allRisks": "Alle Risiken",
     "high": "Hoch",
@@ -136,21 +151,6 @@
     "low": "Niedrig",
     "info": "Info",
     "allCategories": "Alle Kategorien",
-    "cat": {
-      "Non-Compete": "Wettbewerbsverbot",
-      "Liability": "Haftung",
-      "Termination": "Kündigung",
-      "IP Assignment": "IP-Zuweisung",
-      "Confidentiality": "Vertraulichkeit",
-      "Governing Law": "Anwendbares Recht",
-      "Indemnification": "Haftungsfreistellung",
-      "Data Protection": "Datenschutz",
-      "Payment Terms": "Zahlungsbedingungen",
-      "Limitation of Liability": "Haftungsbeschränkung",
-      "Force Majeure": "Höhere Gewalt",
-      "Dispute Resolution": "Streitbeilegung",
-      "Other": "Sonstiges"
-    },
     "sortRiskHighLow": "Risiko: Hoch → Niedrig",
     "sortRiskLowHigh": "Risiko: Niedrig → Hoch",
     "sortCategory": "Kategorie",

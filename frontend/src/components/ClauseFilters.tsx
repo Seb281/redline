@@ -51,23 +51,6 @@ const CATEGORY_VALUES: (ClauseCategory | "all")[] = [
   "other",
 ];
 
-const CATEGORY_KEY: Record<ClauseCategory | "all", string> = {
-  all: "",
-  non_compete: "Non-Compete",
-  liability: "Liability",
-  termination: "Termination",
-  ip_assignment: "IP Assignment",
-  confidentiality: "Confidentiality",
-  governing_law: "Governing Law",
-  indemnification: "Indemnification",
-  data_protection: "Data Protection",
-  payment_terms: "Payment Terms",
-  limitation_of_liability: "Limitation of Liability",
-  force_majeure: "Force Majeure",
-  dispute_resolution: "Dispute Resolution",
-  other: "Other",
-};
-
 const SORT_VALUES: SortOption[] = ["risk-desc", "risk-asc", "category"];
 
 const SORT_KEY: Record<SortOption, string> = {
@@ -91,6 +74,7 @@ export function ClauseFilters({
   filteredCount,
 }: ClauseFiltersProps) {
   const t = useTranslations("ClauseFilters");
+  const tCat = useTranslations("ClauseCategory");
   return (
     <div className="mb-5 flex flex-wrap items-center gap-3.5">
       <select
@@ -112,7 +96,7 @@ export function ClauseFilters({
       >
         {CATEGORY_VALUES.map((v) => (
           <option key={v} value={v}>
-            {v === "all" ? t("allCategories") : t(`cat.${CATEGORY_KEY[v]}`)}
+            {v === "all" ? t("allCategories") : tCat(v)}
           </option>
         ))}
       </select>

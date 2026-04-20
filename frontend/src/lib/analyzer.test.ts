@@ -784,10 +784,26 @@ describe("buildAnalysisSystemPrompt — locale plumbing (SP-7 Layer B')", () => 
 
   it('non-EN locale lists every prose field that must render in the target language', () => {
     const prompt = buildAnalysisSystemPrompt(true, null, null, null, "fr");
+    expect(prompt).toContain("title");
     expect(prompt).toContain("plain_english");
     expect(prompt).toContain("risk_explanation");
     expect(prompt).toContain("negotiation_suggestion");
     expect(prompt).toContain("unusual_explanation");
+  });
+
+  it('non-EN locale does NOT require title to remain in English (SP-7 Phase 3)', () => {
+    // Phase 3 fix — clause.title is rendered as a heading in ClauseCard,
+    // UnusualClausesCallout, and export.ts, so it is user-facing prose and
+    // must translate. Guard against regression by asserting title is not
+    // listed as a "must remain in English" enum field.
+    const prompt = buildAnalysisSystemPrompt(true, null, null, null, "de");
+    const [, englishBlock = ""] = prompt.split("CRITICAL:");
+    // The English-anchored section stops at the first blank line that
+    // introduces the rest of the prompt body.
+    const criticalOnly = englishBlock.split("\n\n")[0] ?? "";
+    expect(criticalOnly).not.toContain("title");
+    expect(criticalOnly).toContain("category");
+    expect(criticalOnly).toContain("risk_level");
   });
 
   it('non-EN locale still renders the userRole perspective line', () => {

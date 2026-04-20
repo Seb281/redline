@@ -129,6 +129,21 @@
     "originalText": "Oorspronkelijke tekst van de clausule",
     "askAbout": "Vraag naar deze clausule →"
   },
+  "ClauseCategory": {
+    "non_compete": "Concurrentiebeding",
+    "liability": "Aansprakelijkheid",
+    "termination": "Beëindiging",
+    "ip_assignment": "Overdracht van intellectuele eigendom",
+    "confidentiality": "Vertrouwelijkheid",
+    "governing_law": "Toepasselijk recht",
+    "indemnification": "Schadeloosstelling",
+    "data_protection": "Gegevensbescherming",
+    "payment_terms": "Betalingsvoorwaarden",
+    "limitation_of_liability": "Aansprakelijkheidsbeperking",
+    "force_majeure": "Overmacht",
+    "dispute_resolution": "Geschillenbeslechting",
+    "other": "Overige"
+  },
   "ClauseFilters": {
     "allRisks": "Alle risico’s",
     "high": "Hoog",
@@ -136,21 +151,6 @@
     "low": "Laag",
     "info": "Info",
     "allCategories": "Alle categorieën",
-    "cat": {
-      "Non-Compete": "Concurrentiebeding",
-      "Liability": "Aansprakelijkheid",
-      "Termination": "Beëindiging",
-      "IP Assignment": "Overdracht van intellectuele eigendom",
-      "Confidentiality": "Vertrouwelijkheid",
-      "Governing Law": "Toepasselijk recht",
-      "Indemnification": "Schadeloosstelling",
-      "Data Protection": "Gegevensbescherming",
-      "Payment Terms": "Betalingsvoorwaarden",
-      "Limitation of Liability": "Aansprakelijkheidsbeperking",
-      "Force Majeure": "Overmacht",
-      "Dispute Resolution": "Geschillenbeslechting",
-      "Other": "Overige"
-    },
     "sortRiskHighLow": "Risico: Hoog → Laag",
     "sortRiskLowHigh": "Risico: Laag → Hoog",
     "sortCategory": "Categorie",

@@ -24,9 +24,15 @@ interface ClauseCardProps {
 /** Renders a single clause with risk badge, category, and expandable details. */
 export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   const t = useTranslations("ClauseCard");
+  const tCat = useTranslations("ClauseCategory");
   const [expanded, setExpanded] = useState(false);
   const cardId = useId().replace(/:/g, "-");
-  const categoryLabel = clause.category.replace(/_/g, " ").toUpperCase();
+  // SP-7 Layer B' Phase 3 — the category pill is a canonical enum
+  // (non_compete, ip_assignment, …) rendered as a localized display
+  // label from the ClauseCategory namespace. Pre-Phase-3 the pill was
+  // `clause.category.replace(/_/g, " ").toUpperCase()`, which always
+  // rendered English regardless of UI locale.
+  const categoryLabel = tCat(clause.category).toUpperCase();
   const hasDetails =
     clause.risk_level !== "informational";
 

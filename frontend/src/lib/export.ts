@@ -10,7 +10,7 @@
  * provider.
  */
 
-import type { AnalyzeResponse, RiskLevel } from "@/types";
+import type { AnalyzeResponse, ClauseCategory, RiskLevel } from "@/types";
 import { exportPdf } from "@/lib/api";
 import { parseExplanation } from "@/lib/citations";
 import { STATUTE_LABELS } from "@/lib/applicable-law";
@@ -46,6 +46,13 @@ export interface MarkdownLabels {
   cited: string;
   originalClauseText: string;
   riskLevel: Record<RiskLevel, string>;
+  /**
+   * SP-7 Layer B' Phase 3 — localized display labels for each clause
+   * category enum. The exporter renders `categoryLabel[clause.category]`
+   * in the clause header instead of a raw `NON_COMPETE`-style string.
+   * Callers resolve the map via `useTranslations("ClauseCategory")`.
+   */
+  categoryLabel: Record<ClauseCategory, string>;
 }
 
 /**
@@ -87,6 +94,21 @@ export const DEFAULT_MARKDOWN_LABELS: MarkdownLabels = {
     medium: "MEDIUM",
     low: "LOW",
     informational: "INFORMATIONAL",
+  },
+  categoryLabel: {
+    non_compete: "Non-Compete",
+    liability: "Liability",
+    termination: "Termination",
+    ip_assignment: "IP Assignment",
+    confidentiality: "Confidentiality",
+    governing_law: "Governing Law",
+    indemnification: "Indemnification",
+    data_protection: "Data Protection",
+    payment_terms: "Payment Terms",
+    limitation_of_liability: "Limitation of Liability",
+    force_majeure: "Force Majeure",
+    dispute_resolution: "Dispute Resolution",
+    other: "Other",
   },
 };
 
@@ -159,7 +181,7 @@ export function generateMarkdown(
 
   for (const clause of data.clauses) {
     const level = labels.riskLevel[clause.risk_level];
-    const category = clause.category.replace(/_/g, " ").toUpperCase();
+    const category = labels.categoryLabel[clause.category].toUpperCase();
     lines.push(`### ${clause.title}`);
     lines.push(`**${level} ${labels.riskSuffix}** · ${category}`, "");
     if (clause.is_unusual) {

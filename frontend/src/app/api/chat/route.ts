@@ -12,6 +12,9 @@ import { buildChatContext } from "@/lib/chat-context";
 import { redact } from "@/lib/redaction";
 import { heuristicLabels, normalizeLabel, disambiguateLabels } from "@/lib/redaction/role-heuristics";
 import { STATUTE_LABELS } from "@/lib/applicable-law";
+import { localeToLanguageName } from "@/lib/analyzer";
+import { resolveAnalysisLocale } from "@/lib/analysis-locale";
+import { logPass } from "@/lib/llm/debug-log";
 import type { AnalyzeResponse, AnalyzedClause } from "@/types";
 
 const MAX_MESSAGES = 10;
@@ -96,6 +99,17 @@ export async function POST(request: Request) {
     .filter(Boolean)
     .join("\n");
 
+  // SP-7 Layer B' — resolve analysis locale (validated + override-aware).
+  // Must happen before we build the system prompt so the language
+  // directive can be appended. Redaction runs AFTER the directive is
+  // appended so tokenisation sees the final string the model will see.
+  const { effective: locale, requested, overridden } = resolveAnalysisLocale(body.locale);
+  logPass("locale_resolved", { route: "chat", requested, effective: locale, overridden });
+  const localeDirective =
+    locale === "en"
+      ? ""
+      : `\n\nLANGUAGE: Respond in ${localeToLanguageName(locale)}. Use plain language, not legal jargon. Maintain the same professional but accessible register as the rest of the analysis.`;
+
   const systemPrompt = `You are a helpful contract assistant analyzing a specific contract. \
 You have access to contract metadata and the most relevant clauses for this question.
 
@@ -112,7 +126,7 @@ INSTRUCTIONS:
 - Be direct and practical. Use plain English, not legal jargon.
 - If asked about jurisdiction-specific law, note that legal outcomes vary and recommend \
 consulting a local attorney.
-- Keep responses concise (2-4 paragraphs max) unless the user asks for detail.`;
+- Keep responses concise (2-4 paragraphs max) unless the user asks for detail.${localeDirective}`;
 
   // Scrub BOTH party names and PII (emails, phone numbers, IBANs, VAT
   // IDs, …) out of the system prompt and every user message before the

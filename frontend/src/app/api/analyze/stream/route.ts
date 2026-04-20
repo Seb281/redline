@@ -7,6 +7,8 @@
 
 import { streamExtractAndAnalyze } from "@/lib/streaming-analyzer";
 import { getProvider, isOverrideAllowed, type ProviderName } from "@/lib/llm/provider";
+import { resolveAnalysisLocale } from "@/lib/analysis-locale";
+import { logPass } from "@/lib/llm/debug-log";
 import type { AnalysisMode, JurisdictionEvidence } from "@/types";
 
 export async function POST(request: Request) {
@@ -61,6 +63,10 @@ export async function POST(request: Request) {
       : undefined;
   const provider = getProvider(override);
 
+  // SP-7 Layer B' — resolve analysis locale (validated + override-aware).
+  const { effective, requested, overridden } = resolveAnalysisLocale(body.locale);
+  logPass("locale_resolved", { route: "stream", requested, effective, overridden });
+
   const stream = streamExtractAndAnalyze(
     text,
     mode,
@@ -70,6 +76,7 @@ export async function POST(request: Request) {
     jurisdiction,
     jurisdictionEvidence,
     provider,
+    effective,
   );
 
   return new Response(stream, {

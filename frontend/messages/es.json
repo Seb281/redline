@@ -421,7 +421,7 @@
     "whoWeAreBody": "Redline está gestionado por Sebastián Giupana, un desarrollador independiente. Para consultas sobre privacidad, ponte en contacto con <email></email>.",
     "whatDataTitle": "Qué datos tratamos",
     "contractTextLabel": "Texto del contrato",
-    "contractTextBody": "Cuando subes un contrato (en formato PDF o DOCX), el texto extraído se envía a un proveedor externo de inteligencia artificial para su análisis. Consulta la sección «Encargados del tratamiento externos» más abajo.",
+    "contractTextBody": "Cuando subes un contrato (en formato PDF o DOCX), el texto extraído se envía a un proveedor externo de inteligencia artificial para su análisis. Si tu interfaz está en un idioma distinto del inglés, las propias instrucciones de análisis también se traducen: Mistral es multilingüe y opera en la UE, por lo que no se utiliza ningún servicio de traducción automática. Consulta la sección «Encargados del tratamiento externos» más abajo.",
     "themePrefLabel": "Preferencia de tema",
     "themePrefBody": "La configuración del modo oscuro o claro se guarda en el archivo «<code>localStorage</code>» de tu navegador, bajo la clave «<code>redline-theme</code>».",
     "cookieDismissLabel": "Aceptación del aviso sobre cookies",
@@ -477,7 +477,7 @@
     "optionalTitle": "Flujos de datos opcionales",
     "optionalDesc": "Estos procesadores solo entran en funcionamiento cuando el operador habilita una función específica: el historial guardado, el inicio de sesión mediante «magic-link» o la reversión del LLM no predeterminada.",
     "configNote": "Esta página se genera directamente a partir de la configuración introducida en <code>frontend/src/lib/data-flows.ts</code>, por lo que refleja la configuración en tiempo real sin desviaciones manuales.",
-    "i18nNote": "La interfaz de usuario está traducida al inglés, francés, alemán, neerlandés, español e italiano. Los resultados del análisis (resúmenes de cláusulas, explicaciones de riesgos, respuestas del chat) se generan en inglés independientemente del idioma de la interfaz de usuario; dado que la traducción automática de textos jurídicos puede alterar el significado, por el momento nos limitamos a una revisión humana exclusivamente en inglés.",
+    "i18nNote": "La interfaz de usuario está traducida al inglés, francés, alemán, neerlandés, español e italiano. Los resultados del análisis (resúmenes de cláusulas, explicaciones de riesgos, respuestas de chat) son generados de forma nativa por Mistral; ningún servicio de traducción automática intermedia interviene en el texto del contrato. Cada configuración regional solo se activa después de que un hablante nativo haya revisado las indicaciones; las configuraciones regionales que aún están pendientes de revisión recurren al análisis en inglés, de modo que ningún usuario vea texto jurídico generado por un modelo de lenguaje grande sin revisar en su idioma.",
     "data": "Datos",
     "legalBasis": "Fundamento jurídico",
     "notes": "Notas",
@@ -488,9 +488,10 @@
       "mistral": {
         "purpose": "Análisis de contratos con modelos de lenguaje natural (LLM): visión general, extracción de cláusulas, evaluación de riesgos y respuestas de chat.",
         "dataCategories": [
-          "Texto del contrato con datos ocultos (la información de identificación personal se sustituye por marcadores ⟦KIND_N⟧ antes de salir del navegador)"
+          "Texto del contrato con datos ocultos (la información de identificación personal se sustituye por marcadores ⟦KIND_N⟧ antes de salir del navegador)",
+          "Las indicaciones de análisis se muestran en el idioma de la interfaz de usuario seleccionado por el usuario (EN, FR, DE, NL, ES, IT). Mistral está entrenado para ser multilingüe y procesa cada configuración regional compatible de forma nativa; no se utiliza ningún servicio de traducción."
         ],
-        "notes": "Proveedor de LLM predeterminado. Modelo fijado en mistral-small-latest (instantánea mistral-small-2603). Mistral La Plateforme se ejecuta en la UE; no se realizan transferencias fuera de la UE/EEE durante la fase de análisis."
+        "notes": "Proveedor de LLM predeterminado. Modelo fijado en mistral-small-latest (instantánea mistral-small-2603). Mistral La Plateforme se ejecuta en la UE; no se produce ninguna transferencia fuera de la UE/EEE, ni del texto del contrato ni de las indicaciones de análisis, independientemente del idioma de la interfaz de usuario que haya seleccionado el usuario."
       },
       "vercel": {
         "purpose": "Alojamiento front-end y distribución en el borde de la aplicación Next.js.",
@@ -565,7 +566,14 @@
     "unpin": "Desanclar",
     "pinForever": "Fijar para siempre",
     "pinFailed": "El pin ha fallado",
-    "extendFailed": "La ampliación ha fallado"
+    "extendFailed": "La ampliación ha fallado",
+    "savedLocaleBadge": "Análisis guardado en {language}",
+    "savedLocaleEnglish": "Español",
+    "savedLocaleFrench": "Francés",
+    "savedLocaleGerman": "Alemán",
+    "savedLocaleDutch": "holandés",
+    "savedLocaleSpanish": "Español",
+    "savedLocaleItalian": "Italiano"
   },
   "AuthVerify": {
     "verifying": "Comprobando tus datos de inicio de sesión...",

@@ -421,7 +421,7 @@
     "whoWeAreBody": "Redline wird von Sebastian Giupana, einem unabhängigen Entwickler, betrieben. Bei Fragen zum Datenschutz wenden Sie sich bitte an <email></email>.",
     "whatDataTitle": "Welche Daten wir verarbeiten",
     "contractTextLabel": "Vertragstext",
-    "contractTextBody": "Wenn Sie einen Vertrag (als PDF oder DOCX) hochladen, wird der extrahierte Text zur Analyse an einen externen KI-Anbieter weitergeleitet. Siehe „Externe Auftragsverarbeiter“ weiter unten.",
+    "contractTextBody": "Wenn Sie einen Vertrag (als PDF oder DOCX) hochladen, wird der extrahierte Text zur Analyse an einen externen KI-Anbieter weitergeleitet. Wenn Ihre Benutzeroberfläche in einer anderen Sprache als Englisch vorliegt, werden auch die Analyseanweisungen selbst lokalisiert – Mistral ist mehrsprachig und wird in der EU betrieben, sodass kein maschineller Übersetzungsdienst zum Einsatz kommt. Siehe „Externe Auftragsverarbeiter“ weiter unten.",
     "themePrefLabel": "Bevorzugtes Design",
     "themePrefBody": "Deine Einstellung für den Dunkel-/Hellmodus wird in der Datei „<code>localStorage</code>“ deines Browsers unter dem Schlüssel „<code>redline-theme</code>“ gespeichert.",
     "cookieDismissLabel": "Cookie-Banner schließen",
@@ -477,7 +477,7 @@
     "optionalTitle": "Optionale Datenflüsse",
     "optionalDesc": "Diese Prozessoren kommen nur dann zum Einsatz, wenn eine bestimmte Funktion – gespeicherter Verlauf, Anmeldung per Magic-Link oder das nicht standardmäßige LLM-Rollback – vom Betreiber aktiviert wurde.",
     "configNote": "Diese Seite wird direkt aus der Konfigurationsdatei „<code>frontend/src/lib/data-flows.ts</code>“ gerendert, sodass sie die Live-Konfiguration ohne manuelle Abweichungen widerspiegelt.",
-    "i18nNote": "Die Benutzeroberfläche ist ins Englische, Französische, Deutsche, Niederländische, Spanische und Italienische übersetzt. Die Analyseergebnisse (Zusammenfassungen der Klauseln, Erläuterungen zu Risiken, Chat-Antworten) werden unabhängig von der Sprache der Benutzeroberfläche auf Englisch ausgegeben – da die maschinelle Übersetzung von Rechtstexten die Bedeutung verfälschen könnte, werden diese derzeit ausschließlich auf Englisch von Menschen überprüft.",
+    "i18nNote": "Die Benutzeroberfläche ist ins Englische, Französische, Deutsche, Niederländische, Spanische und Italienische übersetzt. Die Analyseergebnisse (Zusammenfassungen von Vertragsklauseln, Erläuterungen zu Risiken, Chat-Antworten) werden direkt von Mistral generiert – der Vertragstext wird dabei nicht von einem maschinellen Übersetzungsdienst bearbeitet. Jede Sprachversion wird erst freigeschaltet, nachdem ein Muttersprachler die Eingabeaufforderungen überprüft hat; bei Sprachversionen, die noch auf ihre Überprüfung warten, wird auf die englische Analyse zurückgegriffen, sodass kein Nutzer ungeprüfte juristische Texte aus dem LLM in seiner Sprache zu sehen bekommt.",
     "data": "Daten",
     "legalBasis": "Rechtsgrundlage",
     "notes": "Anmerkungen",
@@ -488,9 +488,10 @@
       "mistral": {
         "purpose": "Analyse von LLM-Verträgen – Überblick, Klauselextraktion, Risikobewertung, Chat-Antworten.",
         "dataCategories": [
-          "Vertragstext mit geschwärzten Mustern (personenbezogene Daten wurden vor dem Verlassen des Browsers durch ⟦KIND_N⟧-Platzhalter ersetzt)"
+          "Vertragstext mit geschwärzten Mustern (personenbezogene Daten wurden vor dem Verlassen des Browsers durch ⟦KIND_N⟧-Platzhalter ersetzt)",
+          "Analysehinweise in der vom Benutzer gewählten Sprache der Benutzeroberfläche (EN, FR, DE, NL, ES, IT) – Mistral ist von Grund auf mehrsprachig und verarbeitet jede unterstützte Spracheinstellung nativ; es wird kein Übersetzungsdienst hinzugezogen"
         ],
-        "notes": "Standard-LLM-Anbieter. Das Modell ist auf „mistral-small-latest“ (Snapshot „mistral-small-2603“) festgelegt. Mistral La Plateforme wird in der EU betrieben; für den Analyseschritt erfolgt keine Datenübermittlung außerhalb der EU/des EWR."
+        "notes": "Standard-LLM-Anbieter. Das Modell ist auf „mistral-small-latest“ (Snapshot „mistral-small-2603“) festgelegt. Mistral La Plateforme wird in der EU betrieben; weder der Vertragstext noch die Analyseanfragen werden außerhalb der EU/des EWR übertragen, unabhängig davon, welche Sprache der Benutzer in der Benutzeroberfläche ausgewählt hat."
       },
       "vercel": {
         "purpose": "Frontend-Hosting und Edge-Bereitstellung der Next.js-App.",
@@ -565,7 +566,14 @@
     "unpin": "Lösen",
     "pinForever": "Für immer anheften",
     "pinFailed": "Das Anheften ist fehlgeschlagen",
-    "extendFailed": "Erweiterung fehlgeschlagen"
+    "extendFailed": "Erweiterung fehlgeschlagen",
+    "savedLocaleBadge": "Analyse in „{language}“ gespeichert",
+    "savedLocaleEnglish": "Deutsch",
+    "savedLocaleFrench": "Französisch",
+    "savedLocaleGerman": "Deutsch",
+    "savedLocaleDutch": "Niederländisch",
+    "savedLocaleSpanish": "Spanisch",
+    "savedLocaleItalian": "Italienisch"
   },
   "AuthVerify": {
     "verifying": "Ihre Anmeldedaten werden überprüft...",

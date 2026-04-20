@@ -421,7 +421,7 @@
     "whoWeAreBody": "Redline wordt beheerd door Sebastian Giupana, een onafhankelijke ontwikkelaar. Neem voor vragen over privacy contact op met <email></email>.",
     "whatDataTitle": "Welke gegevens verwerken wij?",
     "contractTextLabel": "Contracttekst",
-    "contractTextBody": "Wanneer u een contract uploadt (in PDF- of DOCX-formaat), wordt de geëxtraheerde tekst ter analyse doorgestuurd naar een externe AI-dienstverlener. Zie ‘Externe verwerkers’ hieronder.",
+    "contractTextBody": "Wanneer u een contract (PDF of DOCX) uploadt, wordt de geëxtraheerde tekst ter analyse naar een externe AI-aanbieder gestuurd. Als uw interface in een andere taal dan het Engels is, worden ook de analyse-instructies zelf gelokaliseerd — Mistral is meertalig en draait binnen de EU, dus er komt geen machinevertaaldienst aan te pas. Zie „Externe verwerkers“ hieronder.",
     "themePrefLabel": "Themavoorkeur",
     "themePrefBody": "Je keuze voor de donkere of lichte modus wordt opgeslagen in het bestand `<code>localStorage</code>` van je browser, onder de sleutel `<code>redline-theme</code>`.",
     "cookieDismissLabel": "Het sluiten van de cookiebanner",
@@ -477,7 +477,7 @@
     "optionalTitle": "Optionele gegevensstromen",
     "optionalDesc": "Deze processors worden alleen ingeschakeld wanneer een specifieke functie — opgeslagen geschiedenis, inloggen via Magic Link of het terugdraaien van de standaard-LLM — door de beheerder is ingeschakeld.",
     "configNote": "Deze pagina wordt rechtstreeks gegenereerd op basis van de getypte configuratie in `<code>frontend/src/lib/data-flows.ts</code>`, zodat deze de actuele configuratie volgt zonder dat er handmatig wijzigingen hoeven te worden aangebracht.",
-    "i18nNote": "De gebruikersinterface is vertaald in het Engels, Frans, Duits, Nederlands, Spaans en Italiaans. De analyseresultaten (samenvattingen van clausules, risico-uitleg, antwoorden in de chat) worden in het Engels gegenereerd, ongeacht de taal van de gebruikersinterface. Aangezien het automatisch vertalen van juridische teksten de betekenis kan veranderen, laten we deze voorlopig uitsluitend door mensen controleren in het Engels.",
+    "i18nNote": "De gebruikersinterface van Chrome is vertaald naar het Engels, Frans, Duits, Nederlands, Spaans en Italiaans. De analyse-uitvoer (samenvattingen van clausules, risico-uitleg, chatantwoorden) wordt rechtstreeks door Mistral gegenereerd — er komt geen tussenliggende machinevertaaldienst aan de contracttekst. Elke taalversie wordt pas ingeschakeld nadat een moedertaalspreker de prompts heeft gecontroleerd; taalversies die nog in behandeling zijn, vallen terug op de Engelse analyse, zodat geen enkele gebruiker ongecontroleerde juridische teksten van het LLM in zijn of haar eigen taal te zien krijgt.",
     "data": "Gegevens",
     "legalBasis": "Rechtsgrondslag",
     "notes": "Opmerkingen",
@@ -488,9 +488,10 @@
       "mistral": {
         "purpose": "LLM-contractanalyse — overzicht, extractie van clausules, risicobeoordeling, chatreacties.",
         "dataCategories": [
-          "Contracttekst met verwijderde gegevens (persoonsgegevens zijn vóór het verlaten van de browser vervangen door ⟦KIND_N⟧-tokens)"
+          "Contracttekst met verwijderde gegevens (persoonsgegevens zijn vóór het verlaten van de browser vervangen door ⟦KIND_N⟧-tokens)",
+          "Analyse-aanwijzingen in de door de gebruiker geselecteerde taal van de gebruikersinterface (EN, FR, DE, NL, ES, IT) — Mistral is van nature meertalig en verwerkt elke ondersteunde taalversie op native wijze; er komt geen vertaaldienst aan te pas"
         ],
-        "notes": "Standaard LLM-aanbieder. Model vastgezet op mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme draait binnen de EU; er vindt geen gegevensoverdracht buiten de EU/EER plaats tijdens de analysestap."
+        "notes": "Standaard LLM-aanbieder. Model vastgezet op mistral-small-latest (snapshot mistral-small-2603). Mistral La Plateforme draait binnen de EU; er vindt geen overdracht plaats buiten de EU/EER, noch voor de contracttekst, noch voor de analyseprompts, ongeacht de taal die de gebruiker in de gebruikersinterface heeft geselecteerd."
       },
       "vercel": {
         "purpose": "Frontend-hosting en edge-levering van de Next.js-app.",
@@ -565,7 +566,14 @@
     "unpin": "Ontkoppelen",
     "pinForever": "Voor altijd vastpinnen",
     "pinFailed": "Het vastzetten is mislukt",
-    "extendFailed": "Uitbreiden is mislukt"
+    "extendFailed": "Uitbreiden is mislukt",
+    "savedLocaleBadge": "Opgeslagen analyse in {language}",
+    "savedLocaleEnglish": "Nederlands",
+    "savedLocaleFrench": "Frans",
+    "savedLocaleGerman": "Duits",
+    "savedLocaleDutch": "Nederlands",
+    "savedLocaleSpanish": "Spaans",
+    "savedLocaleItalian": "Italiaans"
   },
   "AuthVerify": {
     "verifying": "Uw inloggegevens worden gecontroleerd...",

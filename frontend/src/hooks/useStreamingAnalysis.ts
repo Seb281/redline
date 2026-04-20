@@ -19,6 +19,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 import type {
   AnalyzedClause,
   AnalysisSummary,
@@ -111,6 +112,11 @@ const INITIAL_STATE: StreamingAnalysisState = {
 export function useStreamingAnalysis() {
   const [state, setState] = useState<StreamingAnalysisState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
+  // SP-7 Layer B' — UI locale is forwarded on every pipeline POST so the
+  // API route can resolve it into an effective analysis locale (subject
+  // to `ANALYSIS_LOCALE_OVERRIDE` on the server). Read from next-intl
+  // so the hook does not require plumbing through from consumer pages.
+  const locale = useLocale();
   // Mirrored here so runAnalysis can read the overview without depending
   // on stale closure state from the last render.
   const overviewRef = useRef<ContractOverview | null>(null);
@@ -199,7 +205,7 @@ export function useStreamingAnalysis() {
         const response = await fetch("/api/analyze/overview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: patternPhase.scrubbed }),
+          body: JSON.stringify({ text: patternPhase.scrubbed, locale }),
           signal: controller.signal,
         });
 
@@ -299,7 +305,7 @@ export function useStreamingAnalysis() {
         return null;
       }
     },
-    [abort],
+    [abort, locale],
   );
 
   /**
@@ -455,6 +461,7 @@ export function useStreamingAnalysis() {
             clause_inventory: clauseInventory,
             jurisdiction,
             jurisdiction_evidence: jurisdictionEvidence,
+            locale,
           }),
           signal: controller.signal,
         });
@@ -544,7 +551,7 @@ export function useStreamingAnalysis() {
         return null;
       }
     },
-    [abort],
+    [abort, locale],
   );
 
   return {

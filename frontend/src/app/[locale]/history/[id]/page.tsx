@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -17,6 +17,7 @@ import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
 export default function HistoryDetailPage() {
   const t = useTranslations("HistoryDetail");
   const tChat = useTranslations("ChatPanel");
+  const currentLocale = useLocale();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -141,8 +142,35 @@ export default function HistoryDetailPage() {
 
   const retention = getRetentionStatus(analysis.expires_at, analysis.pinned);
 
+  // SP-7 Layer B' — language-mismatch badge.
+  // Render only when the saved analysis recorded a locale AND it differs
+  // from the active UI locale. Absent `analysis_locale` (pre-Layer-B'
+  // rows) means "unknown"; we say nothing rather than guess, to avoid
+  // labelling a legacy EN analysis as non-English by accident.
+  const savedLocale = analyzeResponse.provenance.analysis_locale;
+  const localeMismatch =
+    typeof savedLocale === "string" && savedLocale !== currentLocale;
+  const localeLabelMap: Record<string, string> = {
+    en: t("savedLocaleEnglish"),
+    fr: t("savedLocaleFrench"),
+    de: t("savedLocaleGerman"),
+    nl: t("savedLocaleDutch"),
+    es: t("savedLocaleSpanish"),
+    it: t("savedLocaleItalian"),
+  };
+
   return (
     <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
+      {localeMismatch && savedLocale && (
+        <div
+          className="mb-3 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]"
+          data-testid="saved-locale-badge"
+        >
+          {t("savedLocaleBadge", {
+            language: localeLabelMap[savedLocale] ?? savedLocale.toUpperCase(),
+          })}
+        </div>
+      )}
       {/* SP-5 retention bar */}
       <div
         className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-[13px] font-[var(--font-body)]"

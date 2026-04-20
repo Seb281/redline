@@ -6,8 +6,12 @@ import {
   contractOverviewSchema,
   formatInventoryPrompt,
   buildExtractionPrompt,
+  buildExtractionSystemPrompt,
   buildAnalysisSystemPrompt,
+  buildOverviewSystemPrompt,
   buildProvenance,
+  EXTRACTION_SYSTEM_PROMPT,
+  localeToLanguageName,
   OVERVIEW_SYSTEM_PROMPT,
   PROMPT_TEMPLATE_VERSION,
   reconcileJurisdiction,
@@ -546,8 +550,8 @@ describe("buildAnalysisSystemPrompt — SP-1.7 dispatch", () => {
 });
 
 describe("PROMPT_TEMPLATE_VERSION", () => {
-  it("is bumped to 1.1 for SP-1.7", () => {
-    expect(PROMPT_TEMPLATE_VERSION).toBe("1.1");
+  it("is bumped to 1.2 for SP-7 Layer B'", () => {
+    expect(PROMPT_TEMPLATE_VERSION).toBe("1.2");
   });
 });
 
@@ -670,5 +674,186 @@ describe("contractOverviewSchema — country (SP-2)", () => {
       },
     });
     expect(r.success).toBe(false);
+  });
+});
+
+/**
+ * SP-7 Layer B' — locale plumbing regression tests.
+ *
+ * Phase 1 contract: for `locale === "en"` every prompt builder returns
+ * output byte-identical to the pre-Layer-B' constants. For non-EN
+ * locales, an English-anchored LANGUAGE DIRECTIVE prefix is prepended
+ * but the rest of the prompt (enum vocab, structural rules) stays in
+ * English. Enum schema fields (risk_level, category, source_type,
+ * citations[].code) MUST remain English — any locale leakage into those
+ * fields must be rejected at the Zod boundary.
+ */
+describe("localeToLanguageName (SP-7 Layer B')", () => {
+  it("maps every routing locale to an English language name", () => {
+    expect(localeToLanguageName("en")).toBe("English");
+    expect(localeToLanguageName("fr")).toBe("French");
+    expect(localeToLanguageName("de")).toBe("German");
+    expect(localeToLanguageName("nl")).toBe("Dutch");
+    expect(localeToLanguageName("es")).toBe("Spanish");
+    expect(localeToLanguageName("it")).toBe("Italian");
+  });
+
+  it("falls back to English for unknown / malformed locales", () => {
+    expect(localeToLanguageName("xx")).toBe("English");
+    expect(localeToLanguageName("")).toBe("English");
+    expect(localeToLanguageName("en-US")).toBe("English");
+  });
+});
+
+describe("buildOverviewSystemPrompt (SP-7 Layer B')", () => {
+  it('locale="en" returns byte-identical output to legacy OVERVIEW_SYSTEM_PROMPT', () => {
+    expect(buildOverviewSystemPrompt("en")).toBe(OVERVIEW_SYSTEM_PROMPT);
+  });
+
+  it('non-EN locale prefixes a LANGUAGE DIRECTIVE naming the target language', () => {
+    const prompt = buildOverviewSystemPrompt("fr");
+    expect(prompt).toContain("LANGUAGE DIRECTIVE");
+    expect(prompt).toContain("French");
+  });
+
+  it('non-EN locale keeps the English-anchor for contract_type and enum fields', () => {
+    const prompt = buildOverviewSystemPrompt("de");
+    expect(prompt).toContain("German");
+    expect(prompt).toContain("contract_type");
+    expect(prompt).toContain("jurisdiction_evidence.source_type");
+    expect(prompt).toContain("pii_entities");
+    expect(prompt).toContain("role_label");
+  });
+
+  it('non-EN locale still contains the full legacy English body after the directive', () => {
+    const prompt = buildOverviewSystemPrompt("nl");
+    expect(prompt).toContain(OVERVIEW_SYSTEM_PROMPT);
+  });
+
+  it('unknown locales render the directive block with English as the fallback language name', () => {
+    // `localeToLanguageName` falls back to "English"; builders only
+    // short-circuit to the legacy body when `locale === "en"`, so an
+    // unknown locale still renders the directive block naming English.
+    // Verify the language slot is filled (no raw template placeholder,
+    // no "undefined" leak) and the legacy body follows.
+    const prompt = buildOverviewSystemPrompt("xx");
+    expect(prompt).toContain("respond in English");
+    expect(prompt).not.toContain("undefined");
+    expect(prompt).toContain(OVERVIEW_SYSTEM_PROMPT);
+  });
+});
+
+describe("buildExtractionSystemPrompt (SP-7 Layer B')", () => {
+  it('locale="en" returns byte-identical output to legacy EXTRACTION_SYSTEM_PROMPT', () => {
+    expect(buildExtractionSystemPrompt("en")).toBe(EXTRACTION_SYSTEM_PROMPT);
+  });
+
+  it('non-EN locale prefixes a LANGUAGE line naming the target language', () => {
+    const prompt = buildExtractionSystemPrompt("it");
+    expect(prompt).toContain("LANGUAGE");
+    expect(prompt).toContain("Italian");
+  });
+
+  it('non-EN locale retains the full English extraction ruleset', () => {
+    const prompt = buildExtractionSystemPrompt("es");
+    expect(prompt).toContain(EXTRACTION_SYSTEM_PROMPT);
+  });
+});
+
+describe("buildAnalysisSystemPrompt — locale plumbing (SP-7 Layer B')", () => {
+  it('default 4-arg call is identical to explicit locale="en" 5-arg call', () => {
+    const legacy = buildAnalysisSystemPrompt(true, null, null, null);
+    const explicit = buildAnalysisSystemPrompt(true, null, null, null, "en");
+    expect(explicit).toBe(legacy);
+  });
+
+  it('locale="en" emits no LANGUAGE DIRECTIVE block', () => {
+    const prompt = buildAnalysisSystemPrompt(true, "Tenant", null, null, "en");
+    expect(prompt).not.toContain("LANGUAGE DIRECTIVE");
+  });
+
+  it('non-EN locale injects a LANGUAGE DIRECTIVE naming the target language', () => {
+    const prompt = buildAnalysisSystemPrompt(true, "Tenant", null, null, "de");
+    expect(prompt).toContain("LANGUAGE DIRECTIVE");
+    expect(prompt).toContain("German");
+    // English enum vocab must survive the injection — the schema
+    // rejects translated values, so the model must see them in English.
+    expect(prompt).toContain("non_compete");
+    expect(prompt).toContain("informational, low, medium, high");
+  });
+
+  it('non-EN locale lists every prose field that must render in the target language', () => {
+    const prompt = buildAnalysisSystemPrompt(true, null, null, null, "fr");
+    expect(prompt).toContain("plain_english");
+    expect(prompt).toContain("risk_explanation");
+    expect(prompt).toContain("negotiation_suggestion");
+    expect(prompt).toContain("unusual_explanation");
+  });
+
+  it('non-EN locale still renders the userRole perspective line', () => {
+    const prompt = buildAnalysisSystemPrompt(true, "Tenant", null, null, "es");
+    expect(prompt).toContain("from the perspective of Tenant");
+  });
+});
+
+describe("analyzedClauseSchema — locale leakage guards (SP-7 Layer B')", () => {
+  const valid = {
+    clause_text: "x",
+    category: "other" as const,
+    title: "t",
+    plain_english: "p",
+    risk_level: "low" as const,
+    risk_explanation: "r",
+    negotiation_suggestion: null,
+    is_unusual: false,
+    unusual_explanation: null,
+    applicable_law: null,
+    citations: [],
+  };
+
+  it("rejects a translated risk_level (German 'hoch' must not replace 'high')", () => {
+    const r = analyzedClauseSchema.safeParse({ ...valid, risk_level: "hoch" });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects a translated risk_level (French 'élevé' must not replace 'high')", () => {
+    const r = analyzedClauseSchema.safeParse({ ...valid, risk_level: "élevé" });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects a translated category (French 'non_compétition' must not replace 'non_compete')", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...valid,
+      category: "non_compétition",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects a translated category (Italian 'riservatezza' must not replace 'confidentiality')", () => {
+    const r = analyzedClauseSchema.safeParse({
+      ...valid,
+      category: "riservatezza",
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("buildProvenance — analysis_locale (SP-7 Layer B')", () => {
+  function fakeProvider() {
+    return {
+      name: "mistral" as const,
+      model: () => ({}) as never,
+      snapshot: () => "mistral-small-2603",
+      region: "eu-west-paris",
+    };
+  }
+
+  it('defaults analysis_locale to "en" when the caller omits it', () => {
+    expect(buildProvenance(fakeProvider()).analysis_locale).toBe("en");
+  });
+
+  it("records the effective locale passed in by the API route", () => {
+    expect(buildProvenance(fakeProvider(), "fr").analysis_locale).toBe("fr");
+    expect(buildProvenance(fakeProvider(), "de").analysis_locale).toBe("de");
   });
 });

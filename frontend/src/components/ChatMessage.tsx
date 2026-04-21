@@ -94,15 +94,15 @@ export function ChatMessage({
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-lg px-4 py-3 text-[15px] leading-relaxed font-[var(--font-body)] ${
+        className={`max-w-[85%] border px-4 py-3 text-[15px] leading-relaxed ${
           isUser
-            ? "bg-[var(--accent)] text-white"
-            : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-primary)]"
+            ? "border-ink bg-ink text-paper font-sans"
+            : "border-paper-edge bg-paper-2 text-ink-2 t-reading"
         }`}
       >
-        <p className="whitespace-pre-wrap">{textContent}</p>
+        <p className="m-0 whitespace-pre-wrap">{textContent}</p>
         {isStreaming && !isUser && (
-          <span className="inline-block ml-0.5 w-1.5 h-4 bg-[var(--text-muted)] animate-pulse" />
+          <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-ink-muted" />
         )}
       </div>
     </div>

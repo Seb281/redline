@@ -1,15 +1,13 @@
 /**
  * Kind-level redaction preview for the /redact flow.
  *
- * WHY a new component instead of reusing RedactionPreview:
- * The analyzer's RedactionPreview works at per-token granularity (toggle
- * individual "john.doe@acme.com" ON/OFF) and carries party-rename inputs.
- * The redact-export preview works at per-KIND granularity (toggle the whole
- * EMAIL kind ON/OFF) because the user is about to download a redacted PDF
- * — fine-grained per-instance control adds friction without value here, and
- * the data shapes (TokenRange[] vs Map<string,string> + Party[]) don't
- * compose cleanly. Keeping this separate preserves single-responsibility on
- * both sides.
+ * Works at per-KIND granularity (toggle the whole EMAIL kind ON/OFF)
+ * rather than the analyzer's per-token granularity. The user is about
+ * to download a redacted PDF — fine-grained per-instance control adds
+ * friction without value, and the data shapes (TokenRange[] vs
+ * Map<string,string> + Party[]) don't compose cleanly with the
+ * analyzer's RedactionPreview. Keeping it separate preserves
+ * single-responsibility on both sides.
  */
 
 "use client";
@@ -17,6 +15,13 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { TokenKind, TokenRange } from "@/lib/redact-export/types";
+import {
+  BorderedCard,
+  Button,
+  Kicker,
+  MonoLabel,
+  Toggle,
+} from "@/components/ui";
 
 interface RedactPreviewPanelProps {
   /** All tokens produced by the tokenizer; user can disable whole kinds. */
@@ -61,18 +66,17 @@ function buildScrubbed(
   disabledKinds: Set<TokenKind>,
   maxChars = 800,
 ): string {
-  // Only consider tokens whose kind is not disabled.
   const active = tokens
     .filter((t) => !disabledKinds.has(t.kind))
     .sort((a, b) => a.start - b.start);
 
   let result = "";
   let cursor = 0;
-  const preview = fullText.slice(0, maxChars + 500); // slight over-read
+  const preview = fullText.slice(0, maxChars + 500);
 
   for (const t of active) {
     if (t.start >= preview.length) break;
-    if (t.start < cursor) continue; // overlapping — skip
+    if (t.start < cursor) continue;
     result += preview.slice(cursor, t.start);
     result += `[${t.label}]`;
     cursor = t.end;
@@ -90,8 +94,8 @@ export function RedactPreviewPanel({
 }: RedactPreviewPanelProps) {
   const t = useTranslations("RedactPreviewPanel");
   const kindLabel = (kind: TokenKind): string => t(`kinds.${kind}`);
-  // Disabled = kinds that the user has turned OFF (their tokens will NOT be
-  // redacted). Default is all kinds enabled (nothing disabled).
+  // Disabled = kinds turned OFF (their tokens will NOT be redacted).
+  // Default = all kinds enabled (empty disabled set).
   const [disabledKinds, setDisabledKinds] = useState<Set<TokenKind>>(
     new Set(),
   );
@@ -117,82 +121,62 @@ export function RedactPreviewPanel({
   );
 
   return (
-    <div
-      className="mb-7 rounded border border-[var(--accent)] bg-[var(--accent-subtle)] px-6 py-5 theme-transition"
+    <BorderedCard
+      tone="red"
+      padding="md"
+      className="mb-8"
       data-testid="redact-preview-panel"
     >
-      <p className="mb-1 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-        {t("label")}
-      </p>
-      <h3 className="mb-2 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      <Kicker tone="red">{t("label")}</Kicker>
+      <h3 className="mt-3 mb-2 font-serif text-[26px] font-light leading-tight text-ink">
         {t("heading")}
       </h3>
-      <p className="mb-5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+      <p className="mb-5 t-reading text-[15px] italic text-ink-2">
         {t("description")}
       </p>
 
       {/* Kind-level toggle rows */}
-      <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] divide-y divide-[var(--border-primary)]">
+      <div className="border border-paper-edge bg-paper">
         {groups.length === 0 && (
-          <p className="px-4 py-4 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
+          <p className="m-0 px-4 py-4 font-serif text-[15px] italic text-ink-muted">
             {t("noEntities")}
           </p>
         )}
-        {groups.map(({ kind, tokens: kindTokens }) => {
-          const isDisabled = disabledKinds.has(kind);
-          // Show up to 3 example originals as a visual hint.
+        {groups.map(({ kind, tokens: kindTokens }, idx) => {
+          const isEnabled = !disabledKinds.has(kind);
           const examples = kindTokens
             .slice(0, 3)
-            .map((t) => t.original)
+            .map((tok) => tok.original)
             .join(", ");
           const suffix =
             kindTokens.length > 3 ? ` +${kindTokens.length - 3} more` : "";
           return (
-            <button
+            <div
               key={kind}
-              type="button"
-              onClick={() => toggleKind(kind)}
-              aria-pressed={!isDisabled}
-              className={`flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--bg-tertiary)] ${
-                isDisabled ? "opacity-50" : ""
-              }`}
+              className={`flex items-center justify-between gap-4 px-4 py-3 ${
+                idx > 0 ? "border-t border-paper-edge" : ""
+              } ${isEnabled ? "" : "opacity-50"}`}
             >
-              <span className="flex flex-col gap-0.5">
-                <span className="flex items-center gap-2">
-                  <span
-                    className={`text-[12px] font-semibold uppercase tracking-[1.5px] font-[var(--font-body)] ${
-                      isDisabled
-                        ? "text-[var(--text-muted)]"
-                        : "text-[var(--text-secondary)]"
-                    }`}
-                  >
+              <div className="flex flex-col gap-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <MonoLabel tone={isEnabled ? "ink" : "muted"}>
                     {kindLabel(kind)}
-                  </span>
-                  <span className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
+                  </MonoLabel>
+                  <span className="font-mono text-[11px] text-ink-muted">
                     · {kindTokens.length}
                   </span>
-                </span>
-                <span className="text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)] truncate max-w-[400px]">
+                </div>
+                <span className="truncate font-serif text-[13px] italic text-ink-muted max-w-[440px]">
                   {examples}
                   {suffix}
                 </span>
-              </span>
-              {/* Toggle pill */}
-              <span
-                aria-hidden="true"
-                className={`relative ml-4 inline-flex h-6 w-10 flex-shrink-0 items-center rounded-full transition-colors ${
-                  isDisabled
-                    ? "bg-[var(--border-secondary)]"
-                    : "bg-[var(--accent)]"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                    isDisabled ? "translate-x-0.5" : "translate-x-[18px]"
-                  }`}
-                />
-              </span>
-            </button>
+              </div>
+              <Toggle
+                checked={isEnabled}
+                onChange={() => toggleKind(kind)}
+                label={kindLabel(kind)}
+              />
+            </div>
           );
         })}
       </div>
@@ -201,15 +185,15 @@ export function RedactPreviewPanel({
       <button
         type="button"
         onClick={() => setShowInline((v) => !v)}
-        className="mt-4 text-[13px] text-[var(--text-tertiary)] underline-offset-2 hover:underline"
+        className="mt-4 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
       >
         {showInline ? t("hidePreview") : t("showPreview")}
       </button>
       {showInline && (
-        <pre className="mt-2 max-h-[200px] overflow-y-auto rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] whitespace-pre-wrap">
+        <pre className="mt-3 max-h-[220px] overflow-y-auto border border-paper-edge bg-paper-2 p-3 font-mono text-[12px] leading-relaxed text-ink-2 whitespace-pre-wrap">
           {scrubbed}
           {fullText.length > 800 && (
-            <span className="italic text-[var(--text-muted)]">
+            <span className="italic text-ink-muted">
               {"\n"}
               {t("truncNote")}
             </span>
@@ -217,7 +201,7 @@ export function RedactPreviewPanel({
         </pre>
       )}
 
-      <p className="mt-4 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+      <p className="mt-4 m-0 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
         {t("countText", {
           active: activeCount,
           total: totalCount,
@@ -225,22 +209,18 @@ export function RedactPreviewPanel({
         })}
       </p>
 
-      <div className="mt-5 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded px-4 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
-        >
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-paper-edge pt-5">
+        <Button variant="ghost" size="md" onClick={onCancel}>
           {t("cancel")}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
+          size="lg"
           onClick={() => onConfirm(new Set(disabledKinds))}
-          className="rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90"
         >
           {t("buildPdf")}
-        </button>
+        </Button>
       </div>
-    </div>
+    </BorderedCard>
   );
 }

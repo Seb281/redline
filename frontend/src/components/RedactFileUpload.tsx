@@ -1,17 +1,17 @@
 /**
  * PDF-only dropzone for the /redact flow.
  *
- * WHY not reuse FileUpload.tsx: FileUpload accepts PDF + DOCX and carries
- * a citations toggle and analysis mode — none of which belong here.
- * The redact flow is PDF-only (DOCX is rejected with an explicit message)
- * and has no analysis options. Keeping scope tight avoids conditionally
- * disabling features in a shared component.
+ * Kept separate from the analyzer's FileUpload because scope is tighter:
+ * PDF-only (DOCX is rejected with an explicit message), no citations
+ * toggle, no analysis mode. Editorial restyle — 1px paper-edge border,
+ * no rounded corners, ink primary button.
  */
 
 "use client";
 
 import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button, MonoLabel } from "@/components/ui";
 
 const PDF_MIME = "application/pdf";
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -91,25 +91,24 @@ export function RedactFileUpload({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`w-full max-w-[540px] rounded border-2 border-dashed px-12 py-16 text-center transition-all duration-200 ${
+        className={`w-full max-w-[640px] border px-10 py-14 text-center transition-colors duration-150 ${
           isDragging
-            ? "border-[var(--accent)] bg-[var(--accent-subtle)]"
-            : "border-[var(--border-secondary)] bg-[var(--bg-secondary)] hover:border-[var(--text-muted)]"
+            ? "border-ink bg-paper-2"
+            : "border-paper-edge bg-paper hover:border-ink"
         }`}
       >
         {/* Shredder icon */}
-        <div className="mb-5 flex justify-center">
+        <div className="mb-5 flex justify-center text-ink-muted">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="52"
-            height="52"
+            width="48"
+            height="48"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[var(--text-muted)]"
+            strokeWidth="1.25"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
           >
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
@@ -118,33 +117,31 @@ export function RedactFileUpload({
           </svg>
         </div>
 
-        <p className="mb-1.5 text-lg font-medium text-[var(--text-primary)] font-[var(--font-body)]">
+        <p className="m-0 font-serif text-[22px] font-light leading-tight text-ink">
           {t("dropHere")}
         </p>
-        <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
+        <p className="mt-2 mb-6 t-reading text-[14.5px] italic text-ink-muted">
           {t("accepted")}
         </p>
 
         {isProcessing ? (
-          <div className="mx-auto w-56">
-            <div className="mb-2.5 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
+          <div className="mx-auto flex w-60 flex-col items-center gap-3">
+            <div className="h-[2px] w-full overflow-hidden bg-paper-edge">
               <div
-                className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+                className="h-full animate-pulse bg-ink"
                 style={{ width: "60%" }}
               />
             </div>
-            <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-              {t("processing")}
-            </p>
+            <MonoLabel tone="muted">{t("processing")}</MonoLabel>
           </div>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => inputRef.current?.click()}
-            className="rounded bg-[var(--text-primary)] px-7 py-3 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
           >
             {t("browseFiles")}
-          </button>
+          </Button>
         )}
 
         <input
@@ -157,7 +154,7 @@ export function RedactFileUpload({
       </div>
 
       {displayedError && (
-        <p className="mt-5 text-[17px] text-[var(--accent)] font-[var(--font-body)]">
+        <p className="mt-5 font-mono text-[12px] uppercase tracking-[1.2px] text-red-accent">
           {displayedError}
         </p>
       )}

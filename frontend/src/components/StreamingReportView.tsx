@@ -21,6 +21,7 @@ import { RolePicker } from "@/components/RolePicker";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
 import { rebuildScrubbed } from "@/lib/redaction";
+import { BorderedCard, Button, Kicker } from "@/components/ui";
 
 interface StreamingReportViewProps {
   state: StreamingAnalysisState;
@@ -143,31 +144,32 @@ export function StreamingReportView({
       )}
 
       {/* Risk summary — placeholder until complete */}
-      <div className="mb-7 flex gap-5">
+      <div className="mb-8 flex gap-5">
         <div className="grid flex-1 grid-cols-4 gap-4">
           {(["high", "medium", "low", "informational"] as const).map((level) => {
             const value = summary?.risk_breakdown[level];
-            const colorMap = {
-              high: { text: "var(--risk-high)", border: "var(--risk-high-border)", bg: "var(--risk-high-bg)" },
-              medium: { text: "var(--risk-medium)", border: "var(--risk-medium-border)", bg: "var(--risk-medium-bg)" },
-              low: { text: "var(--risk-low)", border: "var(--risk-low-border)", bg: "var(--risk-low-bg)" },
-              informational: { text: "var(--risk-info)", border: "var(--risk-info-border)", bg: "var(--risk-info-bg)" },
+            const toneClass = {
+              high: "text-red-accent",
+              medium: "text-warn",
+              low: "text-ok",
+              informational: "text-info",
             }[level];
             const label = { high: t("highRisk"), medium: t("mediumRisk"), low: t("lowRisk"), informational: t("info") }[level];
 
             return (
-              <div
+              <BorderedCard
                 key={level}
-                className="rounded border p-5 text-center theme-transition"
-                style={{ borderColor: colorMap.border, backgroundColor: colorMap.bg }}
+                tone="edge"
+                padding="sm"
+                className="text-center"
               >
-                <p className="text-[36px] font-bold font-[var(--font-body)]" style={{ color: colorMap.text }}>
+                <p className={`m-0 font-serif text-[32px] font-light leading-none ${toneClass}`}>
                   {value ?? "—"}
                 </p>
-                <p className="text-sm opacity-70 font-[var(--font-body)]" style={{ color: colorMap.text }}>
+                <p className="mt-2 m-0 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
                   {label}
                 </p>
-              </div>
+              </BorderedCard>
             );
           })}
         </div>
@@ -175,24 +177,22 @@ export function StreamingReportView({
           <RiskChart breakdown={summary.risk_breakdown} />
         ) : (
           <div className="flex flex-col items-center justify-center" style={{ width: 90 }}>
-            <div className="h-[90px] w-[90px] animate-pulse rounded-full bg-[var(--bg-tertiary)]" />
-            <p className="mt-1.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">{t("clauses")}</p>
+            <div className="h-[90px] w-[90px] animate-pulse border border-paper-edge bg-paper-2" />
+            <p className="mt-2 m-0 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">{t("clauses")}</p>
           </div>
         )}
       </div>
 
       {/* Top risks — only after complete */}
       {summary && summary.top_risks.length > 0 && (
-        <div className="mb-7 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-5 py-3.5 theme-transition">
-          <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            {t("topRisks")}
-          </p>
-          <ul className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
+        <BorderedCard tone="red" padding="md" className="mb-7">
+          <Kicker tone="red">{t("topRisks")}</Kicker>
+          <ul className="mt-3 m-0 list-disc space-y-1 pl-5 t-reading text-[15px] text-ink-2 marker:text-red-accent">
             {summary.top_risks.map((risk, i) => (
-              <li key={i}>• {risk}</li>
+              <li key={i}>{risk}</li>
             ))}
           </ul>
-        </div>
+        </BorderedCard>
       )}
 
       {/* Unusual clauses — only after complete */}
@@ -200,22 +200,23 @@ export function StreamingReportView({
 
       {/* Error banner with retry */}
       {error && (
-        <div className="mb-5 flex items-center justify-between rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] px-5 py-3.5 theme-transition">
-          <p className="text-[15px] text-[var(--risk-high)] font-[var(--font-body)]">
+        <BorderedCard
+          tone="red"
+          padding="md"
+          className="mb-6 flex flex-wrap items-center justify-between gap-4"
+          role="alert"
+        >
+          <p className="m-0 font-serif text-[16px] italic text-ink">
             {(retryCount ?? 0) >= 2
               ? t("analysisFailed")
               : t("analysisError", { error })}
           </p>
           {onRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="ml-4 rounded border border-[var(--risk-high-border)] px-4 py-2 text-[15px] font-medium text-[var(--risk-high)] font-[var(--font-body)] transition-colors hover:bg-[var(--risk-high-bg)]"
-            >
+            <Button variant="danger" size="md" onClick={onRetry}>
               {t("retry")}
-            </button>
+            </Button>
           )}
-        </div>
+        </BorderedCard>
       )}
 
       {/* Clause cards — each animates in */}
@@ -233,14 +234,14 @@ export function StreamingReportView({
           {Array.from({ length: Math.min(clauseCount - clauses.length, 3) }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="animate-pulse rounded border border-[var(--border-primary)] border-l-4 border-l-[var(--border-secondary)] bg-[var(--bg-card)] p-5 theme-transition"
+              className="animate-pulse border border-paper-edge border-l-2 border-l-ink-muted bg-paper p-5"
             >
-              <div className="mb-3.5 flex gap-2.5">
-                <div className="h-6 w-18 rounded bg-[var(--bg-tertiary)]" />
-                <div className="h-6 w-28 rounded bg-[var(--bg-tertiary)]" />
+              <div className="mb-3 flex gap-2">
+                <div className="h-5 w-16 bg-paper-2" />
+                <div className="h-5 w-24 bg-paper-2" />
               </div>
-              <div className="mb-2.5 h-5 w-56 rounded bg-[var(--bg-tertiary)]" />
-              <div className="h-3.5 w-full rounded bg-[var(--bg-tertiary)]" />
+              <div className="mb-2 h-5 w-56 bg-paper-2" />
+              <div className="h-3 w-full bg-paper-2" />
             </div>
           ))}
         </div>

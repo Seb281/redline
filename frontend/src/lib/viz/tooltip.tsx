@@ -108,7 +108,7 @@ export function VizTooltip({ position, children }: VizTooltipProps) {
         pointerEvents: "none",
         zIndex: 10,
       }}
-      className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded px-3 py-2 text-[13px] text-[var(--text-secondary)] shadow-sm whitespace-nowrap theme-transition"
+      className="whitespace-nowrap border border-ink bg-paper px-3 py-2 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-2"
     >
       {children}
     </div>

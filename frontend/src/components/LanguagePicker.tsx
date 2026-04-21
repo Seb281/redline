@@ -38,7 +38,7 @@ export function LanguagePicker() {
             router.replace(pathname, { locale: nextLocale });
           });
         }}
-        className="cursor-pointer rounded border border-transparent bg-transparent px-1 py-1 text-sm text-[var(--text-tertiary)] font-[var(--font-body)] hover:text-[var(--text-primary)] focus:border-[var(--border-primary)] focus:outline-none disabled:opacity-50"
+        className="cursor-pointer border border-transparent bg-transparent px-1 py-1 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted transition-colors hover:text-ink focus:border-paper-edge focus:outline-none disabled:opacity-50"
       >
         {routing.locales.map((loc) => (
           <option key={loc} value={loc}>

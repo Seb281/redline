@@ -102,15 +102,10 @@ describe("RedactPreviewPanel", () => {
         onCancel={vi.fn()}
       />,
     );
-    // Click the EMAIL kind button to disable it.
-    // The button wraps "Email addresses" label — find by button role.
-    const kindButtons = screen.getAllByRole("button", { hidden: false });
-    // Find the one that contains "Email addresses" text.
-    const emailBtn = kindButtons.find(
-      (b) => b.textContent?.toLowerCase().includes("email"),
-    );
-    expect(emailBtn).toBeTruthy();
-    fireEvent.click(emailBtn!);
+    // Each kind row exposes a role="switch" toggle labelled by the kind
+    // name ("Email addresses"). Clicking flips it to disabled.
+    const emailSwitch = screen.getByRole("switch", { name: /email/i });
+    fireEvent.click(emailSwitch);
     fireEvent.click(screen.getByText(/Redact → Build PDF/i));
     const arg = onConfirm.mock.calls[0][0] as Set<string>;
     expect(arg.has("EMAIL")).toBe(true);

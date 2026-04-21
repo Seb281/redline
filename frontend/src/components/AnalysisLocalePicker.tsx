@@ -22,15 +22,15 @@ export function AnalysisLocalePicker() {
   const { analysisLocale, setAnalysisLocale } = useAnalysisLocale();
 
   return (
-    <label className="inline-flex items-center gap-2">
-      <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+    <label className="inline-flex items-center gap-3">
+      <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
         {t("label")}
       </span>
       <select
         value={analysisLocale}
         aria-label={t("label")}
         onChange={(e) => setAnalysisLocale(e.target.value as Locale)}
-        className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-[var(--font-body)] theme-transition focus:border-[var(--accent)] focus:outline-none"
+        className="border border-paper-edge bg-paper px-3 py-1.5 font-mono text-[11px] uppercase tracking-[1.2px] text-ink transition-colors focus:border-ink focus:outline-none"
       >
         {routing.locales.map((loc) => (
           <option key={loc} value={loc}>

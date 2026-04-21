@@ -1,20 +1,16 @@
 /**
  * Top-level orchestrator for the /redact flow.
  *
- * WHY this is a pure-render orchestrator:
- * All state lives in `useRedactExport`. This component just translates
- * `status` into which sub-component to show. No data fetching here —
- * sub-components receive only the props they need, making each stage
- * independently testable.
+ * State lives in `useRedactExport`. This component translates `status`
+ * into the right sub-component and owns no data — each stage is
+ * independently testable via its own component file.
  *
  * Flow:
- *   idle          → RedactFileUpload
- *   extracting /
- *   running_overview → RedactFileUpload (isProcessing=true)
- *   awaiting_preview → RedactPreviewPanel
- *   redacting     → inline spinner
- *   complete      → RedactDownloadCard
- *   error         → error banner + retry/start-over actions
+ *   idle / extracting / running_overview → RedactFileUpload
+ *   awaiting_preview                     → RedactPreviewPanel
+ *   redacting                            → inline spinner
+ *   complete                             → RedactDownloadCard
+ *   error                                → editorial alert card
  */
 
 "use client";
@@ -25,6 +21,14 @@ import { useRedactExport } from "@/hooks/useRedactExport";
 import { RedactFileUpload } from "@/components/RedactFileUpload";
 import { RedactPreviewPanel } from "@/components/RedactPreviewPanel";
 import { RedactDownloadCard } from "@/components/RedactDownloadCard";
+import { PageShell } from "@/components/PageShell";
+import {
+  BorderedCard,
+  Button,
+  Kicker,
+  Masthead,
+  MonoLabel,
+} from "@/components/ui";
 
 /** Main /redact page UI — drives the redact-export state machine. */
 export function RedactExportFlow() {
@@ -55,132 +59,131 @@ export function RedactExportFlow() {
     hook.status === "error" && hook.error?.stage === "overview";
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-      {/* Page header */}
-      <div className="pb-10 pt-14 text-center">
-        <p className="mb-4 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-          {t("label")}
-        </p>
-        <h1 className="mx-auto mb-4 max-w-[540px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("heading")}
-        </h1>
-        <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-          {t("description")}
-        </p>
-      </div>
+    <main>
+      <PageShell width="md" className="pb-16">
+        <Masthead meta={t("label")} title={t("heading")} lede={t("description")} />
 
-      {/* Upload zone */}
-      {(hook.status === "idle" ||
-        hook.status === "extracting" ||
-        hook.status === "running_overview") && (
-        <RedactFileUpload
-          onFileSelected={handleFileSelected}
-          isProcessing={isProcessing}
-          error={hook.status === "idle" && hook.error ? t(`errors.${hook.error.code}`) : null}
-        />
-      )}
+        <section className="mt-12">
+          {/* Upload zone */}
+          {(hook.status === "idle" ||
+            hook.status === "extracting" ||
+            hook.status === "running_overview") && (
+            <RedactFileUpload
+              onFileSelected={handleFileSelected}
+              isProcessing={isProcessing}
+              error={
+                hook.status === "idle" && hook.error
+                  ? t(`errors.${hook.error.code}`)
+                  : null
+              }
+            />
+          )}
 
-      {/* Redaction preview — kind-level toggles */}
-      {hook.status === "awaiting_preview" && hook.preview && (
-        <RedactPreviewPanel
-          tokens={hook.preview.tokens}
-          fullText={hook.preview.extracted.fullText}
-          onConfirm={(disabledKinds) => hook.confirmPreview(disabledKinds)}
-          onCancel={() => hook.reset()}
-        />
-      )}
+          {/* Redaction preview — kind-level toggles */}
+          {hook.status === "awaiting_preview" && hook.preview && (
+            <RedactPreviewPanel
+              tokens={hook.preview.tokens}
+              fullText={hook.preview.extracted.fullText}
+              onConfirm={(disabledKinds) => hook.confirmPreview(disabledKinds)}
+              onCancel={() => hook.reset()}
+            />
+          )}
 
-      {/* Building PDF spinner */}
-      {hook.status === "redacting" && (
-        <div className="flex flex-col items-center gap-4 py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-          <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-            {t("building")}
-          </p>
-        </div>
-      )}
+          {/* Building PDF spinner */}
+          {hook.status === "redacting" && (
+            <div className="flex flex-col items-center gap-5 py-20">
+              <div
+                aria-hidden
+                className="h-9 w-9 animate-spin border-2 border-paper-edge border-t-ink"
+              />
+              <MonoLabel tone="muted">{t("building")}</MonoLabel>
+            </div>
+          )}
 
-      {/* Download card */}
-      {hook.status === "complete" && hook.result && (
-        <RedactDownloadCard
-          blob={hook.result.blob}
-          filename={hook.result.filename}
-          matchesByKind={hook.result.matchesByKind}
-          skipped={hook.result.skipped}
-          onStartOver={() => hook.reset()}
-        />
-      )}
+          {/* Download card */}
+          {hook.status === "complete" && hook.result && (
+            <RedactDownloadCard
+              blob={hook.result.blob}
+              filename={hook.result.filename}
+              matchesByKind={hook.result.matchesByKind}
+              skipped={hook.result.skipped}
+              onStartOver={() => hook.reset()}
+            />
+          )}
 
-      {/* Hard-error banner (extract / overview / build failures) */}
-      {hook.status === "error" && hook.error && (
-        <div
-          role="alert"
-          className="rounded border border-[var(--risk-high-border,#ef4444)] bg-[var(--risk-high-bg,#fef2f2)] px-5 py-4"
-        >
-          <p className="text-[15px] font-semibold text-[var(--risk-high,#dc2626)] font-[var(--font-body)]">
-            {t(`errors.${hook.error.code}`)}
-            {hook.error.detail ? ` — ${hook.error.detail}` : ""}
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            {canRetryOverview && (
-              <button
-                type="button"
-                onClick={() => hook.retryOverview()}
-                className="rounded border border-[var(--accent)] bg-[var(--accent)] px-4 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
-              >
-                {t("retry")}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => hook.reset()}
-              className="rounded border border-[var(--border-primary)] px-4 py-2 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
+          {/* Hard-error banner (extract / overview / build failures) */}
+          {hook.status === "error" && hook.error && (
+            <BorderedCard
+              tone="red"
+              padding="md"
+              role="alert"
+              className="flex flex-col gap-4"
             >
-              {t("startOver")}
-            </button>
-          </div>
-        </div>
-      )}
+              <Kicker tone="red">{t("label")}</Kicker>
+              <p className="m-0 font-serif text-[20px] italic leading-snug text-ink">
+                {t(`errors.${hook.error.code}`)}
+                {hook.error.detail ? ` — ${hook.error.detail}` : ""}
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                {canRetryOverview && (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => hook.retryOverview()}
+                  >
+                    {t("retry")}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => hook.reset()}
+                >
+                  {t("startOver")}
+                </Button>
+              </div>
+            </BorderedCard>
+          )}
+        </section>
 
-      {/* How it works strip */}
-      {hook.status === "idle" && (
-        <div className="mx-auto mt-14 max-w-[540px]">
-          <p className="mb-4 text-center text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            {t("howItWorks")}
-          </p>
-          <div className="flex gap-4">
-            <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-              <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                {t("step1")}
-              </p>
-              <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                {t("step1Desc")}
-              </p>
+        {/* How it works strip — idle only */}
+        {hook.status === "idle" && (
+          <section className="mt-14 border-t border-paper-edge pt-8">
+            <MonoLabel tone="muted" className="block">
+              {t("howItWorks")}
+            </MonoLabel>
+            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <HowItWorksCell n="01" title={t("step1")} body={t("step1Desc")} />
+              <HowItWorksCell n="02" title={t("step2")} body={t("step2Desc")} />
+              <HowItWorksCell n="03" title={t("step3")} body={t("step3Desc")} />
             </div>
-            <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-              <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                {t("step2")}
-              </p>
-              <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                {t("step2Desc")}
-              </p>
-            </div>
-            <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-              <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                {t("step3")}
-              </p>
-              <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                {t("step3Desc")}
-              </p>
-            </div>
-          </div>
-          <div className="mt-10 border-t border-[var(--border-primary)] pt-5 text-center">
-            <p className="text-[15px] italic text-[var(--text-muted)] font-[var(--font-heading)]">
+            <p className="mt-10 border-t border-paper-edge pt-5 text-center font-serif text-[15px] italic text-ink-muted">
               {t("footer")}
             </p>
-          </div>
-        </div>
-      )}
-    </div>
+          </section>
+        )}
+      </PageShell>
+    </main>
+  );
+}
+
+/** Numbered "how it works" cell — mono ordinal, serif title, reading body. */
+function HowItWorksCell({
+  n,
+  title,
+  body,
+}: {
+  n: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <BorderedCard tone="edge" padding="md" className="flex flex-col gap-3">
+      <MonoLabel tone="red">{n}</MonoLabel>
+      <h3 className="m-0 font-serif text-[20px] font-light leading-tight text-ink">
+        {title}
+      </h3>
+      <p className="m-0 t-reading text-[14.5px] text-ink-2">{body}</p>
+    </BorderedCard>
   );
 }

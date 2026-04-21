@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { Button } from "@/components/ui";
 
 const STORAGE_KEY = "redline-cookie-dismissed";
 
@@ -38,24 +39,20 @@ export function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-7">
-        <p className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink bg-paper/95 backdrop-blur-sm">
+      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-4 md:px-10">
+        <p className="m-0 t-reading text-[14.5px] text-ink-2">
           {t("body")}{" "}
           <Link
             href="/privacy"
-            className="text-[var(--accent)] hover:underline"
+            className="text-ink underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
           >
             {t("privacyPolicy")}
           </Link>
         </p>
-        <button
-          type="button"
-          onClick={dismiss}
-          className="rounded border border-[var(--border-primary)] px-4 py-2 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
-        >
+        <Button variant="ghost" size="md" onClick={dismiss}>
           {t("gotIt")}
-        </button>
+        </Button>
       </div>
     </div>
   );

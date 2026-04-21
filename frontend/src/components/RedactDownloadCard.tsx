@@ -5,10 +5,10 @@
  * - Display per-kind match counts so the user can see what was redacted.
  * - Surface a skipped-match banner when the span-matcher could not locate
  *   coordinates for some tokens (rare: custom ToUnicode maps / glyph gaps).
- *   WHY the banner severity matters: a silent partial redaction is worse
- *   than no redaction — the user must consciously accept that risk.
- *   Red + gated checkbox when any skipped kind is in SENSITIVE_KINDS.
- *   Yellow (no gate) when all skips are low-sensitivity (dates, amounts).
+ *   A silent partial redaction is worse than no redaction — the user must
+ *   consciously accept that risk. Red callout + gated checkbox when any
+ *   skipped kind is in SENSITIVE_KINDS; quiet note for low-sensitivity
+ *   skips (dates, amounts) where no gate is needed.
  * - Trigger the Blob URL download with a well-named file.
  * - Offer "Start over" to reset the hook to idle.
  */
@@ -17,9 +17,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-// Note: useState retained for the `reviewed` checkbox state below.
 import type { SkippedMatch, TokenKind } from "@/lib/redact-export/types";
 import { SENSITIVE_KINDS } from "@/lib/redact-export/types";
+import {
+  BorderedCard,
+  Button,
+  Kicker,
+  MonoLabel,
+} from "@/components/ui";
 
 interface RedactDownloadCardProps {
   blob: Blob;
@@ -48,7 +53,6 @@ const KIND_ORDER: TokenKind[] = [
   "OTHER",
 ];
 
-
 /** Download card shown after the redacted PDF has been built. */
 export function RedactDownloadCard({
   blob,
@@ -59,15 +63,11 @@ export function RedactDownloadCard({
 }: RedactDownloadCardProps) {
   const t = useTranslations("RedactDownloadCard");
   const kindLabel = (k: TokenKind): string => t(`kinds.${k}`);
+
   // Blob URL lives in a ref so we can revoke on unmount without triggering
-  // a re-render (URL.createObjectURL is an external side-effect, not state).
-  // We create it eagerly on component mount via useMemo-equivalent ref init.
+  // a re-render. URL.createObjectURL is an external side-effect, not state.
   const blobUrlRef = useRef<string | null>(null);
 
-  // Create and revoke the object URL as an external cleanup concern.
-  // We use a layout effect so the URL is ready before the first paint and
-  // the cleanup fires synchronously before the browser can observe a stale
-  // href on the anchor element.
   useEffect(() => {
     const url = URL.createObjectURL(blob);
     blobUrlRef.current = url;
@@ -77,8 +77,6 @@ export function RedactDownloadCard({
     };
   }, [blob]);
 
-  // Build the set of skipped kinds that are sensitive so we know the
-  // banner severity and whether to gate the download.
   const skippedKinds = new Set(skipped.map((s) => s.kind));
   const sensitiveSkippedKinds = Array.from(skippedKinds).filter((k) =>
     SENSITIVE_KINDS.has(k),
@@ -86,7 +84,6 @@ export function RedactDownloadCard({
   const hasSensitiveSkips = sensitiveSkippedKinds.length > 0;
   const hasAnySkips = skipped.length > 0;
 
-  // Gate checkbox — only shown when sensitive kinds were skipped.
   const [reviewed, setReviewed] = useState(false);
   const canDownload = !hasSensitiveSkips || reviewed;
 
@@ -105,50 +102,29 @@ export function RedactDownloadCard({
   );
 
   return (
-    <div
-      className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition"
+    <BorderedCard
+      tone="edge"
+      padding="md"
       data-testid="redact-download-card"
     >
-      {/* Success header */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-subtle)]">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[var(--accent)]"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-            {t("ready")}
-          </p>
-          <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-            {t("count", { count: totalMatches })}
-          </p>
-        </div>
-      </div>
+      {/* Success masthead */}
+      <Kicker tone="red">{t("ready")}</Kicker>
+      <p className="mt-3 mb-5 font-serif text-[15px] italic text-ink-2">
+        {t("count", { count: totalMatches })}
+      </p>
 
       {/* Per-kind counts */}
       {totalMatches > 0 && (
-        <div className="mb-4 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] divide-y divide-[var(--border-primary)]">
-          {KIND_ORDER.filter((k) => matchesByKind[k] > 0).map((kind) => (
+        <div className="mb-5 border border-paper-edge bg-paper">
+          {KIND_ORDER.filter((k) => matchesByKind[k] > 0).map((kind, idx) => (
             <div
               key={kind}
-              className="flex items-center justify-between px-4 py-2"
+              className={`flex items-center justify-between px-4 py-2.5 ${
+                idx > 0 ? "border-t border-paper-edge" : ""
+              }`}
             >
-              <span className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {kindLabel(kind)}
-              </span>
-              <span className="text-[13px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
+              <MonoLabel tone="muted">{kindLabel(kind)}</MonoLabel>
+              <span className="font-mono text-[12px] text-ink">
                 {matchesByKind[kind]}
               </span>
             </div>
@@ -158,83 +134,55 @@ export function RedactDownloadCard({
 
       {/* Skipped-match banner — severity varies by kind */}
       {hasAnySkips && (
-        <div
-          className={`mb-4 rounded border px-4 py-3 ${
-            hasSensitiveSkips
-              ? "border-[var(--risk-high-border,#ef4444)] bg-[var(--risk-high-bg,#fef2f2)]"
-              : "border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)]"
-          }`}
+        <BorderedCard
+          tone={hasSensitiveSkips ? "red" : "edge"}
+          padding="sm"
+          className="mb-5"
           data-testid="skipped-match-banner"
         >
-          <p
-            className={`text-[13px] font-semibold font-[var(--font-body)] ${
-              hasSensitiveSkips
-                ? "text-[var(--risk-high,#dc2626)]"
-                : "text-[var(--risk-medium)]"
-            }`}
-          >
+          <MonoLabel tone={hasSensitiveSkips ? "red" : "muted"}>
             {hasSensitiveSkips ? t("warnUnmatched") : t("noteLowSensitivity")}
-          </p>
+          </MonoLabel>
           {hasSensitiveSkips && (
-            <p className="mt-1 text-[12px] text-[var(--text-secondary)] font-[var(--font-body)]">
-              {t("affectedCategories", {
-                kinds: sensitiveSkippedKinds.map(kindLabel).join(", "),
-              })}{" "}
-              {t("warnReason")}
-            </p>
+            <>
+              <p className="mt-2 m-0 t-reading text-[14px] text-ink-2">
+                {t("affectedCategories", {
+                  kinds: sensitiveSkippedKinds.map(kindLabel).join(", "),
+                })}{" "}
+                {t("warnReason")}
+              </p>
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={reviewed}
+                  onChange={(e) => setReviewed(e.target.checked)}
+                  data-testid="reviewed-checkbox"
+                  className="mt-0.5 h-4 w-4 accent-red-accent"
+                />
+                <span className="t-reading text-[14px] text-ink-2">
+                  {t("reviewed")}
+                </span>
+              </label>
+            </>
           )}
-          {/* Gate checkbox — only when sensitive kinds skipped */}
-          {hasSensitiveSkips && (
-            <label className="mt-3 flex cursor-pointer items-start gap-2.5">
-              <input
-                type="checkbox"
-                checked={reviewed}
-                onChange={(e) => setReviewed(e.target.checked)}
-                data-testid="reviewed-checkbox"
-                className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
-              />
-              <span className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t("reviewed")}
-              </span>
-            </label>
-          )}
-        </div>
+        </BorderedCard>
       )}
 
       {/* Download + start over */}
-      <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onStartOver}
-          className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:text-[var(--text-secondary)]"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-paper-edge pt-5">
+        <Button variant="ghost" size="md" onClick={onStartOver}>
           {t("startOver")}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
+          size="lg"
           onClick={handleDownload}
           disabled={!canDownload}
-          className="flex items-center gap-2 rounded border border-[var(--accent)] bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="download-button"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
           {t("download")}
-        </button>
+        </Button>
       </div>
-    </div>
+    </BorderedCard>
   );
 }

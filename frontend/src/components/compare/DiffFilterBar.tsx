@@ -1,5 +1,5 @@
 /**
- * Pill-tab filter bar for the comparison view.
+ * Rectilinear mono filter bar for the comparison view.
  *
  * Options:
  *   - all           — every category group
@@ -61,9 +61,9 @@ export function DiffFilterBar({
     <div
       role="tablist"
       aria-label={t("filterGroupLabel")}
-      className="flex flex-wrap gap-2"
+      className="flex flex-wrap gap-0 border-y border-paper-edge"
     >
-      {FILTER_VALUES.map((f) => {
+      {FILTER_VALUES.map((f, i) => {
         const active = f === value;
         return (
           <button
@@ -72,13 +72,13 @@ export function DiffFilterBar({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(f)}
-            className={[
-              "rounded-full border px-3 py-1 text-[12px] font-[var(--font-body)] transition-colors theme-transition",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+            className={`font-mono text-[11px] uppercase tracking-[1.2px] px-4 py-2 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ink ${
+              i > 0 ? "border-l border-paper-edge" : ""
+            } ${
               active
-                ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--bg-primary)]"
-                : "border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--accent)]",
-            ].join(" ")}
+                ? "bg-ink text-paper"
+                : "bg-paper text-ink-2 hover:bg-paper-2 hover:text-ink"
+            }`}
           >
             {labelFor(f)}
           </button>

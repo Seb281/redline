@@ -1,13 +1,12 @@
 /**
- * Single category diff row — category header + A/B side columns.
+ * Single category diff row — category kicker + verdict chip, with two
+ * side-by-side clause columns underneath.
  *
- * Uses a 12-column grid so the verdict badge sits centred between the
- * two clause columns on desktop; stacks vertically on mobile.
- *
- * Clause rendering is kept intentionally lightweight (title + risk
- * badge + truncated plain-english) — the full interactive ClauseCard
- * lives on `/report`. The compare view is for orienting, not deep
- * reading.
+ * Slot A renders with a 1px ink left rail; Slot B with a 2px red-accent
+ * left rail, echoing the slot cards above. Clause rendering is kept
+ * intentionally lightweight (title + risk badge + truncated
+ * plain-english) — the full interactive ClauseCard lives on `/report`.
+ * The compare view is for orienting, not deep reading.
  */
 
 "use client";
@@ -21,7 +20,7 @@ interface DiffClauseRowProps {
   group: ComparisonGroup;
 }
 
-/** Maps verdict → the localised badge label key. */
+/** Maps verdict → the localised chip label key. */
 function verdictLabelKey(v: CategoryVerdict): string {
   switch (v) {
     case "higher_in_a":
@@ -37,39 +36,45 @@ function verdictLabelKey(v: CategoryVerdict): string {
   }
 }
 
-/** Tailwind classes for the verdict pill — colour-codes by severity. */
-function verdictPillClass(v: CategoryVerdict): string {
-  const base = "rounded-full border px-2 py-0.5 text-[11px] font-semibold";
+/** Editorial mono chip classes for the verdict. */
+function verdictChipClass(v: CategoryVerdict): string {
+  const base =
+    "inline-block border px-2 py-[1px] font-mono text-[9.5px] font-semibold uppercase tracking-[1.2px]";
   switch (v) {
     case "higher_in_a":
     case "higher_in_b":
-      return `${base} border-[var(--risk-medium)] text-[var(--risk-medium)]`;
+      return `${base} border-warn/60 text-warn bg-warn-soft`;
     case "unique_to_a":
     case "unique_to_b":
-      return `${base} border-[var(--accent)] text-[var(--accent)]`;
+      return `${base} border-red-accent/60 text-red-accent bg-red-soft`;
     case "same":
-      return `${base} border-[var(--border-primary)] text-[var(--text-muted)]`;
+      return `${base} border-paper-edge text-ink-muted bg-paper-2`;
   }
 }
 
 /**
- * Renders one side's column. `empty` hints that this contract has no
- * clause in the category — shown as a neutral placeholder rather than
- * a blank cell so the row height stays symmetric.
+ * Renders one side's column with a coloured left rail. `empty` hints
+ * that this contract has no clause in the category — shown as a
+ * neutral placeholder rather than a blank cell so the row height stays
+ * symmetric.
  */
 function SideColumn({
   clauses,
   highlighted,
   emptyLabel,
+  rail,
 }: {
   clauses: AnalyzedClause[];
   highlighted: boolean;
   emptyLabel: string;
+  rail: "ink" | "red";
 }) {
+  const railClass = rail === "ink" ? "border-l-ink" : "border-l-red-accent";
+
   if (clauses.length === 0) {
     return (
       <div
-        className="rounded border border-dashed border-[var(--border-primary)] bg-transparent p-3 text-[13px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+        className={`border border-paper-edge border-l-2 ${railClass} border-dashed bg-paper p-4 font-mono text-[11px] uppercase tracking-[1.2px] italic text-ink-muted`}
         data-testid="diff-side-empty"
       >
         {emptyLabel}
@@ -79,33 +84,35 @@ function SideColumn({
 
   return (
     <div
-      className={[
-        "flex flex-col gap-2 rounded border bg-[var(--bg-card)] p-3 theme-transition",
-        highlighted
-          ? "border-[var(--risk-medium)]"
-          : "border-[var(--border-primary)]",
-      ].join(" ")}
+      className={`border border-paper-edge border-l-2 bg-paper p-4 ${railClass} ${
+        highlighted ? "bg-paper-2" : ""
+      }`}
       data-testid="diff-side"
       data-highlighted={highlighted}
     >
-      {clauses.map((c, i) => (
-        <div key={i} className="flex flex-col gap-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[14px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-              {c.title}
+      <div className="flex flex-col gap-3">
+        {clauses.map((c, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-1 border-b border-paper-edge pb-2 last:border-b-0 last:pb-0"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h4 className="m-0 font-serif text-[16px] font-light leading-tight tracking-[-0.005em] text-ink">
+                {c.title}
+              </h4>
+              <RiskBadge level={c.risk_level} />
+            </div>
+            <p className="t-reading line-clamp-3 text-[14px] text-ink-2">
+              {c.plain_english}
             </p>
-            <RiskBadge level={c.risk_level} />
           </div>
-          <p className="line-clamp-3 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-            {c.plain_english}
-          </p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
-/** One full diff row: category header → two side columns + verdict pill. */
+/** One full diff row: category kicker + verdict chip → two side columns. */
 export function DiffClauseRow({ group }: DiffClauseRowProps) {
   const t = useTranslations("Compare");
   const tCat = useTranslations("ClauseCategory");
@@ -118,30 +125,32 @@ export function DiffClauseRow({ group }: DiffClauseRowProps) {
 
   return (
     <div
-      className="flex flex-col gap-2 border-t border-[var(--border-primary)] py-4 first:border-t-0 first:pt-0"
+      className="flex flex-col gap-3 border-b border-paper-edge py-5 last:border-b-0"
       data-testid="diff-row"
       data-category={group.category}
       data-verdict={group.verdict}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] font-[var(--font-heading)]">
+      <div className="flex flex-wrap items-baseline gap-3">
+        <span className="font-mono text-[11px] uppercase tracking-[1.5px] text-ink">
           {tCat(group.category)}
-        </p>
-        <span className={verdictPillClass(group.verdict)}>
+        </span>
+        <span className={verdictChipClass(group.verdict)}>
           {tRow(verdictLabelKey(group.verdict))}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <SideColumn
           clauses={group.clausesA}
           highlighted={highlightedA}
           emptyLabel={t("noMatchingClause")}
+          rail="ink"
         />
         <SideColumn
           clauses={group.clausesB}
           highlighted={highlightedB}
           emptyLabel={t("noMatchingClause")}
+          rail="red"
         />
       </div>
     </div>

@@ -6,8 +6,10 @@
  * axis. Category mismatches surface via the summary bar's
  * "unique to one" counter rather than via ghost axes on the radars.
  *
+ * Slot A panel carries a 1px ink border; Slot B panel carries a 2px
+ * red-accent border so the pair echoes the slot cards and diff rails.
  * The component is purely presentational: no filter wiring, no click
- * handlers. Tooltips + vertex colouring come for free from `RiskRadar`.
+ * handlers.
  */
 
 "use client";
@@ -15,6 +17,8 @@
 import { useTranslations } from "next-intl";
 import type { AnalyzedClause } from "@/types";
 import { RiskRadar } from "@/components/RiskRadar";
+import { BorderedCard } from "@/components/ui/BorderedCard";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 /** Props for {@link RadarComparison}. */
 interface RadarComparisonProps {
@@ -39,13 +43,15 @@ export function RadarComparison({
   const t = useTranslations("Compare");
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <RadarPanel
+        tone="ink"
         label={labelA}
         clauses={clausesA}
         clausesLabel={t("clauses", { count: clausesA.length })}
       />
       <RadarPanel
+        tone="red"
         label={labelB}
         clauses={clausesB}
         clausesLabel={t("clauses", { count: clausesB.length })}
@@ -55,32 +61,35 @@ export function RadarComparison({
 }
 
 /**
- * A single radar panel — title + SVG. Split out so both sides share
- * identical chrome and the container grid stays clean.
+ * A single radar panel — tone-coded masthead + SVG. Split out so both
+ * sides share identical chrome and the container grid stays clean.
  */
 function RadarPanel({
+  tone,
   label,
   clauses,
   clausesLabel,
 }: {
+  tone: "ink" | "red";
   label: string;
   clauses: AnalyzedClause[];
   clausesLabel: string;
 }) {
+  const kickerTone = tone === "red" ? "red" : "ink";
+
   return (
-    <div
-      className="flex flex-col items-center rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition"
-      data-testid="radar-panel"
-    >
-      <p className="mb-1 text-center text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] font-[var(--font-heading)]">
-        {label}
-      </p>
-      <p className="mb-3 text-center text-[12px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {clausesLabel}
-      </p>
-      <div className="w-full max-w-[260px]">
-        <RiskRadar clauses={clauses} />
+    <BorderedCard tone={tone} padding="md" data-testid="radar-panel">
+      <div className="flex flex-col items-center">
+        <MonoLabel tone={kickerTone} className="block">
+          {label}
+        </MonoLabel>
+        <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
+          {clausesLabel}
+        </p>
+        <div className="mt-3 w-full max-w-[260px]">
+          <RiskRadar clauses={clauses} />
+        </div>
       </div>
-    </div>
+    </BorderedCard>
   );
 }

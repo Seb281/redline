@@ -1,6 +1,7 @@
 /**
  * Orchestrates the two compare slots and renders the diff view once
- * both are ready.
+ * both are ready. Editorial layout: Masthead → slot pair → summary →
+ * radar pair → filter bar → diff table.
  *
  * State ownership:
  *   - two `useCompareSlot()` instances (one per side)
@@ -31,6 +32,8 @@ import { RadarComparison } from "@/components/compare/RadarComparison";
 import { ComparisonSummaryBar } from "@/components/compare/ComparisonSummaryBar";
 import { DiffFilterBar } from "@/components/compare/DiffFilterBar";
 import { DiffClauseList } from "@/components/compare/DiffClauseList";
+import { Masthead } from "@/components/ui/Masthead";
+import { PageShell } from "@/components/PageShell";
 
 /** Full compare page — client-side so it can use sessionStorage + hooks. */
 export function ComparePageClient() {
@@ -74,71 +77,74 @@ export function ComparePageClient() {
   }, [slotA.slot, slotB.slot]);
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-9 sm:px-7">
-      <header className="mb-6">
-        <h1 className="text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("pageTitle")}
-        </h1>
-        <p className="mt-1 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("pageSubtitle")}
-        </p>
-      </header>
+    <main>
+      <PageShell width="lg" className="pb-16">
+        <Masthead meta="COMPARE" title={t("pageTitle")} lede={t("pageSubtitle")} />
 
-      <section
-        className="grid grid-cols-1 gap-4 md:grid-cols-2"
-        data-testid="compare-slots"
-      >
-        <ContractSlotCard
-          side="A"
-          slot={slotA.slot}
-          onLoadSample={(sample, label) =>
-            void slotA.loadSample(sample, label)
-          }
-          onLoadSaved={(id, label) =>
-            void slotA.loadSavedAnalysis(id, label)
-          }
-          onClear={slotA.clear}
-        />
-        <ContractSlotCard
-          side="B"
-          slot={slotB.slot}
-          onLoadSample={(sample, label) =>
-            void slotB.loadSample(sample, label)
-          }
-          onLoadSaved={(id, label) =>
-            void slotB.loadSavedAnalysis(id, label)
-          }
-          onClear={slotB.clear}
-        />
-      </section>
-
-      {bothReady && prepared && slotA.slot.status === "ready" && slotB.slot.status === "ready" && (
-        <section className="mt-8 flex flex-col gap-6" data-testid="compare-diff">
-          <RadarComparison
-            labelA={slotA.slot.label}
-            labelB={slotB.slot.label}
-            clausesA={slotA.slot.data.clauses}
-            clausesB={slotB.slot.data.clauses}
+        <section
+          className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2"
+          data-testid="compare-slots"
+        >
+          <ContractSlotCard
+            side="A"
+            slot={slotA.slot}
+            onLoadSample={(sample, label) =>
+              void slotA.loadSample(sample, label)
+            }
+            onLoadSaved={(id, label) =>
+              void slotA.loadSavedAnalysis(id, label)
+            }
+            onClear={slotA.clear}
           />
-
-          <ComparisonSummaryBar
-            stats={prepared.stats}
-            labelA={slotA.slot.label}
-            labelB={slotB.slot.label}
-            overviewA={slotA.slot.data.overview}
-            overviewB={slotB.slot.data.overview}
+          <ContractSlotCard
+            side="B"
+            slot={slotB.slot}
+            onLoadSample={(sample, label) =>
+              void slotB.loadSample(sample, label)
+            }
+            onLoadSaved={(id, label) =>
+              void slotB.loadSavedAnalysis(id, label)
+            }
+            onClear={slotB.clear}
           />
-
-          <DiffFilterBar
-            value={filter}
-            onChange={setFilter}
-            labelA={slotA.slot.label}
-            labelB={slotB.slot.label}
-          />
-
-          <DiffClauseList groups={prepared.groups} filter={filter} />
         </section>
-      )}
+
+        {bothReady &&
+          prepared &&
+          slotA.slot.status === "ready" &&
+          slotB.slot.status === "ready" && (
+            <section
+              className="mt-12 flex flex-col gap-10"
+              data-testid="compare-diff"
+            >
+              <ComparisonSummaryBar
+                stats={prepared.stats}
+                labelA={slotA.slot.label}
+                labelB={slotB.slot.label}
+                overviewA={slotA.slot.data.overview}
+                overviewB={slotB.slot.data.overview}
+              />
+
+              <RadarComparison
+                labelA={slotA.slot.label}
+                labelB={slotB.slot.label}
+                clausesA={slotA.slot.data.clauses}
+                clausesB={slotB.slot.data.clauses}
+              />
+
+              <div className="flex flex-col gap-4">
+                <DiffFilterBar
+                  value={filter}
+                  onChange={setFilter}
+                  labelA={slotA.slot.label}
+                  labelB={slotB.slot.label}
+                />
+
+                <DiffClauseList groups={prepared.groups} filter={filter} />
+              </div>
+            </section>
+          )}
+      </PageShell>
     </main>
   );
 }

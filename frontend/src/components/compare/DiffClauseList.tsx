@@ -56,7 +56,7 @@ export function DiffClauseList({ groups, filter }: DiffClauseListProps) {
   if (filtered.length === 0) {
     return (
       <p
-        className="rounded border border-dashed border-[var(--border-primary)] px-4 py-6 text-center text-[13px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+        className="t-reading border-y border-paper-edge py-10 text-center text-[15px] italic text-ink-muted"
         data-testid="diff-empty"
       >
         {t("noMatchingFilter")}
@@ -65,7 +65,7 @@ export function DiffClauseList({ groups, filter }: DiffClauseListProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col border-t border-ink">
       {filtered.map((g) => (
         <DiffClauseRow key={g.category} group={g} />
       ))}

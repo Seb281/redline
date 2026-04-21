@@ -11,13 +11,17 @@
     "logOut": "Uitloggen",
     "switchToDark": "Schakel over naar de donkere modus",
     "switchToLight": "Schakel over naar de lichte modus",
-    "language": "Taal"
+    "language": "Taal",
+    "trust": "Trust",
+    "signIn": "Sign in"
   },
   "Footer": {
     "brand": "Redline",
     "privacyPolicy": "Privacybeleid",
     "portfolio": "Portfolio",
-    "transparency": "Transparantie"
+    "transparency": "Transparantie",
+    "trust": "Trust",
+    "dataResidency": "Data residency"
   },
   "CookieBanner": {
     "body": "Redline gebruikt localStorage uitsluitend voor thema-instellingen. Er worden geen cookies of tracking gebruikt.",

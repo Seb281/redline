@@ -11,13 +11,17 @@
     "logOut": "Se déconnecter",
     "switchToDark": "Passer en mode sombre",
     "switchToLight": "Passer en mode clair",
-    "language": "Langue"
+    "language": "Langue",
+    "trust": "Trust",
+    "signIn": "Sign in"
   },
   "Footer": {
     "brand": "Redline",
     "privacyPolicy": "Politique de confidentialité",
     "portfolio": "Portefeuille",
-    "transparency": "Transparence"
+    "transparency": "Transparence",
+    "trust": "Trust",
+    "dataResidency": "Data residency"
   },
   "CookieBanner": {
     "body": "Redline utilise uniquement localStorage pour les préférences de thème. Pas de cookies ni de suivi.",

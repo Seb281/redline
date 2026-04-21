@@ -3,6 +3,8 @@
     "redact": "Redact",
     "compare": "Compare",
     "history": "History",
+    "trust": "Trust",
+    "signIn": "Sign in",
     "showRealNames": "Show real names",
     "hideRealNames": "Hide real names",
     "showNames": "Show names",
@@ -14,9 +16,11 @@
     "language": "Language"
   },
   "Footer": {
-    "brand": "Redline",
-    "privacyPolicy": "Privacy Policy",
+    "brand": "Redline — read before you sign",
+    "trust": "Trust",
+    "privacyPolicy": "Privacy",
     "transparency": "Transparency",
+    "dataResidency": "Data residency",
     "portfolio": "Portfolio"
   },
   "CookieBanner": {

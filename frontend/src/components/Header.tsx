@@ -1,4 +1,4 @@
-/** Persistent header with Redline wordmark, navigation, and user menu. */
+/** Persistent editorial header — BrandMark, nav links, utility cluster. */
 
 "use client";
 
@@ -8,106 +8,81 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRehydrate } from "@/contexts/RehydrateContext";
 import { useTheme } from "@/hooks/useTheme";
 import { LanguagePicker } from "@/components/LanguagePicker";
+import { BrandMark } from "@/components/ui/BrandMark";
 
-/** Top bar shown on every screen. */
+/** Top bar shown on every screen. 49px effective height, 1px ink bottom rule. */
 export function Header() {
   const t = useTranslations("Header");
   const { theme, toggle } = useTheme();
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { isAuthenticated, logout, isLoading } = useAuth();
   const { rehydrate, setRehydrate } = useRehydrate();
 
+  const navLinkBase =
+    "font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted no-underline transition-colors hover:text-ink";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5">
-        {/* Red dash + wordmark — links back to landing page */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <div className="h-[3px] w-5 bg-[var(--accent)]" />
-          <span className="font-[var(--font-body)] text-sm font-semibold uppercase tracking-[1.5px] text-[var(--text-primary)]">
-            Redline
-          </span>
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-ink bg-paper/95 backdrop-blur-sm theme-transition">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-6 px-6 py-3 md:px-10">
+        <div className="flex items-center gap-8">
+          <BrandMark />
+          <nav aria-label="Primary">
+            <ul className="hidden items-center gap-6 md:flex">
+              <li>
+                <Link href="/redact" className={navLinkBase}>
+                  {t("redact")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/compare" className={navLinkBase}>
+                  {t("compare")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/history" className={navLinkBase}>
+                  {t("history")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/trust" className={navLinkBase}>
+                  {t("trust")}
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </div>
 
         <div className="flex items-center gap-3">
-          {/* Redact link — standalone PII-stripping flow, no account needed */}
-          <Link
-            href="/redact"
-            className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
-          >
-            {t("redact")}
-          </Link>
-
-          {/* Compare link — side-by-side contract comparison */}
-          <Link
-            href="/compare"
-            className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
-          >
-            {t("compare")}
-          </Link>
-
-          {/* History link — always visible, page handles auth state */}
-          <Link
-            href="/history"
-            className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
-          >
-            {t("history")}
-          </Link>
-
-          {/* Session-only toggle — "Show real names" swaps role labels back to
-              party names across the report. No localStorage; resets each
-              session so privacy is the default. */}
           <button
             type="button"
             onClick={() => setRehydrate(!rehydrate)}
             aria-pressed={rehydrate}
             aria-label={rehydrate ? t("hideRealNames") : t("showRealNames")}
             title={rehydrate ? t("hideRealNames") : t("showRealNames")}
-            className={`rounded px-2 py-1 text-sm font-[var(--font-body)] transition-colors ${
+            className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors ${
               rehydrate
-                ? "text-[var(--accent)] hover:text-[var(--text-primary)]"
-                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                ? "text-red-accent hover:text-red-deep"
+                : "text-ink-muted hover:text-ink"
             }`}
           >
             {rehydrate ? t("hideNames") : t("showNames")}
           </button>
 
-          {/* User info + account + logout — only when authenticated */}
-          {!isLoading && isAuthenticated && (
-            <>
-              <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                {user?.email}
-              </span>
-              <Link
-                href="/account"
-                className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] no-underline transition-colors hover:text-[var(--text-primary)]"
-              >
-                {t("account")}
-              </Link>
-              <button
-                type="button"
-                onClick={() => logout()}
-                className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--text-primary)]"
-              >
-                {t("logOut")}
-              </button>
-            </>
-          )}
+          <span aria-hidden className="h-4 w-px bg-paper-edge" />
 
-          {/* Language picker */}
           <LanguagePicker />
 
-          {/* Theme toggle */}
           <button
             type="button"
             onClick={toggle}
             aria-label={theme === "light" ? t("switchToDark") : t("switchToLight")}
-            className="rounded p-2.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+            className="text-ink-muted transition-colors hover:text-ink"
           >
             {theme === "light" ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5" />
                 <line x1="12" y1="1" x2="12" y2="3" />
                 <line x1="12" y1="21" x2="12" y2="23" />
@@ -120,6 +95,27 @@ export function Header() {
               </svg>
             )}
           </button>
+
+          <span aria-hidden className="h-4 w-px bg-paper-edge" />
+
+          {!isLoading && isAuthenticated ? (
+            <>
+              <Link href="/account" className={navLinkBase}>
+                {t("account")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted transition-colors hover:text-ink"
+              >
+                {t("logOut")}
+              </button>
+            </>
+          ) : (
+            <Link href="/auth" className={navLinkBase}>
+              {t("signIn")}
+            </Link>
+          )}
         </div>
       </div>
     </header>

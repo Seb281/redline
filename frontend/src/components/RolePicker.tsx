@@ -17,6 +17,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Party } from "@/types";
 import { useRehydrate } from "@/contexts/RehydrateContext";
+import { BorderedCard } from "@/components/ui/BorderedCard";
+import { Button } from "@/components/ui/Button";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 interface RolePickerProps {
   /** Parties extracted by Pass 0 (parallel to `labels`). */
@@ -53,20 +56,20 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
   };
 
   return (
-    <div className="mb-7 rounded border border-[var(--accent)] bg-[var(--accent-subtle)] px-6 py-5 theme-transition">
-      <p className="mb-1 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
+    <BorderedCard tone="ink" padding="lg" className="mb-8">
+      <MonoLabel tone="red" className="block">
         {t("label")}
-      </p>
-      <h3 className="mb-4 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      </MonoLabel>
+      <h3 className="mt-3 font-serif text-[28px] font-light leading-[1.05] tracking-[-0.01em] text-ink md:text-[32px]">
         {t("heading")}
       </h3>
-      <p className="mb-5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+      <p className="t-reading mt-3 max-w-[60ch] text-[15px] text-ink-2">
         {t("description")}
       </p>
 
       {/* One button per party — label-first, with optional legal-name sub-label
           when the user has flipped the global "Show real names" toggle. */}
-      <div className="flex flex-wrap gap-2.5">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {parties.map((party, i) => {
           const label = labels[i] ?? "PARTY";
           const pretty = titleCase(label) || t("defaultPartyName");
@@ -75,11 +78,16 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
               key={`${label}-${i}`}
               type="button"
               onClick={() => onPick(label)}
-              className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2.5 text-left text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]"
+              className="group flex flex-col items-start gap-1.5 border border-paper-edge bg-paper px-5 py-4 text-left transition-colors hover:border-ink hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink"
             >
-              <span>{t("imThe", { role: pretty })}</span>
+              <MonoLabel tone="muted" className="group-hover:text-red-accent">
+                0{i + 1}
+              </MonoLabel>
+              <span className="font-serif text-[20px] leading-tight tracking-[-0.01em] text-ink">
+                {t("imThe", { role: pretty })}
+              </span>
               {rehydrate && (
-                <span className="block text-[12px] font-normal text-[var(--text-muted)]">
+                <span className="t-reading text-[13px] text-ink-muted">
                   {party.name}
                 </span>
               )}
@@ -91,15 +99,15 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
           <button
             type="button"
             onClick={() => setOtherOpen(true)}
-            className="rounded border border-dashed border-[var(--border-secondary)] bg-transparent px-4 py-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:border-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            className="flex flex-col items-start gap-1.5 border border-dashed border-paper-edge bg-transparent px-5 py-4 text-left transition-colors hover:border-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink"
           >
-            {t("other")}
+            <MonoLabel tone="muted">{t("other")}</MonoLabel>
           </button>
         )}
       </div>
 
       {otherOpen && (
-        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <input
             type="text"
             autoFocus
@@ -112,29 +120,29 @@ export function RolePicker({ parties, labels, onPick }: RolePickerProps) {
               }
             }}
             placeholder={t("otherPlaceholder")}
-            className="min-w-[220px] flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3.5 py-2.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-muted)] font-[var(--font-body)] focus:border-[var(--accent)] focus:outline-none"
+            className="min-w-[220px] flex-1 border border-ink bg-paper px-3 py-2 font-serif text-[15px] text-ink placeholder:font-mono placeholder:text-[12px] placeholder:uppercase placeholder:tracking-[1.2px] placeholder:text-ink-muted focus:border-red-accent focus:outline-none"
           />
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
             onClick={handleOtherConfirm}
             disabled={otherValue.trim().length === 0}
-            className="rounded bg-[var(--text-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("confirm")}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Skip — keeps default weaker-party framing for Pass 2 */}
-      <div className="mt-4">
+      <div className="mt-6 border-t border-paper-edge pt-4">
         <button
           type="button"
           onClick={() => onPick(null)}
-          className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] hover:text-[var(--text-secondary)] hover:underline"
+          className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
         >
           {t("skipNeutral")}
         </button>
       </div>
-    </div>
+    </BorderedCard>
   );
 }

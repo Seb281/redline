@@ -1,5 +1,11 @@
 /**
- * Contract overview card — shows high-level contract metadata.
+ * Contract overview — editorial masthead showing contract metadata.
+ *
+ * Renders the contract type as a Fraunces headline, role-first party
+ * line, and a standfirst grid of the key facts (effective date,
+ * duration, jurisdiction with evidence pill, value). Key terms are
+ * surfaced as an ink-ruled list below the masthead so they read as the
+ * top-of-page abstract that opened the design brief.
  *
  * SP-1.9: Parties render as role labels by default (e.g. "Provider ·
  * Client"). The global "Show real names" toggle, exposed via
@@ -13,10 +19,13 @@
 
 "use client";
 
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import type { ContractOverview as ContractOverviewType } from "@/types";
 import { useRehydrate } from "@/contexts/RehydrateContext";
 import { deriveLabels } from "@/lib/history/adapt-overview";
+import { Kicker } from "@/components/ui/Kicker";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 interface ContractOverviewProps {
   overview: ContractOverviewType;
@@ -39,19 +48,11 @@ function titleCase(label: string): string {
     .join(" ");
 }
 
-/**
- * SP-1.7 — Tailwind classes for the jurisdiction-evidence pill. Green
- * means "explicitly stated in the contract", amber means "inferred from
- * addresses/language/currency", gray means "could not determine".
- */
-function pillClassFor(sourceType: "stated" | "inferred" | "unknown"): string {
-  if (sourceType === "stated") {
-    return "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
-  }
-  if (sourceType === "inferred") {
-    return "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
-  }
-  return "bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+/** Mono uppercase tone classes for the jurisdiction-evidence chip. */
+function evidenceToneClass(sourceType: "stated" | "inferred" | "unknown"): string {
+  if (sourceType === "stated") return "border-ok/60 text-ok bg-ok-soft";
+  if (sourceType === "inferred") return "border-warn/60 text-warn bg-warn-soft";
+  return "border-paper-edge text-ink-muted bg-paper-2";
 }
 
 /** Renders structured contract metadata at the top of the report. */
@@ -59,11 +60,6 @@ export function ContractOverview({ overview, labels }: ContractOverviewProps) {
   const t = useTranslations("ContractOverview");
   const { rehydrate } = useRehydrate();
   const resolvedLabels = labels ?? deriveLabels(overview);
-
-  const details: string[] = [];
-  if (overview.effective_date) details.push(t("effective", { date: overview.effective_date }));
-  if (overview.duration) details.push(t("duration", { duration: overview.duration }));
-  if (overview.total_value) details.push(t("value", { value: overview.total_value }));
 
   // Role-first display; legal name disclosed only when rehydrate is on.
   const partyDisplay = overview.parties
@@ -74,44 +70,83 @@ export function ContractOverview({ overview, labels }: ContractOverviewProps) {
     })
     .join(" · ");
 
-  return (
-    <div className="mb-7 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-6 theme-transition">
-      <h2 className="mb-1.5 text-[25px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-        {overview.contract_type}
-      </h2>
-      <p className="mb-3.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        {partyDisplay}
-      </p>
-
-      {details.length > 0 && (
-        <p className="mb-3.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {details.join(" · ")}
-        </p>
-      )}
-
-      {overview.jurisdiction_evidence && (
-        <p className="mb-3.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {t("jurisdiction", { jurisdiction: overview.governing_jurisdiction ?? "—" })}
+  /** Standfirst cells — built piecewise so absent fields collapse. */
+  const cells: { kicker: string; value: ReactNode }[] = [];
+  if (overview.effective_date) {
+    cells.push({ kicker: t("effectiveLabel"), value: overview.effective_date });
+  }
+  if (overview.duration) {
+    cells.push({ kicker: t("durationLabel"), value: overview.duration });
+  }
+  if (overview.total_value) {
+    cells.push({ kicker: t("valueLabel"), value: overview.total_value });
+  }
+  if (overview.jurisdiction_evidence) {
+    cells.push({
+      kicker: t("jurisdictionLabel"),
+      value: (
+        <span className="inline-flex flex-wrap items-baseline gap-2">
+          <span>{overview.governing_jurisdiction ?? "—"}</span>
           <span
             data-testid="jurisdiction-pill"
             title={overview.jurisdiction_evidence.source_text ?? undefined}
-            className={`ml-2 inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[1px] ${pillClassFor(overview.jurisdiction_evidence.source_type)}`}
+            className={`inline-block border px-1.5 py-[1px] font-mono text-[9.5px] font-semibold uppercase tracking-[1.2px] ${evidenceToneClass(overview.jurisdiction_evidence.source_type)}`}
           >
             {t(`jurisdictionEvidence.${overview.jurisdiction_evidence.source_type}`)}
           </span>
-        </p>
+        </span>
+      ),
+    });
+  }
+
+  return (
+    <header className="mb-10">
+      <MonoLabel tone="muted" className="block">
+        {partyDisplay}
+      </MonoLabel>
+      <h2 className="mt-3 font-serif text-[40px] font-light leading-[1.02] tracking-[-0.02em] text-ink m-0 md:text-[52px]">
+        {overview.contract_type}
+      </h2>
+      <div aria-hidden className="mt-6 border-b-2 border-ink" />
+
+      {cells.length > 0 && (
+        <dl
+          className="mt-5 grid gap-x-8 gap-y-4"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(cells.length, 4)}, minmax(0, 1fr))`,
+          }}
+        >
+          {cells.map((cell, i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <dt>
+                <MonoLabel tone="muted">{cell.kicker}</MonoLabel>
+              </dt>
+              <dd className="font-serif text-[19px] leading-tight text-ink m-0">
+                {cell.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       )}
 
-      <div>
-        <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-          {t("keyTerms")}
-        </p>
-        <ul className="space-y-1.5 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {overview.key_terms.map((term, i) => (
-            <li key={i}>• {term}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
+      {overview.key_terms.length > 0 && (
+        <section className="mt-8 border-t border-paper-edge pt-4">
+          <Kicker tone="ink">{t("keyTerms")}</Kicker>
+          <ul className="mt-3 grid gap-y-2 sm:grid-cols-2 sm:gap-x-8">
+            {overview.key_terms.map((term, i) => (
+              <li
+                key={i}
+                className="t-reading grid grid-cols-[auto_1fr] gap-x-3 text-[15px] text-ink-2"
+              >
+                <span className="font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>{term}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </header>
   );
 }

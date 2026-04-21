@@ -1,29 +1,18 @@
-/** Color-coded risk level badge using CSS variable risk tokens. */
+/** Color-coded risk level badge — thin wrapper around the shared RiskChip primitive. */
 
 "use client";
 
 import { useTranslations } from "next-intl";
 import type { RiskLevel } from "@/types";
-
-const STYLES: Record<RiskLevel, string> = {
-  high: "bg-[var(--risk-high-bg)] text-[var(--risk-high)] border border-[var(--risk-high-border)]",
-  medium: "bg-[var(--risk-medium-bg)] text-[var(--risk-medium)] border border-[var(--risk-medium-border)]",
-  low: "bg-[var(--risk-low-bg)] text-[var(--risk-low)] border border-[var(--risk-low-border)]",
-  informational: "bg-[var(--risk-info-bg)] text-[var(--risk-info)] border border-[var(--risk-info-border)]",
-};
+import { RiskChip } from "@/components/ui/RiskChip";
 
 interface RiskBadgeProps {
   level: RiskLevel;
 }
 
-/** Renders a small colored badge indicating risk level. */
+/** Renders a small editorial chip indicating risk level. */
 export function RiskBadge({ level }: RiskBadgeProps) {
   const t = useTranslations("RiskBadge");
-  return (
-    <span
-      className={`inline-block rounded px-2.5 py-1 text-sm font-semibold uppercase font-[var(--font-body)] ${STYLES[level]}`}
-    >
-      {level === "informational" ? t("info") : t("level", { level })}
-    </span>
-  );
+  const label = level === "informational" ? t("info") : t("level", { level });
+  return <RiskChip level={level} label={label} size="md" />;
 }

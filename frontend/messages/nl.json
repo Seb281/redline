@@ -188,7 +188,11 @@
       "stated": "verklaarde",
       "inferred": "afgeleid",
       "unknown": "onbekend"
-    }
+    },
+    "effectiveLabel": "Van kracht",
+    "durationLabel": "Duur",
+    "valueLabel": "Waarde",
+    "jurisdictionLabel": "Rechtsgebied"
   },
   "RiskChart": {
     "ariaLabel": "Risicoclassificatie: {high} hoog, {medium} gemiddeld, {low} laag, {info} informatief",

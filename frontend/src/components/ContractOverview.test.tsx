@@ -113,7 +113,7 @@ describe("ContractOverview — jurisdiction pill (SP-1.7)", () => {
         />
       </RehydrateProvider>,
     );
-    expect(screen.getByText(/Jurisdiction: Netherlands/)).toBeTruthy();
+    expect(screen.getByText(/Netherlands/)).toBeTruthy();
     const pill = screen.getByTestId("jurisdiction-pill");
     expect(pill.textContent).toMatch(/stated/i);
     expect(pill.getAttribute("title")).toContain("\u00A714 Governing Law");
@@ -153,7 +153,7 @@ describe("ContractOverview — jurisdiction pill (SP-1.7)", () => {
         />
       </RehydrateProvider>,
     );
-    expect(screen.getByText(/Jurisdiction: —/)).toBeTruthy();
+    expect(screen.getByText("—")).toBeTruthy();
     const pill = screen.getByTestId("jurisdiction-pill");
     expect(pill.textContent).toMatch(/unknown/i);
   });

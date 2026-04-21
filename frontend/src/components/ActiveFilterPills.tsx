@@ -27,9 +27,9 @@ export interface ActiveFilterPillsProps {
   onClearAll: () => void;
 }
 
-/** Shared CSS classes for a single filter pill. */
+/** Shared editorial pill — 1px ink rectangle, mono uppercase label. */
 const pillClasses =
-  "inline-flex items-center gap-1.5 rounded-full border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-0.5 text-[12px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition hover:border-[var(--accent)] hover:bg-[var(--bg-tertiary)] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  "inline-flex items-center gap-2 border border-ink bg-paper px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink transition-colors hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-accent";
 
 /**
  * Row of active filter pills with per-pill dismiss and a "Clear all" control.
@@ -51,15 +51,11 @@ export function ActiveFilterPills({
 
   if (!hasRisk && !hasCategory) return null;
 
-  /** Human label for the active risk level (from RiskChart.labels namespace). */
   const riskLabel = hasRisk ? tRisk(`labels.${riskFilter}`) : null;
-
-  /** Human label for the active category (from ClauseCategory namespace). */
   const categoryLabel = hasCategory ? tCat(categoryFilter) : null;
 
   return (
-    <div className="mt-4 mb-2 flex flex-wrap items-center gap-2">
-      {/* Risk pill */}
+    <div className="mt-3 mb-2 flex flex-wrap items-center gap-2">
       {hasRisk && riskLabel !== null && (
         <button
           type="button"
@@ -67,17 +63,14 @@ export function ActiveFilterPills({
           aria-label={t("removeFilter", { label: riskLabel })}
           onClick={onClearRisk}
         >
-          <span>
-            <span className="font-semibold">{t("riskPrefix")}</span>{" "}
-            {riskLabel}
-          </span>
-          <span aria-hidden="true" className="text-[11px] opacity-60">
+          <span className="text-ink-muted">{t("riskPrefix")}</span>
+          <span>{riskLabel}</span>
+          <span aria-hidden="true" className="text-red-accent">
             ×
           </span>
         </button>
       )}
 
-      {/* Category pill */}
       {hasCategory && categoryLabel !== null && (
         <button
           type="button"
@@ -85,21 +78,18 @@ export function ActiveFilterPills({
           aria-label={t("removeFilter", { label: categoryLabel })}
           onClick={onClearCategory}
         >
-          <span>
-            <span className="font-semibold">{t("categoryPrefix")}</span>{" "}
-            {categoryLabel}
-          </span>
-          <span aria-hidden="true" className="text-[11px] opacity-60">
+          <span className="text-ink-muted">{t("categoryPrefix")}</span>
+          <span>{categoryLabel}</span>
+          <span aria-hidden="true" className="text-red-accent">
             ×
           </span>
         </button>
       )}
 
-      {/* Clear all */}
       <button
         type="button"
         onClick={onClearAll}
-        className="text-[12px] text-[var(--text-muted)] font-[var(--font-body)] underline underline-offset-2 hover:text-[var(--text-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted underline-offset-2 transition-colors hover:text-red-accent hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-accent"
       >
         {t("clearAll")}
       </button>

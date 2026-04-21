@@ -188,7 +188,11 @@
       "stated": "afirmó",
       "inferred": "deducido",
       "unknown": "desconocido"
-    }
+    },
+    "effectiveLabel": "Vigencia",
+    "durationLabel": "Duración",
+    "valueLabel": "Valor",
+    "jurisdictionLabel": "Competencia"
   },
   "RiskChart": {
     "ariaLabel": "Distribución de riesgos: {high} alto, {medium} medio, {low} bajo, {info} informativo",

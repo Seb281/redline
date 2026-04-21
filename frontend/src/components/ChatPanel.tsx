@@ -14,6 +14,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AnalyzeResponse } from "@/types";
 import { ChatMessage } from "@/components/ChatMessage";
+import { Button } from "@/components/ui/Button";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -74,7 +76,7 @@ export function ChatPanel({
       sendMessage({ text });
       if (inputRef.current) inputRef.current.value = "";
     },
-    [sendMessage, status]
+    [sendMessage, status],
   );
 
   /** Submit on Enter (Shift+Enter for newline). */
@@ -85,7 +87,7 @@ export function ChatPanel({
         handleSubmit(e);
       }
     },
-    [handleSubmit]
+    [handleSubmit],
   );
 
   return (
@@ -93,53 +95,63 @@ export function ChatPanel({
       {/* Overlay (mobile) */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 sm:hidden"
+          className="fixed inset-0 z-40 bg-ink/30 sm:hidden"
           onClick={onToggle}
         />
       )}
 
       {/* Panel */}
-      <div
-        className={`fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-[var(--border-primary)] bg-[var(--bg-primary)] transition-transform duration-300 sm:w-[400px] ${
+      <aside
+        className={`fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-ink bg-paper transition-transform duration-300 sm:w-[420px] ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        aria-hidden={!isOpen}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
-          <h2 className="text-[17px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-            {t("heading")}
-          </h2>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-            aria-label={t("close")}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        {/* Header — editorial masthead */}
+        <header className="border-b-2 border-ink px-5 pb-4 pt-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <MonoLabel tone="red" className="block">
+                Q&amp;A
+              </MonoLabel>
+              <h2 className="mt-2 font-serif text-[24px] font-light leading-tight tracking-[-0.01em] text-ink">
+                {t("heading")}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onToggle}
+              className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
+              aria-label={t("close")}
+            >
+              ×
+            </button>
+          </div>
+        </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <p className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)] mb-3">
+            <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+              <p className="t-reading mb-4 text-[15px] text-ink-2">
                 {t("empty")}
               </p>
-              <div className="space-y-2 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-                <p>&ldquo;{t("example1")}&rdquo;</p>
-                <p>&ldquo;{t("example2")}&rdquo;</p>
-                <p>&ldquo;{t("example3")}&rdquo;</p>
-              </div>
+              <ul className="space-y-1.5 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
+                <li>&ldquo;{t("example1")}&rdquo;</li>
+                <li>&ldquo;{t("example2")}&rdquo;</li>
+                <li>&ldquo;{t("example3")}&rdquo;</li>
+              </ul>
             </div>
           )}
           {messages.map((msg) => (
             <ChatMessage
               key={msg.id}
               message={msg}
-              isStreaming={status === "streaming" && msg === messages[messages.length - 1] && msg.role === "assistant"}
+              isStreaming={
+                status === "streaming" &&
+                msg === messages[messages.length - 1] &&
+                msg.role === "assistant"
+              }
               parties={analysis.overview.parties}
               contractType={analysis.overview.contract_type}
             />
@@ -148,49 +160,54 @@ export function ChatPanel({
         </div>
 
         {/* Input */}
-        <div className="border-t border-[var(--border-primary)] px-5 py-4">
-          <form onSubmit={handleSubmit} className="flex gap-2.5">
+        <div className="border-t border-ink px-5 py-4">
+          <form onSubmit={handleSubmit} className="flex gap-2">
             <textarea
               ref={inputRef}
               rows={1}
-              placeholder={messages.length >= 10 ? t("placeholderLimit") : t("placeholder")}
+              placeholder={
+                messages.length >= 10 ? t("placeholderLimit") : t("placeholder")
+              }
               disabled={messages.length >= 10}
               onKeyDown={handleKeyDown}
-              className="flex-1 resize-none rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none theme-transition"
+              className="flex-1 resize-none border border-paper-edge bg-paper-2 px-3 py-2 font-serif text-[15px] text-ink placeholder:font-mono placeholder:text-[12px] placeholder:uppercase placeholder:tracking-[1.2px] placeholder:text-ink-muted focus:border-red-accent focus:outline-none"
             />
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={status !== "ready" || messages.length >= 10}
-              className="rounded bg-[var(--accent)] px-4 py-2.5 text-[15px] font-medium text-white font-[var(--font-body)] transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("send")}
-            </button>
+            </Button>
           </form>
           {messages.length >= 10 && (
-            <p className="mt-2 text-[13px] text-[var(--accent)] font-[var(--font-body)]">
+            <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[1.2px] text-red-accent">
               {t("limitReached")}
             </p>
           )}
-          {status === "streaming" && (
-            <button
-              type="button"
-              onClick={() => stop()}
-              className="mt-2 text-[13px] text-[var(--text-muted)] font-[var(--font-body)] hover:underline"
-            >
-              {t("stopGenerating")}
-            </button>
-          )}
-          {messages.length > 0 && status === "ready" && (
-            <button
-              type="button"
-              onClick={() => setMessages([])}
-              className="mt-2 text-[13px] text-[var(--text-muted)] font-[var(--font-body)] hover:underline"
-            >
-              {t("clearChat")}
-            </button>
-          )}
+          <div className="mt-2 flex gap-4">
+            {status === "streaming" && (
+              <button
+                type="button"
+                onClick={() => stop()}
+                className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
+              >
+                {t("stopGenerating")}
+              </button>
+            )}
+            {messages.length > 0 && status === "ready" && (
+              <button
+                type="button"
+                onClick={() => setMessages([])}
+                className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
+              >
+                {t("clearChat")}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </aside>
     </>
   );
 }

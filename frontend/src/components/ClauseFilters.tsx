@@ -1,4 +1,4 @@
-/** Filter and sort controls for clause list. */
+/** Filter and sort controls for clause list — editorial mono selects on a 1px paper rail. */
 
 "use client";
 
@@ -59,8 +59,9 @@ const SORT_KEY: Record<SortOption, string> = {
   category: "sortCategory",
 };
 
+/** Editorial mono select — 1px ink border, uppercase mono label. */
 const selectClasses =
-  "rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3.5 py-2 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition focus:border-[var(--accent)] focus:outline-none";
+  "appearance-none border border-ink bg-paper px-3 py-1.5 font-mono text-[11px] uppercase tracking-[1.2px] text-ink focus:border-red-accent focus:outline-none";
 
 /** Filter bar above clause cards. */
 export function ClauseFilters({
@@ -76,7 +77,7 @@ export function ClauseFilters({
   const t = useTranslations("ClauseFilters");
   const tCat = useTranslations("ClauseCategory");
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-3.5">
+    <div className="mb-5 flex flex-wrap items-center gap-3 border-t border-paper-edge pt-4">
       <select
         value={riskFilter}
         onChange={(e) => onRiskFilterChange(e.target.value as RiskLevel | "all")}
@@ -113,7 +114,7 @@ export function ClauseFilters({
       </select>
 
       {filteredCount !== totalCount && (
-        <span className="text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
+        <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted">
           {t("countOf", { filtered: filteredCount, total: totalCount })}
         </span>
       )}

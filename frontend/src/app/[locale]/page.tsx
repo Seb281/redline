@@ -352,7 +352,7 @@ export default function Home() {
       )}
 
       {state.view === "analyzing" && (
-        <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
+        <PageShell width="lg" className="py-9">
           <StreamingReportView
             state={streaming}
             upload={state.upload}
@@ -363,19 +363,21 @@ export default function Home() {
             onRetry={handleRetry}
             retryCount={retryCount}
           />
-        </div>
+        </PageShell>
       )}
 
       {state.view === "report" && (
-        <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-          <ReportView
-            data={state.analysis}
-            onReset={handleReset}
-            onOpenChat={handleOpenChat}
-            onAskAboutClause={handleAskAboutClause}
-            onSave={handleSave}
-            filename={state.upload.filename}
-          />
+        <>
+          <PageShell width="lg" className="py-9">
+            <ReportView
+              data={state.analysis}
+              onReset={handleReset}
+              onOpenChat={handleOpenChat}
+              onAskAboutClause={handleAskAboutClause}
+              onSave={handleSave}
+              filename={state.upload.filename}
+            />
+          </PageShell>
           <ChatPanel
             isOpen={chatOpen}
             onToggle={() => setChatOpen((o) => !o)}
@@ -383,7 +385,7 @@ export default function Home() {
             initialQuestion={chatQuestion}
             onInitialQuestionConsumed={() => setChatQuestion(null)}
           />
-        </div>
+        </>
       )}
     </main>
   );

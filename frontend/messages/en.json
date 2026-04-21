@@ -188,7 +188,11 @@
       "stated": "stated",
       "inferred": "inferred",
       "unknown": "unknown"
-    }
+    },
+    "effectiveLabel": "Effective",
+    "durationLabel": "Duration",
+    "valueLabel": "Value",
+    "jurisdictionLabel": "Jurisdiction"
   },
   "RiskChart": {
     "ariaLabel": "Risk distribution: {high} high, {medium} medium, {low} low, {info} informational",

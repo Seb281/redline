@@ -22,6 +22,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LEGACY_PROVENANCE_PROVIDER } from "@/lib/analyzer";
 import type { AnalysisProvenance, ReasoningEffortLabel } from "@/types";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 interface AnalysisFooterProps {
   provenance: AnalysisProvenance;
@@ -35,19 +36,11 @@ interface AnalysisFooterProps {
   onDownloadReceipt?: () => void | Promise<void>;
 }
 
-/** Uppercase micro-label styling used throughout the expanded panel. */
-const LABEL_CLASS =
-  "text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]";
-
-/** Monospace value styling for identifiers and timestamps. */
-const VALUE_CLASS =
-  "text-[13px] text-[var(--text-secondary)] font-[var(--font-mono)] select-all break-all";
-
-/** Map an effort level to a restrained text color token. */
-function effortColor(level: ReasoningEffortLabel): string {
-  if (level === "high") return "var(--accent)";
-  if (level === "medium") return "var(--text-secondary)";
-  return "var(--text-muted)";
+/** Map an effort level to a restrained editorial tone class. */
+function effortToneClass(level: ReasoningEffortLabel): string {
+  if (level === "high") return "text-red-accent";
+  if (level === "medium") return "text-ink-2";
+  return "text-ink-muted";
 }
 
 /** Stacked label + monospace value block used in the expanded panel.
@@ -57,8 +50,10 @@ function MetaField({ label, value }: { label: string; value: string }) {
   const displayValue = value && value.trim() ? value : "\u2014";
   return (
     <div className="flex flex-col gap-1">
-      <span className={LABEL_CLASS}>{label}</span>
-      <span className={VALUE_CLASS}>{displayValue}</span>
+      <MonoLabel tone="muted">{label}</MonoLabel>
+      <span className="font-mono text-[12px] text-ink-2 select-all break-all">
+        {displayValue}
+      </span>
     </div>
   );
 }
@@ -72,13 +67,10 @@ function PassEffortRow({
   effort: ReasoningEffortLabel;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-        {name}
-      </span>
+    <div className="flex items-baseline justify-between gap-4 border-b border-paper-edge py-1.5 last:border-b-0">
+      <span className="t-reading text-[14px] text-ink-2">{name}</span>
       <span
-        className="text-[13px] font-[var(--font-mono)] uppercase tracking-[1px]"
-        style={{ color: effortColor(effort) }}
+        className={`font-mono text-[11px] uppercase tracking-[1.2px] ${effortToneClass(effort)}`}
       >
         {effort}
       </span>
@@ -90,8 +82,8 @@ function PassEffortRow({
 function LegacyFooter() {
   const t = useTranslations("AnalysisFooter");
   return (
-    <footer className="mt-10 border-t border-[var(--border-primary)] pt-5 pb-3 theme-transition">
-      <p className="text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
+    <footer className="mt-10 border-t border-ink pt-4 pb-3">
+      <p className="font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
         {t("legacyNote")}
       </p>
     </footer>
@@ -113,22 +105,15 @@ export function AnalysisFooter({
   // Prefer snapshot; fall back to model when snapshot is empty.
   const identifier = provenance.snapshot?.trim() || provenance.model;
   const idClass =
-    "text-[13px] text-[var(--text-secondary)] font-[var(--font-mono)] select-all break-all";
+    "font-mono text-[11px] text-ink-2 select-all break-all";
   const sepClass =
-    "text-[13px] text-[var(--text-muted)] font-[var(--font-mono)] select-none px-1";
+    "font-mono text-[11px] text-ink-muted select-none px-1";
 
   return (
-    <footer className="mt-10 border-t border-[var(--border-primary)] pt-5 pb-3 theme-transition">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
-          <span
-            className="text-[13px] font-semibold uppercase tracking-[2px] text-[var(--text-tertiary)] font-[var(--font-body)]"
-          >
-            {t("recordedBy")}
-          </span>
-          {/* Each identifier is its own `select-all` span so a single
-              click copies JUST that value (the separator dots are
-              `select-none` and stay out of the selection). */}
+    <footer className="mt-10 border-t border-ink pt-5 pb-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-baseline sm:gap-4">
+          <MonoLabel tone="muted">{t("recordedBy")}</MonoLabel>
           <span
             data-testid="collapsed-summary"
             className="flex flex-wrap items-baseline"
@@ -144,7 +129,7 @@ export function AnalysisFooter({
           type="button"
           aria-expanded={expanded}
           onClick={() => setExpanded((v) => !v)}
-          className="group inline-flex items-center gap-1 self-start text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--text-secondary)] hover:underline"
+          className="group inline-flex items-center gap-1 self-start font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
         >
           <span>{t("details")}</span>
           <span
@@ -158,9 +143,9 @@ export function AnalysisFooter({
       </div>
 
       <div
-        className={`grid overflow-hidden transition-all duration-200 ease-out ${expanded ? "max-h-[400px] opacity-100 mt-6" : "max-h-0 opacity-0"}`}
+        className={`grid overflow-hidden transition-all duration-200 ease-out ${expanded ? "max-h-[480px] opacity-100 mt-6" : "max-h-0 opacity-0"}`}
       >
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div className="flex flex-col gap-4">
             <MetaField label={t("provider")} value={provenance.provider} />
             <MetaField label={t("model")} value={provenance.model} />
@@ -188,8 +173,8 @@ export function AnalysisFooter({
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className={LABEL_CLASS}>{t("passEffort")}</span>
-            <div className="flex flex-col gap-2">
+            <MonoLabel tone="muted">{t("passEffort")}</MonoLabel>
+            <div className="border-t border-paper-edge">
               <PassEffortRow
                 name={t("passOverview")}
                 effort={provenance.reasoning_effort_per_pass.overview}
@@ -210,15 +195,11 @@ export function AnalysisFooter({
           </div>
         </div>
 
-        <p className="mt-5 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
+        <p className="t-reading mt-5 text-[13px] italic text-ink-muted">
           {t("disclosure")}
         </p>
 
-        {/* SP-9 — AI Act transparency receipt + page cross-link. Kept
-            inside the expanded disclosure panel so the report surface
-            itself stays user-focused; compliance artifacts live in the
-            compliance surface. */}
-        <div className="mt-4 flex flex-col gap-2 border-t border-[var(--border-primary)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-paper-edge pt-4 sm:flex-row sm:items-center sm:justify-between">
           {onDownloadReceipt && (
             <button
               type="button"
@@ -226,14 +207,14 @@ export function AnalysisFooter({
                 void onDownloadReceipt();
               }}
               data-testid="download-transparency-receipt"
-              className="inline-flex items-baseline gap-1 self-start text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--accent)] hover:underline"
+              className="inline-flex items-baseline gap-1 self-start font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent hover:underline"
             >
               <span>{t("downloadReceipt")}</span>
             </button>
           )}
           <Link
             href="/transparency"
-            className="text-[12px] uppercase tracking-[1.5px] text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors hover:text-[var(--accent)] hover:underline"
+            className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent hover:underline"
           >
             {t("transparencyPageLink")}
           </Link>
@@ -242,7 +223,7 @@ export function AnalysisFooter({
 
       {provenance.text_source === "ocr" && (
         <p
-          className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+          className="mt-4 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted"
           data-testid="ocr-note"
         >
           {t("ocrNote")}
@@ -250,7 +231,7 @@ export function AnalysisFooter({
       )}
       {provenance.text_source === "hybrid" && (
         <p
-          className="mt-4 text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]"
+          className="mt-4 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted"
           data-testid="ocr-note"
         >
           {t("hybridOcrNote")}

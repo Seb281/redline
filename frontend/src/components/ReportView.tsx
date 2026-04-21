@@ -1,4 +1,10 @@
-/** Full report view — overview, risk summary, filters, clause cards, sticky export bar. */
+/**
+ * Full report view — editorial restyle.
+ *
+ * Wraps the analysis output in a paper/ink editorial layout: contract
+ * standfirst, risk stat band, radar + donut, top-risks call-out, filters,
+ * clause dossier, colophon, and a sticky action bar at the foot.
+ */
 
 "use client";
 
@@ -17,6 +23,9 @@ import { RiskChart } from "@/components/RiskChart";
 import { RiskRadar } from "@/components/RiskRadar";
 import { ActiveFilterPills } from "@/components/ActiveFilterPills";
 import { UnusualClausesCallout } from "@/components/UnusualClausesCallout";
+import { Button } from "@/components/ui/Button";
+import { Kicker } from "@/components/ui/Kicker";
+import { StatBlock } from "@/components/ui/StatBlock";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitationNavProvider } from "@/contexts/CitationNavContext";
 import { downloadMarkdown, downloadPdf, type MarkdownLabels } from "@/lib/export";
@@ -55,7 +64,7 @@ function useFilteredClauses(
   clauses: AnalyzedClause[],
   riskFilter: RiskLevel | "all",
   categoryFilter: ClauseCategory | "all",
-  sort: SortOption
+  sort: SortOption,
 ) {
   return useMemo(() => {
     let result = clauses;
@@ -76,7 +85,15 @@ function useFilteredClauses(
 }
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
-export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave, filename, savedId }: ReportViewProps) {
+export function ReportView({
+  data,
+  onReset,
+  onOpenChat,
+  onAskAboutClause,
+  onSave,
+  filename,
+  savedId,
+}: ReportViewProps) {
   const t = useTranslations("ReportView");
   const tExport = useTranslations("Export");
   const tCat = useTranslations("ClauseCategory");
@@ -87,57 +104,60 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
    * rather than passing `t` through. `useMemo` keeps the object
    * identity stable across renders when only unrelated state changes.
    */
-  const markdownLabels = useMemo<MarkdownLabels>(() => ({
-    title: tExport("title"),
-    disclaimerLabel: tExport("disclaimerLabel"),
-    disclaimerBody: tExport("disclaimerBody"),
-    contractOverview: tExport("contractOverview"),
-    type: tExport("type"),
-    parties: tExport("parties"),
-    effectiveDate: tExport("effectiveDate"),
-    duration: tExport("duration"),
-    value: tExport("value"),
-    jurisdiction: tExport("jurisdiction"),
-    keyTerms: tExport("keyTerms"),
-    summary: tExport("summary"),
-    totalClauses: tExport("totalClauses"),
-    highRisk: tExport("highRisk"),
-    mediumRisk: tExport("mediumRisk"),
-    lowRisk: tExport("lowRisk"),
-    informational: tExport("informational"),
-    topRisks: tExport("topRisks"),
-    unusualClauses: tExport("unusualClauses"),
-    atypicalDefault: tExport("atypicalDefault"),
-    atypicalGeneric: tExport("atypicalGeneric"),
-    clauses: tExport("clauses"),
-    riskSuffix: tExport("riskSuffix"),
-    atypicalBadge: tExport("atypicalBadge"),
-    risk: tExport("risk"),
-    suggestion: tExport("suggestion"),
-    cited: tExport("cited"),
-    originalClauseText: tExport("originalClauseText"),
-    riskLevel: {
-      high: tExport("riskLevel.high"),
-      medium: tExport("riskLevel.medium"),
-      low: tExport("riskLevel.low"),
-      informational: tExport("riskLevel.informational"),
-    },
-    categoryLabel: {
-      non_compete: tCat("non_compete"),
-      liability: tCat("liability"),
-      termination: tCat("termination"),
-      ip_assignment: tCat("ip_assignment"),
-      confidentiality: tCat("confidentiality"),
-      governing_law: tCat("governing_law"),
-      indemnification: tCat("indemnification"),
-      data_protection: tCat("data_protection"),
-      payment_terms: tCat("payment_terms"),
-      limitation_of_liability: tCat("limitation_of_liability"),
-      force_majeure: tCat("force_majeure"),
-      dispute_resolution: tCat("dispute_resolution"),
-      other: tCat("other"),
-    },
-  }), [tExport, tCat]);
+  const markdownLabels = useMemo<MarkdownLabels>(
+    () => ({
+      title: tExport("title"),
+      disclaimerLabel: tExport("disclaimerLabel"),
+      disclaimerBody: tExport("disclaimerBody"),
+      contractOverview: tExport("contractOverview"),
+      type: tExport("type"),
+      parties: tExport("parties"),
+      effectiveDate: tExport("effectiveDate"),
+      duration: tExport("duration"),
+      value: tExport("value"),
+      jurisdiction: tExport("jurisdiction"),
+      keyTerms: tExport("keyTerms"),
+      summary: tExport("summary"),
+      totalClauses: tExport("totalClauses"),
+      highRisk: tExport("highRisk"),
+      mediumRisk: tExport("mediumRisk"),
+      lowRisk: tExport("lowRisk"),
+      informational: tExport("informational"),
+      topRisks: tExport("topRisks"),
+      unusualClauses: tExport("unusualClauses"),
+      atypicalDefault: tExport("atypicalDefault"),
+      atypicalGeneric: tExport("atypicalGeneric"),
+      clauses: tExport("clauses"),
+      riskSuffix: tExport("riskSuffix"),
+      atypicalBadge: tExport("atypicalBadge"),
+      risk: tExport("risk"),
+      suggestion: tExport("suggestion"),
+      cited: tExport("cited"),
+      originalClauseText: tExport("originalClauseText"),
+      riskLevel: {
+        high: tExport("riskLevel.high"),
+        medium: tExport("riskLevel.medium"),
+        low: tExport("riskLevel.low"),
+        informational: tExport("riskLevel.informational"),
+      },
+      categoryLabel: {
+        non_compete: tCat("non_compete"),
+        liability: tCat("liability"),
+        termination: tCat("termination"),
+        ip_assignment: tCat("ip_assignment"),
+        confidentiality: tCat("confidentiality"),
+        governing_law: tCat("governing_law"),
+        indemnification: tCat("indemnification"),
+        data_protection: tCat("data_protection"),
+        payment_terms: tCat("payment_terms"),
+        limitation_of_liability: tCat("limitation_of_liability"),
+        force_majeure: tCat("force_majeure"),
+        dispute_resolution: tCat("dispute_resolution"),
+        other: tCat("other"),
+      },
+    }),
+    [tExport, tCat],
+  );
   const router = useRouter();
   const [exporting, setExporting] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
@@ -155,9 +175,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
   // second click. Initialised from the `savedId` prop so the history
   // detail path uses the existing row id without a round-trip through
   // `onSave`.
-  const [persistedId, setPersistedId] = useState<string | null>(
-    savedId ?? null,
-  );
+  const [persistedId, setPersistedId] = useState<string | null>(savedId ?? null);
 
   // When user becomes authenticated while LoginPrompt is showing,
   // dismiss the prompt so the Save button is ready to click.
@@ -240,44 +258,39 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
 
   return (
     <CitationNavProvider>
-      <div className="pb-24">
-      {/* Contract overview */}
-      <ContractOverview overview={data.overview} />
+      <div className="pb-28">
+        {/* Contract standfirst */}
+        <ContractOverview overview={data.overview} />
 
-      {/* Risk summary — stat cards + radar + donut */}
-      <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-start">
-        {/* Stat cards — 4 up, span full width on mobile, flex column on desktop */}
-        <div className="grid grid-cols-4 gap-4 md:flex-1">
-          <div className="rounded border border-[var(--risk-high-border)] bg-[var(--risk-high-bg)] p-5 text-center theme-transition">
-            <p className="text-[36px] font-bold text-[var(--risk-high)] font-[var(--font-body)]">
-              {summary.risk_breakdown.high}
-            </p>
-            <p className="text-sm text-[var(--risk-high)] opacity-70 font-[var(--font-body)]">{t("highRisk")}</p>
+        {/* Risk stat band — 4-up StatBlocks on paper-edge rails */}
+        <section className="mt-10 border-y border-paper-edge py-6">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            <StatBlock
+              value={summary.risk_breakdown.high}
+              label={t("highRisk")}
+              size="lg"
+            />
+            <StatBlock
+              value={summary.risk_breakdown.medium}
+              label={t("mediumRisk")}
+              size="lg"
+            />
+            <StatBlock
+              value={summary.risk_breakdown.low}
+              label={t("lowRisk")}
+              size="lg"
+            />
+            <StatBlock
+              value={summary.risk_breakdown.informational}
+              label={t("info")}
+              size="lg"
+            />
           </div>
-          <div className="rounded border border-[var(--risk-medium-border)] bg-[var(--risk-medium-bg)] p-5 text-center theme-transition">
-            <p className="text-[36px] font-bold text-[var(--risk-medium)] font-[var(--font-body)]">
-              {summary.risk_breakdown.medium}
-            </p>
-            <p className="text-sm text-[var(--risk-medium)] opacity-70 font-[var(--font-body)]">{t("mediumRisk")}</p>
-          </div>
-          <div className="rounded border border-[var(--risk-low-border)] bg-[var(--risk-low-bg)] p-5 text-center theme-transition">
-            <p className="text-[36px] font-bold text-[var(--risk-low)] font-[var(--font-body)]">
-              {summary.risk_breakdown.low}
-            </p>
-            <p className="text-sm text-[var(--risk-low)] opacity-70 font-[var(--font-body)]">{t("lowRisk")}</p>
-          </div>
-          <div className="rounded border border-[var(--risk-info-border)] bg-[var(--risk-info-bg)] p-5 text-center theme-transition">
-            <p className="text-[36px] font-bold text-[var(--risk-info)] font-[var(--font-body)]">
-              {summary.risk_breakdown.informational}
-            </p>
-            <p className="text-sm text-[var(--risk-info)] opacity-70 font-[var(--font-body)]">{t("info")}</p>
-          </div>
-        </div>
+        </section>
 
-        {/* Charts — stacked on mobile, side-by-side on desktop */}
-        <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
-          {/* Radar takes dominant width (~2× donut); max-w caps growth on huge screens */}
-          <div className="w-full max-w-[200px] md:w-[200px]">
+        {/* Charts — radar + donut, side-by-side on desktop */}
+        <section className="mt-6 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-center">
+          <div className="w-full max-w-[220px] md:w-[220px]">
             <RiskRadar
               clauses={clauses}
               activeCategory={categoryFilter}
@@ -289,161 +302,159 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
             activeRisk={riskFilter}
             onSegmentClick={(risk) => setRiskFilter(risk)}
           />
-        </div>
-      </div>
+        </section>
 
-      {/* Top risks callout */}
-      {summary.top_risks.length > 0 && (
-        <div className="mb-7 rounded border border-[var(--risk-high-border)] bg-[var(--accent-subtle)] px-5 py-3.5 theme-transition">
-          <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-            {t("topRisks")}
-          </p>
-          <ul className="text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-            {summary.top_risks.map((risk, i) => (
-              <li key={i}>• {risk}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Unusual clauses */}
-      <UnusualClausesCallout clauses={clauses} />
-
-      {/* Active filter pills — dismissible row reflecting current riskFilter/categoryFilter */}
-      <ActiveFilterPills
-        riskFilter={riskFilter}
-        categoryFilter={categoryFilter}
-        onClearRisk={() => setRiskFilter("all")}
-        onClearCategory={() => setCategoryFilter("all")}
-        onClearAll={() => {
-          setRiskFilter("all");
-          setCategoryFilter("all");
-        }}
-      />
-
-      {/* Filters */}
-      <ClauseFilters
-        riskFilter={riskFilter}
-        categoryFilter={categoryFilter}
-        sort={sort}
-        onRiskFilterChange={setRiskFilter}
-        onCategoryFilterChange={setCategoryFilter}
-        onSortChange={setSort}
-        totalCount={clauses.length}
-        filteredCount={filteredClauses.length}
-      />
-
-      {/* Clause cards */}
-      <div className="space-y-4">
-        {filteredClauses.map((clause, i) => (
-          <ClauseCard
-            key={`${clause.title}-${clause.risk_level}-${i}`}
-            clause={clause}
-            onAskAbout={onAskAboutClause}
-          />
-        ))}
-        {filteredClauses.length === 0 && (
-          <p className="py-9 text-center text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
-            {t("noClauses")}
-          </p>
-        )}
-      </div>
-
-      {/* Disclaimer */}
-      <Disclaimer />
-
-      {/* Transparency colophon — EU AI Act disclosure of the machine
-          that produced the analysis. Guarded with optional chaining so
-          any stray legacy caller without provenance won't crash. */}
-      {data.provenance && (
-        <AnalysisFooter
-          provenance={data.provenance}
-          onDownloadReceipt={handleDownloadReceipt}
-        />
-      )}
-
-      {/* Sticky export bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
-        {/* Login prompt — slides in above buttons when save requires auth */}
-        {saveState === "login" && (
-          <div className="mx-auto max-w-4xl px-5 pt-3 sm:px-7">
-            <LoginPrompt message={t("loginToSave")} />
-          </div>
-        )}
-
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5 sm:px-7">
-          <div className="flex gap-2.5">
-            {/* Save button */}
-            {onSave && (
-              <>
-                {saveState === "saved" ? (
-                  <Link
-                    href="/history"
-                    className="rounded border border-green-500/30 bg-green-500/10 px-5 py-2.5 text-[15px] font-medium text-green-600 no-underline transition-colors hover:bg-green-500/20 font-[var(--font-body)] dark:text-green-400"
-                  >
-                    {t("saved")}
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saveState === "saving"}
-                    className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
-                  >
-                    {saveState === "saving" ? t("saving") : t("save")}
-                  </button>
-                )}
-                {saveState === "error" && saveError && (
-                  <span className="self-center text-sm text-[var(--accent)] font-[var(--font-body)]">
-                    {saveError}
+        {/* Top risks — editorial callout with numbered items */}
+        {summary.top_risks.length > 0 && (
+          <section className="mt-10 border-t border-ink pt-5">
+            <Kicker tone="red" className="mb-3">
+              {t("topRisks")}
+            </Kicker>
+            <ol className="flex flex-col gap-2">
+              {summary.top_risks.map((risk, i) => (
+                <li
+                  key={i}
+                  className="flex items-baseline gap-4 border-b border-paper-edge pb-2 last:border-b-0"
+                >
+                  <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-                )}
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => downloadMarkdown(data, markdownLabels)}
-              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
-            >
-              {t("exportMd")}
-            </button>
-            <button
-              type="button"
-              onClick={handlePdfExport}
-              disabled={exporting}
-              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
-            >
-              {exporting ? t("generating") : t("exportPdf")}
-            </button>
-            <button
-              type="button"
-              onClick={handleCompare}
-              className="rounded border border-[var(--border-primary)] px-5 py-2.5 text-[15px] font-medium text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)]"
-            >
-              {t("compare")}
-            </button>
-            <button
-              type="button"
-              onClick={onReset}
-              className="rounded px-5 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
-            >
-              {t("newContract")}
-            </button>
-          </div>
-          <div className="flex items-center gap-3">
-            {onOpenChat && (
-              <button
-                type="button"
-                onClick={onOpenChat}
-                className="rounded border border-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+                  <span className="t-reading flex-1 text-[16px] text-ink-2">
+                    {risk}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* Unusual clauses */}
+        <UnusualClausesCallout clauses={clauses} />
+
+        {/* Active filter pills */}
+        <div className="mt-8">
+          <ActiveFilterPills
+            riskFilter={riskFilter}
+            categoryFilter={categoryFilter}
+            onClearRisk={() => setRiskFilter("all")}
+            onClearCategory={() => setCategoryFilter("all")}
+            onClearAll={() => {
+              setRiskFilter("all");
+              setCategoryFilter("all");
+            }}
+          />
+        </div>
+
+        {/* Filters bar */}
+        <ClauseFilters
+          riskFilter={riskFilter}
+          categoryFilter={categoryFilter}
+          sort={sort}
+          onRiskFilterChange={setRiskFilter}
+          onCategoryFilterChange={setCategoryFilter}
+          onSortChange={setSort}
+          totalCount={clauses.length}
+          filteredCount={filteredClauses.length}
+        />
+
+        {/* Clause dossier */}
+        <div className="mt-5 flex flex-col gap-4">
+          {filteredClauses.map((clause, i) => (
+            <ClauseCard
+              key={`${clause.title}-${clause.risk_level}-${i}`}
+              clause={clause}
+              onAskAbout={onAskAboutClause}
+            />
+          ))}
+          {filteredClauses.length === 0 && (
+            <p className="t-reading py-10 text-center text-[16px] italic text-ink-muted">
+              {t("noClauses")}
+            </p>
+          )}
+        </div>
+
+        {/* Disclaimer */}
+        <Disclaimer />
+
+        {/* Transparency colophon — EU AI Act disclosure of the machine
+            that produced the analysis. Guarded with optional chaining so
+            any stray legacy caller without provenance won't crash. */}
+        {data.provenance && (
+          <AnalysisFooter
+            provenance={data.provenance}
+            onDownloadReceipt={handleDownloadReceipt}
+          />
+        )}
+
+        {/* Sticky action bar — save + exports + compare + new + chat. */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink bg-paper/95 backdrop-blur-sm">
+          {saveState === "login" && (
+            <div className="mx-auto w-full max-w-[1440px] px-6 pt-3 md:px-10">
+              <LoginPrompt message={t("loginToSave")} />
+            </div>
+          )}
+          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between md:px-10">
+            <div className="flex flex-wrap items-center gap-2">
+              {onSave && (
+                <>
+                  {saveState === "saved" ? (
+                    <Link
+                      href="/history"
+                      className="inline-flex items-center justify-center border border-ok px-4 py-2 font-sans text-[13px] font-medium text-ok no-underline transition-colors hover:bg-ok-soft"
+                    >
+                      {t("saved")}
+                    </Link>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={handleSave}
+                      disabled={saveState === "saving"}
+                    >
+                      {saveState === "saving" ? t("saving") : t("save")}
+                    </Button>
+                  )}
+                  {saveState === "error" && saveError && (
+                    <span className="font-mono text-[10.5px] uppercase tracking-[1.2px] text-red-accent">
+                      {saveError}
+                    </span>
+                  )}
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => downloadMarkdown(data, markdownLabels)}
               >
-                {t("askAi")}
-              </button>
-            )}
-            <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("notLegalAdvice")}</span>
+                {t("exportMd")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={handlePdfExport}
+                disabled={exporting}
+              >
+                {exporting ? t("generating") : t("exportPdf")}
+              </Button>
+              <Button variant="ghost" size="md" onClick={handleCompare}>
+                {t("compare")}
+              </Button>
+              <Button variant="link" size="md" onClick={onReset}>
+                {t("newContract")}
+              </Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {onOpenChat && (
+                <Button variant="danger" size="md" onClick={onOpenChat}>
+                  {t("askAi")}
+                </Button>
+              )}
+              <span className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted">
+                {t("notLegalAdvice")}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </CitationNavProvider>
   );

@@ -77,10 +77,7 @@ export function ClauseExplanation({
 
   return (
     <div>
-      <p
-        id={narrativeId}
-        className="text-[15px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]"
-      >
+      <p id={narrativeId} className="t-reading text-[16px] text-ink-2">
         {segments.map((seg, i) => {
           if (seg.kind === "text") {
             return <span key={`t-${i}`}>{seg.value}</span>;
@@ -91,7 +88,7 @@ export function ClauseExplanation({
               <button
                 type="button"
                 onClick={() => handleMarkerClick(seg.id, markerId)}
-                className="rounded px-0.5 text-[var(--accent)] font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="px-0.5 font-mono text-red-accent font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-red-accent"
                 aria-label={t("jumpToCitation", { id: seg.id })}
               >
                 [{seg.id}]
@@ -102,7 +99,7 @@ export function ClauseExplanation({
       </p>
 
       {citeSegments.length > 0 && (
-        <ol className="mt-3 space-y-1.5 border-t border-[var(--border-primary)] pt-2 text-[13px] text-[var(--text-tertiary)] font-[var(--font-body)]">
+        <ol className="mt-3 space-y-1.5 border-t border-paper-edge pt-2 font-mono text-[12px] text-ink-muted">
           {citeSegments.map((seg) => {
             const footId = `cite-${cardId}-${seg.id}`;
             if (seg.quotedText === null) {
@@ -113,7 +110,7 @@ export function ClauseExplanation({
                   className="opacity-60"
                   title={t("noCitationTitle")}
                 >
-                  <span className="mr-1 font-semibold">[{seg.id}]</span>
+                  <span className="mr-1 font-semibold text-ink-2">[{seg.id}]</span>
                   {t("noCitation")}
                 </li>
               );
@@ -126,7 +123,7 @@ export function ClauseExplanation({
                   className="opacity-60"
                   title={t("quoteNotFound")}
                 >
-                  <span className="mr-1 font-semibold">[{seg.id}]</span>
+                  <span className="mr-1 font-semibold text-ink-2">[{seg.id}]</span>
                   <span className="italic">&ldquo;{seg.quotedText}&rdquo;</span>
                   <span className="ml-1">&#9888;</span>
                 </li>
@@ -134,13 +131,13 @@ export function ClauseExplanation({
             }
             return (
               <li key={footId} id={footId} className="flex items-start gap-2">
-                <span className="font-semibold">[{seg.id}]</span>
+                <span className="font-semibold text-ink-2">[{seg.id}]</span>
                 <span className="italic flex-1">&ldquo;{seg.quotedText}&rdquo;</span>
                 {isOriginWithinThisCard && (
                   <button
                     type="button"
                     onClick={handleReturn}
-                    className="rounded px-1 text-[var(--accent)] hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    className="px-1 text-red-accent hover:underline focus:outline-none focus:ring-1 focus:ring-red-accent"
                     aria-label={t("returnToMarker")}
                     title={t("returnToMarker")}
                   >

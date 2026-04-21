@@ -1,27 +1,29 @@
-/** Individual clause card with expandable risk details. */
+/** Individual clause card — editorial treatment with left risk rail. */
 
 "use client";
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { AnalyzedClause } from "@/types";
+import type { AnalyzedClause, RiskLevel } from "@/types";
 import { RiskBadge } from "@/components/RiskBadge";
 import { ClauseExplanation } from "@/components/ClauseExplanation";
 import { ApplicableLawCite } from "@/components/ApplicableLawCite";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
-const BORDER_COLORS = {
-  high: "border-l-[var(--risk-high)]",
-  medium: "border-l-[var(--risk-medium)]",
-  low: "border-l-[var(--risk-low)]",
-  informational: "border-l-[var(--risk-info)]",
-} as const;
+/** Map risk level to the left-rail accent colour. */
+const RAIL_COLORS: Record<RiskLevel, string> = {
+  high: "border-l-red-accent",
+  medium: "border-l-warn",
+  low: "border-l-ok",
+  informational: "border-l-paper-edge",
+};
 
 interface ClauseCardProps {
   clause: AnalyzedClause;
   onAskAbout?: (clause: AnalyzedClause) => void;
 }
 
-/** Renders a single clause with risk badge, category, and expandable details. */
+/** Renders a single clause with risk chip, category kicker, and expandable details. */
 export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   const t = useTranslations("ClauseCard");
   const tCat = useTranslations("ClauseCategory");
@@ -32,27 +34,24 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   // label from the ClauseCategory namespace. Pre-Phase-3 the pill was
   // `clause.category.replace(/_/g, " ").toUpperCase()`, which always
   // rendered English regardless of UI locale.
-  const categoryLabel = tCat(clause.category).toUpperCase();
-  const hasDetails =
-    clause.risk_level !== "informational";
+  const categoryLabel = tCat(clause.category);
+  const hasDetails = clause.risk_level !== "informational";
 
   return (
-    <div
-      className={`rounded border border-[var(--border-primary)] border-l-4 bg-[var(--bg-card)] p-5 theme-transition ${BORDER_COLORS[clause.risk_level]}`}
+    <article
+      className={`border border-paper-edge border-l-4 bg-paper p-5 ${RAIL_COLORS[clause.risk_level]}`}
     >
-      <div className="mb-2.5 flex items-start gap-2.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <RiskBadge level={clause.risk_level} />
-        <span className="rounded bg-[var(--bg-tertiary)] px-2.5 py-0.5 text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
-          {categoryLabel}
-        </span>
+        <MonoLabel tone="muted">{categoryLabel}</MonoLabel>
         {clause.is_unusual && (
-          <span className="rounded border border-[var(--risk-unusual-border)] bg-[var(--risk-unusual-bg)] px-2.5 py-0.5 text-sm font-semibold text-[var(--risk-unusual)] font-[var(--font-body)]">
+          <span className="border border-ink-muted bg-paper-2 px-2 py-[2px] font-mono text-[10px] font-semibold uppercase tracking-[1.4px] text-ink-2">
             {t("atypical")}
           </span>
         )}
       </div>
 
-      <h3 className="mb-1.5 text-lg font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      <h3 className="mt-1 mb-3 font-serif text-[22px] font-light leading-tight tracking-[-0.01em] text-ink">
         {clause.title}
       </h3>
 
@@ -67,38 +66,44 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2.5 text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+          className="mt-4 font-mono text-[10.5px] uppercase tracking-[1.5px] text-red-accent transition-colors hover:text-red-deep focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-accent"
         >
           {expanded ? t("hideDetails") : t("showDetails")}
         </button>
       )}
 
       {expanded && (
-        <div className="mt-3.5 rounded bg-[var(--bg-secondary)] p-3.5 text-[15px] leading-relaxed text-[var(--text-secondary)] font-[var(--font-body)]">
-          <p>
-            <strong className="text-[var(--accent)]">{t("risk")}</strong>{" "}
+        <div className="mt-4 border-t border-paper-edge pt-4 text-[15px] leading-relaxed">
+          <p className="t-reading text-ink-2">
+            <MonoLabel tone="red" className="mr-2 inline">
+              {t("risk")}
+            </MonoLabel>
             {clause.risk_explanation}
           </p>
           {clause.negotiation_suggestion && (
-            <p className="mt-2.5">
-              <strong className="text-blue-600 dark:text-blue-400">{t("suggestion")}</strong>{" "}
+            <p className="t-reading mt-3 text-ink-2">
+              <MonoLabel tone="ink" className="mr-2 inline">
+                {t("suggestion")}
+              </MonoLabel>
               {clause.negotiation_suggestion}
             </p>
           )}
           {clause.unusual_explanation && (
-            <p className="mt-2.5">
-              <strong className="text-[var(--risk-unusual)]">{t("unusual")}</strong>{" "}
+            <p className="t-reading mt-3 text-ink-2">
+              <MonoLabel tone="muted" className="mr-2 inline">
+                {t("unusual")}
+              </MonoLabel>
               {clause.unusual_explanation}
             </p>
           )}
           {clause.applicable_law && (
             <ApplicableLawCite applicableLaw={clause.applicable_law} />
           )}
-          <details className="mt-2.5">
-            <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
+          <details className="mt-4 border-t border-paper-edge pt-3">
+            <summary className="cursor-pointer font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent">
               {t("originalText")}
             </summary>
-            <p className="mt-1.5 whitespace-pre-wrap font-mono text-sm text-[var(--text-tertiary)]">
+            <p className="mt-2 whitespace-pre-wrap font-mono text-[12px] text-ink-2">
               {clause.clause_text}
             </p>
           </details>
@@ -106,13 +111,13 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
             <button
               type="button"
               onClick={() => onAskAbout(clause)}
-              className="mt-3 text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+              className="mt-4 font-mono text-[10.5px] uppercase tracking-[1.5px] text-red-accent transition-colors hover:text-red-deep"
             >
               {t("askAbout")}
             </button>
           )}
         </div>
       )}
-    </div>
+    </article>
   );
 }

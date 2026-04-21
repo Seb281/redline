@@ -188,7 +188,11 @@
       "stated": "erklärte",
       "inferred": "abgeleitet",
       "unknown": "unbekannt"
-    }
+    },
+    "effectiveLabel": "Gültig ab",
+    "durationLabel": "Dauer",
+    "valueLabel": "Wert",
+    "jurisdictionLabel": "Zuständigkeit"
   },
   "RiskChart": {
     "ariaLabel": "Risikoeinstufung: {high} hoch, {medium} mittel, {low} niedrig, {info} informativ",

@@ -1,4 +1,4 @@
-/** Legal disclaimer banner — displayed on the report screen. */
+/** Legal disclaimer — editorial pull quote with a 2px red left rail. */
 
 "use client";
 
@@ -8,8 +8,13 @@ export function Disclaimer() {
   const t = useTranslations("Disclaimer");
 
   return (
-    <div className="mt-9 mx-auto max-w-2xl border-l-[3px] border-[var(--border-secondary)] bg-[var(--bg-secondary)] px-5 py-3.5 text-[15px] italic text-[var(--text-tertiary)] font-[var(--font-heading)] theme-transition">
-      {t("body")}
-    </div>
+    <aside
+      role="note"
+      className="mt-10 border-l-2 border-red-accent bg-paper-2 px-6 py-4"
+    >
+      <p className="t-reading m-0 max-w-[62ch] text-[16px] italic text-ink-2">
+        {t("body")}
+      </p>
+    </aside>
   );
 }

@@ -5,6 +5,8 @@
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 
 interface LoginPromptProps {
   /** Message shown above the email input. */
@@ -41,9 +43,7 @@ export function LoginPrompt({ message }: LoginPromptProps) {
         setState("sent");
       } catch (err) {
         setState("error");
-        setError(
-          err instanceof Error ? err.message : t("failed"),
-        );
+        setError(err instanceof Error ? err.message : t("failed"));
       }
     },
     [email, login, t],
@@ -51,14 +51,14 @@ export function LoginPrompt({ message }: LoginPromptProps) {
 
   if (state === "sent") {
     return (
-      <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-4 text-center theme-transition">
-        <p className="text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
+      <div className="border border-ink bg-paper px-5 py-4 text-center">
+        <MonoLabel tone="red" className="block">
           {t("inboxHeading")}
-        </p>
-        <p className="mt-1 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+        </MonoLabel>
+        <p className="mt-2 t-reading text-[15px] text-ink-2">
           {t.rich("inboxBody", {
             email,
-            strong: (chunks) => <strong>{chunks}</strong>,
+            strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
           })}
         </p>
         <button
@@ -67,7 +67,7 @@ export function LoginPrompt({ message }: LoginPromptProps) {
             setState("idle");
             setEmail("");
           }}
-          className="mt-3 text-sm text-[var(--accent)] font-[var(--font-body)] hover:underline"
+          className="mt-3 font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
         >
           {t("useDifferentEmail")}
         </button>
@@ -76,11 +76,9 @@ export function LoginPrompt({ message }: LoginPromptProps) {
   }
 
   return (
-    <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-4 theme-transition">
+    <div className="border border-ink bg-paper px-5 py-4">
       {message && (
-        <p className="mb-3 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {message}
-        </p>
+        <p className="t-reading mb-3 text-[15px] text-ink-2">{message}</p>
       )}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
@@ -89,18 +87,14 @@ export function LoginPrompt({ message }: LoginPromptProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("emailPlaceholder")}
           required
-          className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          className="flex-1 border border-paper-edge bg-paper-2 px-3 py-2 font-serif text-[15px] text-ink placeholder:font-mono placeholder:text-[12px] placeholder:uppercase placeholder:tracking-[1.2px] placeholder:text-ink-muted focus:border-red-accent focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={state === "submitting"}
-          className="rounded bg-[var(--text-primary)] px-4 py-2 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80 disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" size="md" disabled={state === "submitting"}>
           {state === "submitting" ? t("sending") : t("logIn")}
-        </button>
+        </Button>
       </form>
       {error && (
-        <p className="mt-2 text-sm text-[var(--accent)] font-[var(--font-body)]">
+        <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[1.2px] text-red-accent">
           {error}
         </p>
       )}

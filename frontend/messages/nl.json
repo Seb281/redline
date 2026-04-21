@@ -602,6 +602,25 @@
     "savedLocaleSpanish": "Spaans",
     "savedLocaleItalian": "Italiaans"
   },
+  "Trust": {
+    "metaTitle": "Vertrouwen — Redline",
+    "metaDescription": "Hoe Redline omgaat met uw gegevens, wat het onthult onder de AI-verordening en waar elke byte reist.",
+    "meta": "VERTROUWEN",
+    "title": "Hoe wij uw contract behandelen.",
+    "lede": "Drie dingen om te lezen voordat u Redline een document toevertrouwt: wat wij verzamelen, waar het reist, en hoe het model werkt.",
+    "privacyKicker": "PRIVACY",
+    "privacyTitle": "Wat wij verzamelen, en waarom.",
+    "privacyBody": "AVG artikel 13-informatie — datacategorieën, rechtsgronden, bewaring en uw rechten.",
+    "privacyCta": "Lees het beleid",
+    "residencyKicker": "DATA-RESIDENTIE",
+    "residencyTitle": "Waar uw gegevens reizen.",
+    "residencyBody": "Elke externe verwerker, zijn regio en de rechtsgrond voor elke stroom. EU-first als standaard.",
+    "residencyCta": "Bekijk de stromen",
+    "transparencyKicker": "AI-VERORDENING",
+    "transparencyTitle": "Hoe het model tot een oordeel komt.",
+    "transparencyBody": "De pijplijn in vijf stappen, de operator-hefbomen en de bekende beperkingen — zoals vereist door art. 13 / 50 van de AI-verordening.",
+    "transparencyCta": "Lees het artefact"
+  },
   "AuthVerify": {
     "verifying": "Uw inloggegevens worden gecontroleerd...",
     "loggedIn": "Je bent ingelogd",

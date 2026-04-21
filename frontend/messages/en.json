@@ -737,6 +737,25 @@
     "savedLocaleSpanish": "Spanish",
     "savedLocaleItalian": "Italian"
   },
+  "Trust": {
+    "metaTitle": "Trust — Redline",
+    "metaDescription": "How Redline handles your data, what it discloses under the AI Act, and where every byte travels.",
+    "meta": "TRUST",
+    "title": "How we handle your contract.",
+    "lede": "Three things to read before you trust Redline with a document: what we collect, where it travels, and how the model works.",
+    "privacyKicker": "PRIVACY",
+    "privacyTitle": "What we collect, and why.",
+    "privacyBody": "GDPR Article 13 disclosures — data categories, legal bases, retention, and your rights.",
+    "privacyCta": "Read the policy",
+    "residencyKicker": "DATA RESIDENCY",
+    "residencyTitle": "Where your data travels.",
+    "residencyBody": "Every third-party processor, their region, and the legal basis for each flow. EU-first by default.",
+    "residencyCta": "See the flows",
+    "transparencyKicker": "AI ACT",
+    "transparencyTitle": "How the model reaches a verdict.",
+    "transparencyBody": "The five-stage pipeline, the operator levers, and the known limitations — as required by AI Act Art 13 / 50.",
+    "transparencyCta": "Read the artefact"
+  },
   "AuthVerify": {
     "verifying": "Verifying your login...",
     "loggedIn": "You're logged in",

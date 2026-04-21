@@ -15,6 +15,13 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { DATA_FLOWS, type DataFlow } from "@/lib/data-flows";
+import { PageShell } from "@/components/PageShell";
+import {
+  BorderedCard,
+  Masthead,
+  MonoLabel,
+  SectionHead,
+} from "@/components/ui";
 
 export async function generateMetadata({
   params,
@@ -67,79 +74,80 @@ export default async function DataResidencyPage({
   };
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-      <Link
-        href="/privacy"
-        className="mb-6 inline-block text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
-      >
-        {t("back")}
-      </Link>
+    <main>
+      <PageShell width="md" className="pb-16">
+        <Link
+          href="/trust"
+          className="mt-6 inline-block font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
+        >
+          ← {t("back")}
+        </Link>
 
-      <h1 className="mb-2 text-[32px] font-normal leading-tight text-[var(--text-primary)] font-[var(--font-heading)]">
-        {t("title")}
-      </h1>
-      <p className="mb-9 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t("description")}
-      </p>
+        <Masthead
+          meta="DATA RESIDENCY"
+          title={t("title")}
+          lede={t("description")}
+        />
 
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("defaultTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("defaultDesc")}
-        </p>
-        <div className="space-y-4">
-          {defaults.map((flow) => (
-            <DataFlowCard
-              key={flow.provider}
-              flow={flow}
-              labels={fieldLabels}
-              localized={localizeFlow(flow)}
-            />
-          ))}
+        <section className="mt-12">
+          <SectionHead>{t("defaultTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("defaultDesc")}
+          </p>
+          <div className="mt-5 flex flex-col gap-5">
+            {defaults.map((flow) => (
+              <DataFlowCard
+                key={flow.provider}
+                flow={flow}
+                labels={fieldLabels}
+                localized={localizeFlow(flow)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <SectionHead>{t("optionalTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("optionalDesc")}
+          </p>
+          <div className="mt-5 flex flex-col gap-5">
+            {optional.map((flow) => (
+              <DataFlowCard
+                key={flow.provider}
+                flow={flow}
+                labels={fieldLabels}
+                localized={localizeFlow(flow)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-12 flex flex-col gap-3 border-t border-paper-edge pt-6 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
+          <p className="m-0">
+            {t.rich("configNote", {
+              code: (chunks) => (
+                <code className="bg-paper-2 px-1.5 py-0.5 text-ink normal-case">
+                  {chunks}
+                </code>
+              ),
+            })}
+          </p>
+          <p className="m-0">{t("i18nNote")}</p>
+          <p className="m-0">
+            {t.rich("transparencyNote", {
+              link: (chunks) => (
+                <Link
+                  href="/transparency"
+                  className="text-ink underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
         </div>
-      </section>
-
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("optionalTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("optionalDesc")}
-        </p>
-        <div className="space-y-4">
-          {optional.map((flow) => (
-            <DataFlowCard
-              key={flow.provider}
-              flow={flow}
-              labels={fieldLabels}
-              localized={localizeFlow(flow)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <p className="mb-4 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t.rich("configNote", {
-          code: (chunks) => <code>{chunks}</code>,
-        })}
-      </p>
-      <p className="mb-3 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t("i18nNote")}
-      </p>
-      <p className="text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t.rich("transparencyNote", {
-          link: (chunks) => (
-            <Link
-              href="/transparency"
-              className="text-[var(--accent)] hover:underline"
-            >
-              {chunks}
-            </Link>
-          ),
-        })}
-      </p>
+      </PageShell>
     </main>
   );
 }
@@ -159,7 +167,11 @@ interface LocalizedFlow {
   dataCategories: string[];
 }
 
-/** One processor card — heading, region pill, then the audit fields. */
+/**
+ * One processor card — provider name as serif headline, region as mono
+ * kicker, body fields as a definition list. 1px edge border; no
+ * rounded corners.
+ */
 function DataFlowCard({
   flow,
   labels,
@@ -170,26 +182,27 @@ function DataFlowCard({
   localized: LocalizedFlow;
 }) {
   return (
-    <article
-      className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition"
+    <BorderedCard
+      tone="edge"
+      padding="md"
       data-testid={`data-flow-${flow.provider.toLowerCase().replace(/\s+/g, "-")}`}
     >
-      <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[17px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
+      <header className="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 className="m-0 font-serif text-[22px] font-light leading-tight text-ink">
           {flow.provider}
         </h3>
-        <span className="rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] font-[var(--font-body)]">
+        <span className="inline-block border border-paper-edge bg-paper-2 px-2 py-[1px] font-mono text-[10.5px] font-semibold uppercase tracking-[1.2px] text-ink-2">
           {flow.region}
         </span>
       </header>
 
-      <p className="mb-3 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
+      <p className="mt-3 t-reading text-[15px] text-ink-2">
         {localized.purpose}
       </p>
 
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
+      <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[max-content_1fr]">
         <Field label={labels.data}>
-          <ul className="list-disc space-y-1 pl-5 marker:text-[var(--text-muted)]">
+          <ul className="list-disc space-y-1 pl-5 marker:text-ink-muted">
             {localized.dataCategories.map((d) => (
               <li key={d}>{d}</li>
             ))}
@@ -201,17 +214,17 @@ function DataFlowCard({
           <ExtLink href={flow.privacyPolicyUrl}>{labels.privacyPolicy}</ExtLink>
           {flow.dpaUrl && (
             <>
-              <span className="mx-2 text-[var(--text-muted)]">·</span>
+              <span className="mx-2 text-ink-muted">·</span>
               <ExtLink href={flow.dpaUrl}>{labels.dpa}</ExtLink>
             </>
           )}
         </Field>
       </dl>
-    </article>
+    </BorderedCard>
   );
 }
 
-/** One definition-list row — label column, content column. */
+/** Definition-list row — mono label column, serif-ish value column. */
 function Field({
   label,
   children,
@@ -221,23 +234,27 @@ function Field({
 }) {
   return (
     <>
-      <dt className="text-[12px] font-semibold uppercase tracking-[1.5px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {label}
+      <dt>
+        <MonoLabel tone="muted">{label}</MonoLabel>
       </dt>
-      <dd className="text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-        {children}
-      </dd>
+      <dd className="m-0 t-reading text-[14.5px] text-ink-2">{children}</dd>
     </>
   );
 }
 
-function ExtLink({ href, children }: { href: string; children: React.ReactNode }) {
+function ExtLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-[var(--accent)] hover:underline"
+      className="text-ink underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
     >
       {children}
     </a>

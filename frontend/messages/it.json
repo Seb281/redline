@@ -602,6 +602,25 @@
     "savedLocaleSpanish": "spagnolo",
     "savedLocaleItalian": "italiano"
   },
+  "Trust": {
+    "metaTitle": "Fiducia — Redline",
+    "metaDescription": "Come Redline gestisce i tuoi dati, cosa divulga ai sensi dell'AI Act e dove viaggia ogni byte.",
+    "meta": "FIDUCIA",
+    "title": "Come trattiamo il tuo contratto.",
+    "lede": "Tre cose da leggere prima di affidare un documento a Redline: cosa raccogliamo, dove viaggia e come funziona il modello.",
+    "privacyKicker": "PRIVACY",
+    "privacyTitle": "Cosa raccogliamo, e perché.",
+    "privacyBody": "Informazioni GDPR art. 13 — categorie di dati, basi giuridiche, conservazione e i tuoi diritti.",
+    "privacyCta": "Leggi la policy",
+    "residencyKicker": "RESIDENZA DEI DATI",
+    "residencyTitle": "Dove viaggiano i tuoi dati.",
+    "residencyBody": "Ogni responsabile del trattamento terzo, la sua regione e la base giuridica di ogni flusso. UE per impostazione predefinita.",
+    "residencyCta": "Vedi i flussi",
+    "transparencyKicker": "AI ACT",
+    "transparencyTitle": "Come il modello arriva al verdetto.",
+    "transparencyBody": "La pipeline in cinque fasi, le leve dell'operatore e i limiti noti — come richiesto dagli artt. 13 / 50 dell'AI Act.",
+    "transparencyCta": "Leggi l'artefatto"
+  },
   "AuthVerify": {
     "verifying": "Verifica dell'accesso in corso...",
     "loggedIn": "Hai effettuato l'accesso",

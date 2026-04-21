@@ -24,6 +24,13 @@ import {
   OPERATOR_LEVERS,
   PIPELINE_STEPS,
 } from "@/lib/transparency-config";
+import { PageShell } from "@/components/PageShell";
+import {
+  BorderedCard,
+  Masthead,
+  MonoLabel,
+  SectionHead,
+} from "@/components/ui";
 
 export async function generateMetadata({
   params,
@@ -48,195 +55,191 @@ export default async function TransparencyPage({
   const t = await getTranslations("Transparency");
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-      <Link
-        href="/privacy"
-        className="mb-6 inline-block text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
-      >
-        {t("back")}
-      </Link>
+    <main>
+      <PageShell width="md" className="pb-16">
+        <Link
+          href="/trust"
+          className="mt-6 inline-block font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
+        >
+          ← {t("back")}
+        </Link>
 
-      <h1 className="mb-2 text-[32px] font-normal leading-tight text-[var(--text-primary)] font-[var(--font-heading)]">
-        {t("title")}
-      </h1>
-      <p className="mb-9 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t("description")}
-      </p>
-
-      {/* AI Act article map --------------------------------------------- */}
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("aiActTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("aiActDesc")}
-        </p>
-        <div className="space-y-4">
-          {AI_ACT_ARTICLES.map((article) => (
-            <article
-              key={article.translationKey}
-              data-testid={`ai-act-${article.translationKey}`}
-              className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition"
-            >
-              <header className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-[17px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                  {t(`articles.${article.translationKey}.title`)}
-                </h3>
-                <span className="rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] font-[var(--font-body)]">
-                  {article.reference}
-                </span>
-              </header>
-              <p className="text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t(`articles.${article.translationKey}.body`)}
-              </p>
-              <p className="mt-2 text-[12px] font-semibold uppercase tracking-[1.5px] text-[var(--text-muted)] font-[var(--font-body)]">
-                <code className="font-[var(--font-mono)] normal-case">
-                  {article.surface}
-                </code>
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Pipeline diagram ----------------------------------------------- */}
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("pipelineTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("pipelineDesc")}
-        </p>
-        <PipelineDiagram
-          labels={PIPELINE_STEPS.map((step) => ({
-            key: step.translationKey,
-            label: t(`pipelineSteps.${step.translationKey}.label`),
-            isLlmCall: step.isLlmCall,
-          }))}
-          llmBadge={t("pipelineLlmBadge")}
-          localBadge={t("pipelineLocalBadge")}
+        <Masthead
+          meta="AI ACT TRANSPARENCY"
+          title={t("title")}
+          lede={t("description")}
         />
-        <dl className="mt-6 space-y-3">
-          {PIPELINE_STEPS.map((step) => (
-            <div key={step.translationKey}>
-              <dt className="text-[13px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">
-                {t(`pipelineSteps.${step.translationKey}.label`)}
-              </dt>
-              <dd className="mt-1 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t(`pipelineSteps.${step.translationKey}.desc`)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
 
-      {/* Operator levers ------------------------------------------------- */}
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("leversTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("leversDesc")}
-        </p>
-        <div className="space-y-4">
-          {OPERATOR_LEVERS.map((lever) => (
-            <article
-              key={lever.translationKey}
-              data-testid={`operator-lever-${lever.translationKey}`}
-              className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition"
-            >
-              <header className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
-                <h3 className="text-[16px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                  {t(`levers.${lever.translationKey}.label`)}
-                </h3>
-                <code className="text-[12px] text-[var(--text-secondary)] font-[var(--font-mono)]">
-                  {lever.envVar}
-                  {lever.defaultValue !== null && (
-                    <span className="ml-2 text-[var(--text-muted)]">
-                      = {lever.defaultValue}
-                    </span>
-                  )}
-                </code>
-              </header>
-              <p className="text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t(`levers.${lever.translationKey}.desc`)}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
+        {/* AI Act article map --------------------------------------------- */}
+        <section className="mt-12">
+          <SectionHead>{t("aiActTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("aiActDesc")}
+          </p>
+          <div className="mt-5 flex flex-col gap-5">
+            {AI_ACT_ARTICLES.map((article) => (
+              <BorderedCard
+                key={article.translationKey}
+                tone="edge"
+                padding="md"
+                data-testid={`ai-act-${article.translationKey}`}
+              >
+                <header className="flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="m-0 font-serif text-[20px] font-light leading-tight text-ink">
+                    {t(`articles.${article.translationKey}.title`)}
+                  </h3>
+                  <span className="inline-block border border-paper-edge bg-paper-2 px-2 py-[1px] font-mono text-[10.5px] font-semibold uppercase tracking-[1.2px] text-ink-2">
+                    {article.reference}
+                  </span>
+                </header>
+                <p className="mt-3 t-reading text-[15px] text-ink-2">
+                  {t(`articles.${article.translationKey}.body`)}
+                </p>
+                <p className="mt-3 m-0">
+                  <code className="bg-paper-2 px-2 py-0.5 font-mono text-[11.5px] uppercase tracking-[1.2px] text-ink">
+                    {article.surface}
+                  </code>
+                </p>
+              </BorderedCard>
+            ))}
+          </div>
+        </section>
 
-      {/* Limitations ---------------------------------------------------- */}
-      <section className="mb-10">
-        <h2 className="mb-1 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("limitationsTitle")}
-        </h2>
-        <p className="mb-5 text-[14px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("limitationsDesc")}
-        </p>
-        <ul className="space-y-3 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {LIMITATIONS.map((limitation) => (
-            <li
-              key={limitation.translationKey}
-              data-testid={`limitation-${limitation.translationKey}`}
-              className="leading-relaxed"
-            >
-              {t(`limitations.${limitation.translationKey}`)}
+        {/* Pipeline diagram ----------------------------------------------- */}
+        <section className="mt-12">
+          <SectionHead>{t("pipelineTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("pipelineDesc")}
+          </p>
+          <PipelineDiagram
+            labels={PIPELINE_STEPS.map((step) => ({
+              key: step.translationKey,
+              label: t(`pipelineSteps.${step.translationKey}.label`),
+              isLlmCall: step.isLlmCall,
+            }))}
+            llmBadge={t("pipelineLlmBadge")}
+            localBadge={t("pipelineLocalBadge")}
+          />
+          <dl className="mt-6 flex flex-col gap-4">
+            {PIPELINE_STEPS.map((step) => (
+              <div
+                key={step.translationKey}
+                className="border-b border-paper-edge pb-3 last:border-b-0"
+              >
+                <dt>
+                  <MonoLabel tone={step.isLlmCall ? "red" : "ink"}>
+                    {t(`pipelineSteps.${step.translationKey}.label`)}
+                  </MonoLabel>
+                </dt>
+                <dd className="m-0 mt-1 t-reading text-[14.5px] text-ink-2">
+                  {t(`pipelineSteps.${step.translationKey}.desc`)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/* Operator levers ------------------------------------------------- */}
+        <section className="mt-12">
+          <SectionHead>{t("leversTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("leversDesc")}
+          </p>
+          <div className="mt-5 flex flex-col gap-5">
+            {OPERATOR_LEVERS.map((lever) => (
+              <BorderedCard
+                key={lever.translationKey}
+                tone="edge"
+                padding="md"
+                data-testid={`operator-lever-${lever.translationKey}`}
+              >
+                <header className="flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="m-0 font-serif text-[18px] font-light leading-tight text-ink">
+                    {t(`levers.${lever.translationKey}.label`)}
+                  </h3>
+                  <code className="bg-paper-2 px-2 py-0.5 font-mono text-[11.5px] text-ink">
+                    {lever.envVar}
+                    {lever.defaultValue !== null && (
+                      <span className="ml-2 text-ink-muted">
+                        = {lever.defaultValue}
+                      </span>
+                    )}
+                  </code>
+                </header>
+                <p className="mt-3 t-reading text-[15px] text-ink-2">
+                  {t(`levers.${lever.translationKey}.desc`)}
+                </p>
+              </BorderedCard>
+            ))}
+          </div>
+        </section>
+
+        {/* Limitations ---------------------------------------------------- */}
+        <section className="mt-12">
+          <SectionHead>{t("limitationsTitle")}</SectionHead>
+          <p className="mt-3 t-reading text-[15px] italic text-ink-2">
+            {t("limitationsDesc")}
+          </p>
+          <ul className="mt-4 list-disc space-y-2 pl-5 t-reading text-[15px] leading-relaxed text-ink-2 marker:text-ink-muted">
+            {LIMITATIONS.map((limitation) => (
+              <li
+                key={limitation.translationKey}
+                data-testid={`limitation-${limitation.translationKey}`}
+              >
+                {t(`limitations.${limitation.translationKey}`)}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Receipt summary ------------------------------------------------ */}
+        <section className="mt-12">
+          <BorderedCard tone="ink" padding="md">
+            <MonoLabel tone="red" className="block">
+              {t("receiptTitle")}
+            </MonoLabel>
+            <p className="mt-2 m-0 t-reading text-[15px] text-ink-2">
+              {t("receiptDesc")}
+            </p>
+          </BorderedCard>
+        </section>
+
+        {/* Cross-links + disclaimer -------------------------------------- */}
+        <section className="mt-12 border-t border-paper-edge pt-6">
+          <MonoLabel tone="muted">{t("crossLinksTitle")}</MonoLabel>
+          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[1.2px]">
+            <li>
+              <Link
+                href="/privacy"
+                className="text-ink underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
+              >
+                {t("crossLinkPrivacy")}
+              </Link>
             </li>
-          ))}
-        </ul>
-      </section>
+            <li>
+              <Link
+                href="/data-residency"
+                className="text-ink underline underline-offset-4 decoration-paper-edge transition-colors hover:text-red-accent hover:decoration-red-accent"
+              >
+                {t("crossLinkDataResidency")}
+              </Link>
+            </li>
+          </ul>
+        </section>
 
-      {/* Receipt summary ------------------------------------------------ */}
-      <section className="mb-10 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-6 py-5 theme-transition">
-        <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("receiptTitle")}
-        </h2>
-        <p className="text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {t("receiptDesc")}
+        <p className="mt-6 font-serif text-[13px] italic text-ink-muted">
+          {t("notProductionMark")}
         </p>
-      </section>
-
-      {/* Cross-links + disclaimer -------------------------------------- */}
-      <section className="mb-6">
-        <h2 className="mb-3 text-[14px] font-semibold uppercase tracking-[1.5px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("crossLinksTitle")}
-        </h2>
-        <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[14px] font-[var(--font-body)]">
-          <li>
-            <Link
-              href="/privacy"
-              className="text-[var(--accent)] hover:underline"
-            >
-              {t("crossLinkPrivacy")}
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/data-residency"
-              className="text-[var(--accent)] hover:underline"
-            >
-              {t("crossLinkDataResidency")}
-            </Link>
-          </li>
-        </ul>
-      </section>
-
-      <p className="text-[12px] italic text-[var(--text-muted)] font-[var(--font-body)]">
-        {t("notProductionMark")}
-      </p>
+      </PageShell>
     </main>
   );
 }
 
 /**
- * Hand-rolled SVG pipeline diagram. Matches the `RiskChart` /
- * `RiskRadar` approach — no chart library, just declarative geometry.
- *
- * Layout: equal-width boxes laid out horizontally on wide viewports and
- * stacked vertically on narrow ones, connected by chevron arrows. The
- * `isLlmCall` flag picks a distinct fill so readers can see at a glance
- * which steps leave the device.
+ * Hand-rolled SVG pipeline diagram. Rectilinear nodes (no rounded rx)
+ * connected by thin ink lines with arrow heads. LLM steps carry a
+ * red-accent stroke + red-accent badge so the on-device-vs-remote split
+ * reads at a glance.
  */
 function PipelineDiagram({
   labels,
@@ -255,7 +258,7 @@ function PipelineDiagram({
 
   return (
     <div
-      className="overflow-x-auto rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 theme-transition"
+      className="mt-5 overflow-x-auto border border-paper-edge bg-paper p-4"
       data-testid="pipeline-diagram"
     >
       <svg
@@ -274,11 +277,10 @@ function PipelineDiagram({
                 y={y}
                 width={nodeWidth}
                 height={nodeHeight}
-                rx={8}
                 className={
                   node.isLlmCall
-                    ? "fill-[var(--bg-secondary)] stroke-[var(--accent)]"
-                    : "fill-[var(--bg-primary)] stroke-[var(--border-primary)]"
+                    ? "fill-paper-2 stroke-red-accent"
+                    : "fill-paper stroke-ink"
                 }
                 strokeWidth={1.5}
               />
@@ -286,7 +288,8 @@ function PipelineDiagram({
                 x={x + nodeWidth / 2}
                 y={y + 28}
                 textAnchor="middle"
-                className="fill-[var(--text-primary)] text-[12px] font-[var(--font-body)]"
+                className="fill-ink text-[12px]"
+                style={{ fontFamily: "var(--font-serif)" }}
               >
                 {node.label}
               </text>
@@ -296,16 +299,20 @@ function PipelineDiagram({
                 textAnchor="middle"
                 className={
                   node.isLlmCall
-                    ? "fill-[var(--accent)] text-[10px] font-[var(--font-body)] uppercase tracking-[1.5px]"
-                    : "fill-[var(--text-muted)] text-[10px] font-[var(--font-body)] uppercase tracking-[1.5px]"
+                    ? "fill-red-accent text-[10px] uppercase"
+                    : "fill-ink-muted text-[10px] uppercase"
                 }
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "1.2px",
+                }}
               >
                 {node.isLlmCall ? llmBadge : localBadge}
               </text>
               {i < labels.length - 1 && (
                 <path
                   d={`M ${x + nodeWidth} ${y + nodeHeight / 2} L ${x + nodeWidth + gap} ${y + nodeHeight / 2}`}
-                  className="stroke-[var(--text-muted)]"
+                  className="stroke-ink-muted"
                   strokeWidth={1.5}
                   markerEnd="url(#arrowhead)"
                   fill="none"
@@ -323,7 +330,7 @@ function PipelineDiagram({
             refY={4}
             orient="auto"
           >
-            <path d="M0,0 L8,4 L0,8 z" className="fill-[var(--text-muted)]" />
+            <path d="M0,0 L8,4 L0,8 z" className="fill-ink-muted" />
           </marker>
         </defs>
       </svg>

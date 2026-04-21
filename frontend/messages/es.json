@@ -602,6 +602,25 @@
     "savedLocaleSpanish": "Español",
     "savedLocaleItalian": "Italiano"
   },
+  "Trust": {
+    "metaTitle": "Confianza — Redline",
+    "metaDescription": "Cómo Redline maneja tus datos, qué divulga según el Reglamento de IA y por dónde viajan tus archivos.",
+    "meta": "CONFIANZA",
+    "title": "Cómo tratamos tu contrato.",
+    "lede": "Tres cosas que leer antes de confiar un documento a Redline: qué recopilamos, adónde viaja y cómo funciona el modelo.",
+    "privacyKicker": "PRIVACIDAD",
+    "privacyTitle": "Qué recopilamos y por qué.",
+    "privacyBody": "Información del art. 13 del RGPD — categorías de datos, bases legales, conservación y tus derechos.",
+    "privacyCta": "Leer la política",
+    "residencyKicker": "RESIDENCIA DE DATOS",
+    "residencyTitle": "Adónde viajan tus datos.",
+    "residencyBody": "Cada procesador externo, su región y la base legal de cada flujo. Unión Europea por defecto.",
+    "residencyCta": "Ver los flujos",
+    "transparencyKicker": "REGLAMENTO DE IA",
+    "transparencyTitle": "Cómo el modelo llega a su veredicto.",
+    "transparencyBody": "La tubería en cinco etapas, las palancas del operador y las limitaciones conocidas — según exigen los arts. 13 / 50 del Reglamento de IA.",
+    "transparencyCta": "Leer el artefacto"
+  },
   "AuthVerify": {
     "verifying": "Comprobando tus datos de inicio de sesión...",
     "loggedIn": "Has iniciado sesión",

@@ -602,6 +602,25 @@
     "savedLocaleSpanish": "Spanisch",
     "savedLocaleItalian": "Italienisch"
   },
+  "Trust": {
+    "metaTitle": "Vertrauen — Redline",
+    "metaDescription": "Wie Redline mit Ihren Daten umgeht, was es nach dem KI-Gesetz offenlegt und wohin jedes Byte reist.",
+    "meta": "VERTRAUEN",
+    "title": "Wie wir mit Ihrem Vertrag umgehen.",
+    "lede": "Drei Dinge, die Sie lesen sollten, bevor Sie Redline ein Dokument anvertrauen: was wir erfassen, wohin es reist und wie das Modell arbeitet.",
+    "privacyKicker": "DATENSCHUTZ",
+    "privacyTitle": "Was wir erfassen und warum.",
+    "privacyBody": "DSGVO-Artikel-13-Hinweise — Datenkategorien, Rechtsgrundlagen, Aufbewahrung und Ihre Rechte.",
+    "privacyCta": "Richtlinie lesen",
+    "residencyKicker": "DATENSTANDORT",
+    "residencyTitle": "Wohin Ihre Daten reisen.",
+    "residencyBody": "Jeder externe Auftragsverarbeiter, seine Region und die Rechtsgrundlage für jeden Fluss. EU-zuerst als Standard.",
+    "residencyCta": "Flüsse ansehen",
+    "transparencyKicker": "KI-GESETZ",
+    "transparencyTitle": "Wie das Modell zu seinem Urteil kommt.",
+    "transparencyBody": "Die fünf Pipeline-Stufen, die Betreiber-Hebel und die bekannten Grenzen — wie von Art. 13 / 50 des KI-Gesetzes gefordert.",
+    "transparencyCta": "Artefakt lesen"
+  },
   "AuthVerify": {
     "verifying": "Ihre Anmeldedaten werden überprüft...",
     "loggedIn": "Sie sind angemeldet",

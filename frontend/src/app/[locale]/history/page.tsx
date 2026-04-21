@@ -6,6 +6,11 @@
  * Pinning is optimistic — we patch the local list state immediately
  * and only revert if the backend call fails, because the pin toggle
  * needs to feel instant for it to be used at all.
+ *
+ * Editorial treatment: Masthead + PageShell width="md", borderless
+ * rectangular rows separated by 1px paper-edge rules, mono meta, serif
+ * filename headings, and a StickyActionBar footer for the compare
+ * hand-off. No rounded cards; the list is the page.
  */
 
 "use client";
@@ -23,6 +28,14 @@ import {
 } from "@/lib/api";
 import { getRetentionStatus } from "@/lib/retention";
 import type { AnalysisListItem } from "@/types";
+import { PageShell } from "@/components/PageShell";
+import {
+  Button,
+  Kicker,
+  Masthead,
+  MonoLabel,
+  StickyActionBar,
+} from "@/components/ui";
 
 export default function HistoryPage() {
   const t = useTranslations("History");
@@ -147,8 +160,10 @@ export default function HistoryPage() {
   // Auth loading
   if (authLoading) {
     return (
-      <main className="mx-auto max-w-4xl px-5 py-16 text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
+      <main>
+        <PageShell width="md" className="py-16 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-paper-edge border-t-ink" />
+        </PageShell>
       </main>
     );
   }
@@ -156,156 +171,216 @@ export default function HistoryPage() {
   // Not authenticated — show login prompt
   if (!isAuthenticated) {
     return (
-      <main className="mx-auto max-w-md px-5 py-16">
-        <h1 className="mb-2 text-center text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("title")}
-        </h1>
-        <p className="mb-6 text-center text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("loginPrompt")}
-        </p>
-        <LoginPrompt />
+      <main>
+        <PageShell width="sm" className="pb-16">
+          <Masthead meta="HISTORY" title={t("title")} lede={t("loginPrompt")} />
+          <div className="mt-10">
+            <LoginPrompt />
+          </div>
+        </PageShell>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-      <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-        {t("title")}
-      </h1>
-      <p className="mb-6 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
-        {t("infoLine")}
-      </p>
+    <main>
+      <PageShell width="md" className="pb-16">
+        <Masthead meta="HISTORY" title={t("title")} lede={t("infoLine")} />
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="py-12 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-        </div>
-      )}
+        {/* Loading */}
+        {isLoading && (
+          <div className="mt-16 flex justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-paper-edge border-t-ink" />
+          </div>
+        )}
 
-      {/* Error */}
-      {!isLoading && error && (
-        <p className="py-12 text-center text-[15px] text-[var(--accent)] font-[var(--font-body)]">
-          {error}
-        </p>
-      )}
-
-      {/* Empty state */}
-      {!isLoading && !error && analyses.length === 0 && (
-        <div className="py-12 text-center">
-          <p className="text-[17px] text-[var(--text-muted)] font-[var(--font-body)]">
-            {t("empty")}
+        {/* Error */}
+        {!isLoading && error && (
+          <p className="mt-12 border-y border-paper-edge py-10 text-center font-serif text-[17px] italic text-red-accent">
+            {error}
           </p>
-          <Link
-            href="/"
-            className="mt-4 inline-block text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
-          >
-            {t("analyzeLink")}
-          </Link>
-        </div>
-      )}
+        )}
 
-      {/* Analysis list */}
-      {!isLoading && !error && analyses.length > 0 && (
-        <div className="space-y-3">
-          {analyses.map((analysis) => {
-            const retention = getRetentionStatus(
-              analysis.expires_at,
-              analysis.pinned,
-            );
-            const isPending = pendingId === analysis.id;
-            const pillStyle = retention.pinned
-              ? "border-[var(--accent)] text-[var(--accent)]"
-              : retention.daysRemaining <= 7
-                ? "border-[var(--risk-medium-border,#f59e0b)] text-[var(--risk-medium,#b45309)]"
-                : "border-[var(--border-primary)] text-[var(--text-muted)]";
+        {/* Empty state */}
+        {!isLoading && !error && analyses.length === 0 && (
+          <div className="mt-16 flex flex-col items-center gap-4 border-y border-paper-edge py-16 text-center">
+            <Kicker tone="muted">{t("empty")}</Kicker>
+            <p className="t-reading max-w-[40ch] text-[16px] italic text-ink-2">
+              {t("empty")}
+            </p>
+            <Link
+              href="/"
+              className="font-mono text-[11px] uppercase tracking-[1.5px] text-ink underline-offset-4 hover:text-red-accent hover:underline"
+            >
+              {t("analyzeLink")} →
+            </Link>
+          </div>
+        )}
 
-            return (
-              <div
-                key={analysis.id}
-                className="flex items-center justify-between rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 transition-colors hover:bg-[var(--bg-secondary)] theme-transition"
-                data-testid={`analysis-row-${analysis.id}`}
-              >
-                {/* Multi-select checkbox for the compare hand-off.
-                    A clicked label inside the row link would navigate;
-                    we keep this as a plain button outside the Link. */}
-                <label
-                  className="mr-3 flex cursor-pointer items-center"
-                  onClick={(e) => e.stopPropagation()}
+        {/* Analysis list */}
+        {!isLoading && !error && analyses.length > 0 && (
+          <div className="mt-10 border-t border-ink">
+            {analyses.map((analysis) => {
+              const retention = getRetentionStatus(
+                analysis.expires_at,
+                analysis.pinned,
+              );
+              const isPending = pendingId === analysis.id;
+              const isSelected = selectedIds.has(analysis.id);
+
+              // Retention pill tone. Mono chip; color hierarchy:
+              // pinned → red-accent, expiring soon → warn, else muted.
+              const pillTone = retention.pinned
+                ? "border-red-accent/60 text-red-accent bg-red-soft"
+                : retention.expired
+                  ? "border-paper-edge text-ink-muted bg-paper-2"
+                  : retention.daysRemaining <= 7
+                    ? "border-warn/60 text-warn bg-warn-soft"
+                    : "border-paper-edge text-ink-muted bg-paper";
+
+              return (
+                <div
+                  key={analysis.id}
+                  className={`flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-paper-edge py-5 transition-colors last:border-b-0 ${
+                    isSelected ? "bg-paper-2" : "hover:bg-paper-2"
+                  }`}
+                  data-testid={`analysis-row-${analysis.id}`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(analysis.id)}
-                    onChange={() => toggleSelected(analysis.id)}
-                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
-                    aria-label={t("compareSelectAria", {
-                      filename: analysis.filename,
-                    })}
-                    data-testid={`compare-select-${analysis.id}`}
-                  />
-                </label>
+                  {/* Multi-select checkbox for the compare hand-off. */}
+                  <label
+                    className="flex cursor-pointer items-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelected(analysis.id)}
+                      className="h-4 w-4 cursor-pointer accent-red-accent"
+                      aria-label={t("compareSelectAria", {
+                        filename: analysis.filename,
+                      })}
+                      data-testid={`compare-select-${analysis.id}`}
+                    />
+                  </label>
 
-                <Link
-                  href={`/history/${analysis.id}`}
-                  className="flex-1 no-underline"
-                >
-                  <p className="text-[15px] font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-                    {analysis.filename}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-                    {analysis.contract_type && (
-                      <span>{analysis.contract_type}</span>
-                    )}
-                    <span>
-                      {new Date(analysis.created_at).toLocaleDateString()}
-                    </span>
-                    <span>{t("clauseCount", { count: analysis.clause_count })}</span>
-                    <span className="capitalize">
-                      {analysis.analysis_mode}
-                    </span>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${pillStyle}`}
-                      data-testid="retention-pill"
-                    >
-                      {retention.label}
-                    </span>
-                  </div>
-                </Link>
+                  <Link
+                    href={`/history/${analysis.id}`}
+                    className="flex flex-1 min-w-0 flex-col gap-1 no-underline"
+                  >
+                    <h2 className="m-0 truncate font-serif text-[20px] font-light leading-tight tracking-[-0.005em] text-ink">
+                      {analysis.filename}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
+                      {analysis.contract_type && (
+                        <span>{analysis.contract_type}</span>
+                      )}
+                      <span>
+                        {new Date(analysis.created_at).toLocaleDateString()}
+                      </span>
+                      <span>
+                        {t("clauseCount", { count: analysis.clause_count })}
+                      </span>
+                      <span>{analysis.analysis_mode}</span>
+                      <span
+                        className={`inline-block border px-2 py-[1px] font-mono text-[9.5px] font-semibold uppercase tracking-[1.2px] ${pillTone}`}
+                        data-testid="retention-pill"
+                      >
+                        {retention.label}
+                      </span>
+                    </div>
+                  </Link>
 
-                <div className="flex items-center gap-3">
-                  {/* Risk counts */}
-                  <div className="flex gap-2 text-sm font-medium font-[var(--font-body)]">
-                    {analysis.risk_high > 0 && (
-                      <span className="text-[var(--risk-high)]">
-                        {analysis.risk_high}H
-                      </span>
-                    )}
-                    {analysis.risk_medium > 0 && (
-                      <span className="text-[var(--risk-medium)]">
-                        {analysis.risk_medium}M
-                      </span>
-                    )}
-                    {analysis.risk_low > 0 && (
-                      <span className="text-[var(--risk-low)]">
-                        {analysis.risk_low}L
-                      </span>
-                    )}
-                  </div>
+                  <div className="flex items-center gap-4">
+                    {/* Risk counts — mono, coloured per risk ramp. */}
+                    <div className="flex items-baseline gap-2 font-mono text-[12px] font-semibold tracking-[0.5px]">
+                      {analysis.risk_high > 0 && (
+                        <span className="text-red-accent">
+                          {analysis.risk_high}H
+                        </span>
+                      )}
+                      {analysis.risk_medium > 0 && (
+                        <span className="text-warn">
+                          {analysis.risk_medium}M
+                        </span>
+                      )}
+                      {analysis.risk_low > 0 && (
+                        <span className="text-ok">{analysis.risk_low}L</span>
+                      )}
+                    </div>
 
-                  {/* Extend — hidden when pinned (no-op then) */}
-                  {!analysis.pinned && (
+                    {/* Extend — hidden when pinned (no-op then) */}
+                    {!analysis.pinned && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleExtend(analysis);
+                        }}
+                        disabled={isPending}
+                        className="p-2 text-ink-muted transition-colors hover:text-ink disabled:opacity-40"
+                        aria-label={t("extendAria")}
+                        data-testid="extend-button"
+                        title={t("extendKeep")}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                          <polyline points="21 3 21 8 16 8" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Pin toggle */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
-                        handleExtend(analysis);
+                        handleTogglePin(analysis);
                       }}
                       disabled={isPending}
-                      className="rounded p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)] disabled:opacity-40"
-                      aria-label={t("extendAria")}
-                      data-testid="extend-button"
-                      title={t("extendKeep")}
+                      className={`p-2 transition-colors disabled:opacity-40 ${
+                        analysis.pinned
+                          ? "text-red-accent"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                      aria-pressed={analysis.pinned ?? false}
+                      aria-label={analysis.pinned ? t("unpinAria") : t("pinAria")}
+                      data-testid="pin-button"
+                      title={analysis.pinned ? t("unpinTitle") : t("pinTitle")}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill={analysis.pinned ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 17v5" />
+                        <path d="M9 10.76V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 13.24V15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-1.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76z" />
+                      </svg>
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDelete(analysis.id, analysis.filename)
+                      }
+                      className="p-2 text-ink-muted transition-colors hover:text-red-accent"
+                      aria-label={t("deleteAria")}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -318,109 +393,54 @@ export default function HistoryPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
-                        <polyline points="21 3 21 8 16 8" />
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
                     </button>
-                  )}
-
-                  {/* Pin toggle */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleTogglePin(analysis);
-                    }}
-                    disabled={isPending}
-                    className={`rounded p-2 transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-40 ${
-                      analysis.pinned
-                        ? "text-[var(--accent)]"
-                        : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                    }`}
-                    aria-pressed={analysis.pinned ?? false}
-                    aria-label={analysis.pinned ? t("unpinAria") : t("pinAria")}
-                    data-testid="pin-button"
-                    title={analysis.pinned ? t("unpinTitle") : t("pinTitle")}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill={analysis.pinned ? "currentColor" : "none"}
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 17v5" />
-                      <path d="M9 10.76V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 13.24V15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-1.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76z" />
-                    </svg>
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleDelete(analysis.id, analysis.filename)
-                    }
-                    className="rounded p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
-                    aria-label={t("deleteAria")}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </PageShell>
 
-      {/* Floating compare bar — visible as soon as one row is selected.
-          Explicit "Clear" escape hatch so the user is never stuck with
-          a leftover tick. Compare stays disabled unless exactly 2 are
-          selected; the count messaging makes the rule visible. */}
+      {/* Editorial compare bar — visible as soon as one row is selected.
+          StickyActionBar sits at viewport bottom with paper-tint blur.
+          Compare stays disabled unless exactly 2 are selected; the count
+          messaging makes the rule visible. */}
       {selectedIds.size > 0 && (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition"
+          className="fixed inset-x-0 bottom-0 z-40"
           data-testid="compare-bar"
         >
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5 sm:px-7">
-            <p className="text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]">
-              {t("compareSelectedCount", { count: selectedIds.size })}
-            </p>
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setSelectedIds(new Set())}
-                className="rounded px-4 py-2 text-[14px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
-              >
-                {t("compareClear")}
-              </button>
-              <button
-                type="button"
-                onClick={handleCompareSelected}
-                disabled={!canCompare}
-                className="rounded border border-[var(--accent)] px-4 py-2 text-[14px] font-medium text-[var(--accent)] font-[var(--font-body)] transition-colors hover:bg-[var(--accent)] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                data-testid="compare-go"
-              >
-                {t("compareGo")}
-              </button>
-            </div>
-          </div>
+          <StickyActionBar
+            left={
+              <MonoLabel tone="muted">
+                {t("compareSelectedCount", { count: selectedIds.size })}
+              </MonoLabel>
+            }
+            right={
+              <>
+                <Button
+                  variant="link"
+                  size="md"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  {t("compareClear")}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleCompareSelected}
+                  disabled={!canCompare}
+                  data-testid="compare-go"
+                >
+                  {t("compareGo")}
+                </Button>
+              </>
+            }
+          />
         </div>
       )}
     </main>

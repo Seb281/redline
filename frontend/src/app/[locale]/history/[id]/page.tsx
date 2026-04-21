@@ -13,6 +13,8 @@ import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
 import { legacyProvenance } from "@/lib/analyzer";
 import { getRetentionStatus } from "@/lib/retention";
 import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
+import { PageShell } from "@/components/PageShell";
+import { BorderedCard, Button, Kicker, MonoLabel } from "@/components/ui";
 
 export default function HistoryDetailPage() {
   const t = useTranslations("HistoryDetail");
@@ -100,8 +102,10 @@ export default function HistoryDetailPage() {
   // Loading
   if (isLoading || authLoading) {
     return (
-      <main className="mx-auto max-w-4xl px-5 py-16 text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
+      <main>
+        <PageShell width="lg" className="py-16 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-paper-edge border-t-ink" />
+        </PageShell>
       </main>
     );
   }
@@ -109,20 +113,22 @@ export default function HistoryDetailPage() {
   // Error or not found
   if (error || !analysis) {
     return (
-      <main className="mx-auto max-w-md px-5 py-16 text-center">
-        <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
-          {t("notFound")}
-        </h1>
-        <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {error ?? t("deletedFallback")}
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/history")}
-          className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
-        >
-          {t("backHistory")}
-        </button>
+      <main>
+        <PageShell width="sm" className="py-16 text-center">
+          <Kicker tone="muted">{t("notFound")}</Kicker>
+          <p className="mt-3 font-serif text-[24px] font-light italic text-ink">
+            {error ?? t("deletedFallback")}
+          </p>
+          <div className="mt-6">
+            <Button
+              variant="link"
+              size="md"
+              onClick={() => router.push("/history")}
+            >
+              ← {t("backHistory")}
+            </Button>
+          </div>
+        </PageShell>
       </main>
     );
   }
@@ -159,66 +165,84 @@ export default function HistoryDetailPage() {
     it: t("savedLocaleItalian"),
   };
 
-  return (
-    <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
-      {localeMismatch && savedLocale && (
-        <div
-          className="mb-3 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2 text-[13px] text-[var(--text-secondary)] font-[var(--font-body)]"
-          data-testid="saved-locale-badge"
-        >
-          {t("savedLocaleBadge", {
-            language: localeLabelMap[savedLocale] ?? savedLocale.toUpperCase(),
-          })}
-        </div>
-      )}
-      {/* SP-5 retention bar */}
-      <div
-        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-[13px] font-[var(--font-body)]"
-        data-testid="retention-bar"
-      >
-        <span className="text-[var(--text-secondary)]">
-          {retention.pinned
-            ? t("pinnedNotice")
-            : retention.expired
-              ? t("expiredNotice")
-              : t("autoDeleteIn", { days: retention.daysRemaining })}
-        </span>
-        <div className="flex items-center gap-2">
-          {!analysis.pinned && (
-            <button
-              type="button"
-              onClick={handleExtend}
-              disabled={retentionPending}
-              className="rounded border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1 text-[12px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-40"
-              data-testid="retention-extend"
-            >
-              {t("keepMoreDays")}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleTogglePin}
-            disabled={retentionPending}
-            className={`rounded border px-3 py-1 text-[12px] transition-colors disabled:opacity-40 ${
-              analysis.pinned
-                ? "border-[var(--accent)] bg-[var(--accent)] text-white hover:opacity-90"
-                : "border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-            }`}
-            data-testid="retention-pin"
-          >
-            {analysis.pinned ? t("unpin") : t("pinForever")}
-          </button>
-        </div>
-      </div>
+  const retentionSummary = retention.pinned
+    ? t("pinnedNotice")
+    : retention.expired
+      ? t("expiredNotice")
+      : t("autoDeleteIn", { days: retention.daysRemaining });
 
-      <SavedAnalysisReport
-        data={analyzeResponse}
-        onReset={handleReset}
-        onOpenChat={() => setChatOpen(true)}
-        onAskAboutClause={handleAskAboutClause}
-        filename={analysis.filename}
-        savedId={analysis.id}
-      />
+  return (
+    <main>
+      <PageShell width="lg" className="py-9">
+        {localeMismatch && savedLocale && (
+          <BorderedCard
+            tone="edge"
+            padding="sm"
+            className="mb-4 flex items-center gap-3"
+            data-testid="saved-locale-badge"
+          >
+            <MonoLabel tone="red">LOCALE</MonoLabel>
+            <p className="m-0 font-serif text-[15px] italic text-ink-2">
+              {t("savedLocaleBadge", {
+                language:
+                  localeLabelMap[savedLocale] ?? savedLocale.toUpperCase(),
+              })}
+            </p>
+          </BorderedCard>
+        )}
+
+        {/* SP-5 retention bar — editorial variant. */}
+        <BorderedCard
+          tone="edge"
+          padding="sm"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3"
+          data-testid="retention-bar"
+        >
+          <div className="flex items-baseline gap-3">
+            <MonoLabel tone={retention.pinned ? "red" : "muted"}>
+              {retention.pinned
+                ? "PINNED"
+                : retention.expired
+                  ? "EXPIRED"
+                  : "RETENTION"}
+            </MonoLabel>
+            <p className="m-0 font-serif text-[15px] italic text-ink-2">
+              {retentionSummary}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {!analysis.pinned && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExtend}
+                disabled={retentionPending}
+                data-testid="retention-extend"
+              >
+                {t("keepMoreDays")}
+              </Button>
+            )}
+            <Button
+              variant={analysis.pinned ? "primary" : "ghost"}
+              size="sm"
+              onClick={handleTogglePin}
+              disabled={retentionPending}
+              data-testid="retention-pin"
+            >
+              {analysis.pinned ? t("unpin") : t("pinForever")}
+            </Button>
+          </div>
+        </BorderedCard>
+
+        <SavedAnalysisReport
+          data={analyzeResponse}
+          onReset={handleReset}
+          onOpenChat={() => setChatOpen(true)}
+          onAskAboutClause={handleAskAboutClause}
+          filename={analysis.filename}
+          savedId={analysis.id}
+        />
+      </PageShell>
       <ChatPanel
         isOpen={chatOpen}
         onToggle={() => setChatOpen((o) => !o)}

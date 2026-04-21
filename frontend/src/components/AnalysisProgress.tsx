@@ -1,4 +1,12 @@
-/** Horizontal step indicator with clause counter for the analysis pipeline. */
+/**
+ * AnalysisProgress — editorial 6-step pipeline indicator.
+ *
+ * Six steps sit on a shared baseline rule (Upload → Overview →
+ * Redact → Role → Analysis → Complete). Each cell shows a mono
+ * numeral, the step label, and a red accent bar while active so
+ * the user always knows which pass is running. A clause counter
+ * drops in under step 4 while extraction is streaming.
+ */
 
 "use client";
 
@@ -43,11 +51,6 @@ function getActiveStep(status: StreamingAnalysisState["status"]): number {
   }
 }
 
-/**
- * Five-step horizontal stepper that maps to `useStreamingAnalysis`
- * states. Shows a progress bar with clause counter during step 4.
- * Pure presentational — all state comes from props.
- */
 export function AnalysisProgress({
   status,
   analyzedCount,
@@ -56,117 +59,98 @@ export function AnalysisProgress({
   const t = useTranslations("AnalysisProgress");
   const activeStep = getActiveStep(status);
   const isError = status === "error";
+  const percent =
+    status === "analyzing" && totalCount && totalCount > 0
+      ? Math.min(100, Math.round((analyzedCount / totalCount) * 100))
+      : 0;
 
   return (
     <div className="mb-8">
-      {/* Step indicators */}
-      <div className="flex items-center justify-between">
+      <ol className="grid grid-cols-2 border-t border-b border-ink sm:grid-cols-3 md:grid-cols-6">
         {STEP_KEYS.map((stepKey, i) => {
           const isComplete = !isError && activeStep > i;
           const isActive = !isError && activeStep === i;
-
+          const tone = isActive
+            ? "text-ink"
+            : isComplete
+              ? "text-ink-2"
+              : "text-ink-muted";
           return (
-            <div key={stepKey} className="flex flex-1 items-center">
-              {/* Step circle + label */}
-              <div className="flex flex-col items-center">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium font-[var(--font-body)] transition-colors ${
-                    isComplete
-                      ? "bg-[var(--accent)] text-white"
-                      : isActive
-                        ? "border-2 border-[var(--accent)] text-[var(--accent)]"
-                        : "border-2 border-[var(--border-secondary)] text-[var(--text-muted)]"
-                  }`}
-                >
-                  {isComplete ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    i + 1
-                  )}
-                </div>
-                <span
-                  className={`mt-1.5 text-xs font-medium font-[var(--font-body)] ${
-                    isActive
-                      ? "text-[var(--accent)]"
-                      : isComplete
-                        ? "text-[var(--text-secondary)]"
-                        : "text-[var(--text-muted)]"
-                  }`}
-                >
-                  {t(stepKey)}
-                </span>
-              </div>
-
-              {/* Connector line (not after last step) */}
-              {i < STEP_KEYS.length - 1 && (
-                <div
-                  className={`mx-2 h-[2px] flex-1 transition-colors ${
-                    !isError && activeStep > i
-                      ? "bg-[var(--accent)]"
-                      : "bg-[var(--border-secondary)]"
-                  }`}
-                />
-              )}
-            </div>
+            <li
+              key={stepKey}
+              aria-current={isActive ? "step" : undefined}
+              className={`relative flex flex-col gap-2 border-paper-edge px-3 py-4 md:border-r md:last:border-r-0 ${
+                isActive ? "bg-paper-2" : ""
+              }`}
+            >
+              {/* Active top accent — the red running line narrowed to a step */}
+              <span
+                aria-hidden
+                className={`absolute inset-x-0 top-0 h-[2px] transition-colors ${
+                  isActive
+                    ? "bg-red-accent"
+                    : isComplete
+                      ? "bg-ink"
+                      : "bg-transparent"
+                }`}
+              />
+              <span className="font-mono text-[10.5px] uppercase tracking-[1.5px] text-ink-muted">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                className={`font-serif text-[17px] leading-tight tracking-[-0.01em] ${tone}`}
+              >
+                {t(stepKey)}
+              </span>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
-      {/* Subtitle / clause counter */}
-      <div className="mt-3 text-center">
+      {/* Sub-status line — parks under the step row */}
+      <div className="mt-3 flex min-h-[18px] flex-wrap items-center gap-x-6 gap-y-1">
         {status === "analyzing_overview" && (
-          <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+          <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
             {t("extracting")}
-          </p>
+          </span>
         )}
         {status === "awaiting_redaction" && (
-          <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+          <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
             {t("reviewMasked")}
-          </p>
+          </span>
         )}
         {status === "awaiting_role" && (
-          <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+          <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
             {t("selectPerspective")}
-          </p>
+          </span>
         )}
         {status === "analyzing" && totalCount !== null && (
-          <div className="mx-auto max-w-xs">
-            <div className="mb-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
+          <div className="flex w-full items-center gap-4">
+            <div className="h-px flex-1 overflow-hidden bg-paper-edge">
               <div
-                className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
-                style={{
-                  width: `${Math.round((analyzedCount / totalCount) * 100)}%`,
-                }}
+                className="h-full bg-red-accent transition-all duration-500"
+                style={{ width: `${percent}%` }}
               />
             </div>
-            <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+            <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-2">
               {analyzedCount < totalCount
-                ? t("analyzingClause", { n: analyzedCount + 1, total: totalCount })
+                ? t("analyzingClause", {
+                    n: analyzedCount + 1,
+                    total: totalCount,
+                  })
                 : t("allClausesDone", { total: totalCount })}
-            </p>
+            </span>
           </div>
         )}
         {status === "analyzing" && totalCount === null && (
-          <p className="text-sm text-[var(--text-tertiary)] font-[var(--font-body)]">
+          <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
             {t("extractingClauses")}
-          </p>
+          </span>
         )}
         {status === "complete" && (
-          <p className="text-sm text-green-600 font-[var(--font-body)] dark:text-green-400">
+          <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ok">
             {t("complete")}
-          </p>
+          </span>
         )}
       </div>
     </div>

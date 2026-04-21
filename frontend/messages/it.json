@@ -234,7 +234,10 @@
     "analysisFailed": "L'analisi non è andata a buon fine. Controlla la connessione e riprova.",
     "retry": "Riprova",
     "cancel": "Annulla",
-    "inProgress": "Analisi in corso..."
+    "inProgress": "Analisi in corso...",
+    "passThreeOfFive": "Pass in progress · streaming live",
+    "readingTitle": "Reading<br></br><em>your contract,</em><br></br>carefully.",
+    "readingLede": "Three passes, each one narrower than the last. The first pass locates structure; the next extracts and scores clauses against the jurisdiction's statutes. You'll see findings arrive below as they're identified."
   },
   "ChatPanel": {
     "heading": "Chiedi informazioni su questo contratto",

@@ -63,12 +63,30 @@ export function StreamingReportView({
   // Nothing yet — show initial loading state with stepper.
   if (!overview && (status === "analyzing_overview" || status === "analyzing")) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        {/* File info bar */}
-        <div className="mb-9 rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-5 py-3 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] theme-transition">
-          {upload.filename} · {t("pages", { count: upload.page_count })} · {t("chars", { count: upload.char_count })}
+      <div className="py-10">
+        <p className="font-mono text-[11px] uppercase tracking-[1.8px] text-red-accent">
+          {t("passThreeOfFive")}
+        </p>
+        <h1 className="mt-4 font-serif text-[48px] font-light leading-[0.98] tracking-[-0.02em] text-ink m-0 md:text-[64px]">
+          {t.rich("readingTitle", {
+            em: (chunks) => (
+              <em className="italic text-red-accent">{chunks}</em>
+            ),
+            br: () => <br />,
+          })}
+        </h1>
+        <p className="t-reading text-ink-2 mt-6 max-w-[52ch] text-[18px] m-0">
+          {t("readingLede")}
+        </p>
+
+        {/* File info line */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-paper-edge pt-4 font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
+          <span className="text-ink-2">{upload.filename}</span>
+          <span>{t("pages", { count: upload.page_count })}</span>
+          <span>{t("chars", { count: upload.char_count })}</span>
         </div>
-        <div className="w-full max-w-md">
+
+        <div className="mt-8">
           <AnalysisProgress
             status={status}
             analyzedCount={clauses.length}
@@ -233,18 +251,18 @@ export function StreamingReportView({
           attached (i.e. after the `complete` event). */}
       {provenance && <AnalysisFooter provenance={provenance} />}
 
-      {/* Bottom bar — reset only during streaming, full actions after complete */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/95 backdrop-blur-sm theme-transition">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3.5 sm:px-7">
+      {/* Bottom action bar — editorial sticky footer matching StickyActionBar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink bg-paper/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-3 sm:px-7">
           <button
             type="button"
             onClick={onReset}
-            className="rounded px-5 py-2.5 text-[15px] text-[var(--text-muted)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
+            className="font-mono text-[11px] uppercase tracking-[1.5px] text-ink-muted transition-colors hover:text-red-accent"
           >
             {t("cancel")}
           </button>
           {status === "analyzing" && (
-            <span className="text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+            <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
               {t("inProgress")}
             </span>
           )}

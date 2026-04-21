@@ -1,9 +1,21 @@
-/** Drag-and-drop file upload zone for contract documents. */
+/**
+ * FileUpload — editorial dropzone for contract uploads.
+ *
+ * Renders a 1px dashed ink-edged drop target that inverts to paper-2
+ * on drag or hover. A secondary serif prompt drives the visual, with
+ * the Browse action and citations toggle arranged on a mono baseline
+ * below. API (`onFileSelected(file, withCitations)`) is unchanged —
+ * this rewrite is presentation only.
+ */
 
 "use client";
 
 import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+
+import { Button } from "@/components/ui/Button";
+import { MonoLabel } from "@/components/ui/MonoLabel";
+import { Toggle } from "@/components/ui/Toggle";
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -18,7 +30,6 @@ interface FileUploadProps {
   error: string | null;
 }
 
-/** Upload zone with drag-and-drop, file picker, progress bar, and analysis toggles. */
 export function FileUpload({
   onFileSelected,
   isUploading,
@@ -26,9 +37,8 @@ export function FileUpload({
 }: FileUploadProps) {
   const t = useTranslations("FileUpload");
   const [isDragging, setIsDragging] = useState(false);
-  // Default ON: citations are the headline feature of the report, so the
-  // toggle lets power users opt out for cheaper/faster runs instead of
-  // forcing everyone to opt in.
+  // Default ON: citations are the headline feature. Users can opt out
+  // for cheaper/faster runs instead of forcing everyone to opt in.
   const [withCitations, setWithCitations] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,86 +70,85 @@ export function FileUpload({
     [validateAndSelect]
   );
 
+  const openPicker = useCallback(() => {
+    if (!isUploading) inputRef.current?.click();
+  }, [isUploading]);
+
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col">
       <div
+        role="button"
+        tabIndex={0}
+        onClick={openPicker}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openPicker();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`w-full max-w-[540px] rounded border-2 border-dashed px-12 py-16 text-center transition-all duration-200 ${
+        aria-label={t("dropHere")}
+        className={`group flex min-h-[260px] flex-col justify-between gap-8 border border-dashed px-8 py-8 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ink ${
           isDragging
-            ? "border-[var(--accent)] bg-[var(--accent-subtle)]"
-            : "border-[var(--border-secondary)] bg-[var(--bg-secondary)] hover:border-[var(--text-muted)]"
-        }`}
+            ? "border-ink bg-paper-2"
+            : "border-ink/60 bg-paper hover:bg-paper-2 hover:border-ink"
+        } ${isUploading ? "cursor-wait" : "cursor-pointer"}`}
       >
-        {/* Document icon */}
-        <div className="mb-5 flex justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
+        <div>
+          <MonoLabel tone="muted">{t("eyebrow")}</MonoLabel>
+          <h3 className="mt-3 font-serif text-[32px] leading-[1.1] tracking-[-0.02em] text-ink m-0">
+            {t("dropHere")}{" "}
+            <span className="italic text-red-accent">{t("dropHereAccent")}</span>
+          </h3>
+          <p className="t-reading text-ink-2 mt-3 m-0 max-w-[42ch]">{t("hint")}</p>
         </div>
 
-        <p className="mb-1.5 text-lg font-medium text-[var(--text-primary)] font-[var(--font-body)]">
-          {t("dropHere")}
-        </p>
-        <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("accepted")}
-        </p>
-
         {isUploading ? (
-          <div className="mx-auto w-56">
-            <div className="mb-2.5 h-[2px] overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
-              <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style={{ width: "60%" }} />
+          <div className="w-full">
+            <div className="h-px w-full overflow-hidden bg-paper-edge">
+              <div className="h-full w-3/5 bg-red-accent transition-all duration-500" />
             </div>
-            <p className="text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">{t("uploading")}</p>
+            <p className="mt-2 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-muted">
+              {t("uploading")}
+            </p>
           </div>
         ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="rounded bg-[var(--text-primary)] px-7 py-3 text-[15px] font-medium text-[var(--bg-primary)] font-[var(--font-body)] transition-opacity hover:opacity-80"
-            >
-              {t("browseFiles")}
-            </button>
-
-            {/* Analysis toggle */}
-            <div className="mt-6 flex items-center justify-center">
-              {/* Citations toggle */}
-              <div className="group relative">
-                <label className="flex cursor-pointer items-center justify-center gap-2.5 text-[15px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={withCitations}
-                    onClick={() => setWithCitations(!withCitations)}
-                    className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors ${
-                      withCitations ? "bg-[var(--accent)]" : "bg-[var(--border-secondary)]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                        withCitations ? "translate-x-[18px]" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
-                  {t("citations")}
-                </label>
-                {/* Tooltip */}
-                <div className="pointer-events-none absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--text-primary)] px-3.5 py-2 text-[15px] text-[var(--bg-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 font-[var(--font-body)]">
-                  {t("citationsTooltip")}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--text-primary)]" />
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openPicker();
+                }}
+              >
+                {t("browseFiles")}
+              </Button>
+              <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-muted">
+                {t("formats")}
+              </span>
             </div>
-          </>
+
+            <label
+              className="flex cursor-pointer items-center gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Toggle
+                checked={withCitations}
+                onChange={setWithCitations}
+                label={t("citations")}
+              />
+              <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-ink-2">
+                {t("citations")}
+              </span>
+            </label>
+          </div>
         )}
 
         <input
@@ -150,8 +159,11 @@ export function FileUpload({
           className="hidden"
         />
       </div>
+
       {error && (
-        <p className="mt-5 text-[17px] text-[var(--accent)] font-[var(--font-body)]">{error}</p>
+        <p className="mt-4 font-mono text-[12px] uppercase tracking-[1px] text-red-accent">
+          {error}
+        </p>
       )}
     </div>
   );

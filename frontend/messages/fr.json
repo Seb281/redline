@@ -29,12 +29,16 @@
     "gotIt": "D'accord"
   },
   "FileUpload": {
-    "dropHere": "Déposez votre contrat ici",
-    "accepted": "PDF ou DOCX — jusqu'à 10 Mo",
-    "uploading": "Chargement en cours...",
-    "browseFiles": "Parcourir les fichiers",
-    "citations": "Références",
-    "citationsTooltip": "Citer textuellement le texte de la clause dans les notes de bas de page (plus long, plus coûteux)"
+    "dropHere": "Drop a contract",
+    "dropHereAccent": "here.",
+    "eyebrow": "Upload · PDF or DOCX",
+    "accepted": "PDF or DOCX — up to 10 MB",
+    "hint": "We parse it in your browser first, then strip names, emails, IBANs and addresses before anything leaves the device. You'll see and confirm the redactions.",
+    "formats": "PDF · DOCX · ≤ 10 MB",
+    "uploading": "Uploading…",
+    "browseFiles": "Choose a file",
+    "citations": "Citations on",
+    "citationsTooltip": "Quote verbatim clause text in footnotes (slower, costlier)"
   },
   "LoginPrompt": {
     "inboxHeading": "Consultez votre boîte de réception",
@@ -419,37 +423,15 @@
     "generalPrinciple": "Principe général"
   },
   "Home": {
-    "tagline": "Outils de gestion des contrats basés sur l'IA",
-    "heading": "Assurez-vous de bien comprendre ce que vous signez avant de le faire.",
-    "subheading": "Analysez les risques ou supprimez les données à caractère personnel : deux points d'accès de premier ordre, sans obligation de créer un compte.",
-    "primary": "Primaire",
-    "analyzeContract": "Analyser le contrat",
-    "analyzeDesc": "Analyse des risques par l'IA en plusieurs étapes, clause par clause, en langage clair.",
-    "uploadCta": "↓ Cliquez ci-dessous pour commencer",
-    "privacy": "Confidentialité",
-    "redactExport": "Masquer et exporter",
-    "redactDesc": "PDF sans données personnelles généré directement dans votre navigateur — le fichier ne quitte jamais votre appareil.",
-    "goRedact": "Aller à « Masquer » →",
-    "fast": "Rapide",
-    "deep": "Profond",
-    "fastDesc": "Numérisation rapide par lots — Mistral Small (UE)",
-    "deepDesc": "Analyse approfondie clause par clause — Mistral Small (UE)",
-    "demoIntro": "ou essayez une démo avec un modèle de contrat européen",
-    "demoNl": "NL · Indépendant",
-    "demoFr": "FR · Emploi",
-    "demoDe": "DE · SaaS + DPA",
-    "demoEs": "ES · Services SaaS",
-    "demoIt": "Informatique · Emploi",
-    "demoPl": "PL · Distribution",
-    "howItWorks": "Comment ça marche",
-    "step1Title": "1. Télécharger",
-    "step1Body": "Votre contrat, au format PDF ou DOCX",
-    "step2Title": "2. Analyser",
-    "step2Body": "L'IA analyse chaque clause et évalue les risques",
-    "step3Title": "3. Révision",
-    "step3Body": "Rapport sur les risques rédigé en langage clair, avec options d'exportation",
-    "footer": "Conçu par un avocat d'affaires devenu promoteur immobilier. Ceci ne constitue pas un avis juridique.",
-    "genericError": "Une erreur s'est produite"
+    "tagline": "A contract analyser, written by lawyers · Privacy by default",
+    "heading": "Read every<br></br>line <em>before</em><br></br>you sign it.",
+    "subheading": "Drop a PDF. In under a minute we'll read it from <em>your</em> side of the table, flag what's unusual, and cite the statute behind every call. Hosted in Paris. Nothing kept we don't need.",
+    "modeLabel": "Mode",
+    "fast": "Fast",
+    "deep": "Deep",
+    "fastDesc": "Batched scan · Mistral Small (EU)",
+    "deepDesc": "Per-clause read · Mistral Small (EU)",
+    "genericError": "Something went wrong"
   },
   "Privacy": {
     "metaTitle": "Politique de confidentialité — Redline",
@@ -799,5 +781,65 @@
     "crossLinkPrivacy": "Politique de confidentialité",
     "crossLinkDataResidency": "Localisation des données",
     "notProductionMark": "Mise en œuvre du portefeuille — il ne s'agit pas d'un système d'IA à haut risque certifié au sens de la loi sur l'IA."
+  },
+  "Landing": {
+    "HeroAside": {
+      "readsKicker": "Reads from",
+      "readsBody": "PDF and DOCX, native text or on-device OCR. Six EU samples if you don't have one handy.",
+      "watchesKicker": "Watches for",
+      "watchesBody": "IP reach, liability caps, payment windows, termination cure windows, unusual governing-law choices.",
+      "flagsKicker": "Flags against",
+      "flagsBody": "A 33-statute allowlist — DE, NL, FR, ES, IT, PL + EU directives. No free-text citations."
+    },
+    "HowItReads": {
+      "title": "Three passes, one reading.",
+      "meta": "§ 01 · How it reads",
+      "s1Kicker": "01 · Overview",
+      "s1Body": "Locate the bones. Which clauses, which contract type, which jurisdiction. Structural only — no risk calls yet.",
+      "s2Kicker": "02 · Extraction",
+      "s2Body": "Pull the substance. Clause by clause, the material terms — money, term, IP, liability, termination.",
+      "s3Kicker": "03 · Analysis",
+      "s3Body": "Read from your side. You told us who you are; we weigh risk against national market norms and cite the statute."
+    },
+    "Pillars": {
+      "title": "Trust is a verb, not a badge.",
+      "p1Kicker": "§ 02.1 · Where",
+      "p1Title": "Paris-hosted, EU-only.",
+      "p1Body": "Analysis runs on Mistral La Plateforme in fr-paris-1. Processing under French jurisdiction, no transfers outside the EU, no US subprocessors in the analysis path.",
+      "p2Kicker": "§ 02.2 · What",
+      "p2Title": "Redaction before sending.",
+      "p2Body": "Names, emails, IBANs and addresses are replaced with role tokens — in your browser — before a byte leaves the device. You see and confirm every swap.",
+      "p3Kicker": "§ 02.3 · How long",
+      "p3Title": "Nothing kept by default.",
+      "p3Body": "Unpinned analyses expire in 30 days. Pin what you want to keep. Export or delete at any time, from one place. Every deletion is immediate."
+    },
+    "Samples": {
+      "title": "No contract yet? Try one of ours.",
+      "meta": "§ 03 · Or, open a sample",
+      "nlKicker": "NL · Freelance",
+      "nlTitle": "Dutch freelance agreement",
+      "frKicker": "FR · Employment",
+      "frTitle": "CDI employment contract",
+      "deKicker": "DE · SaaS",
+      "deTitle": "SaaS subscription + DPA",
+      "esKicker": "ES · SaaS",
+      "esTitle": "ES SaaS / services agreement",
+      "itKicker": "IT · Employment",
+      "itTitle": "Italian employment contract",
+      "plKicker": "PL · Distribution",
+      "plTitle": "Polish distribution agreement"
+    },
+    "Faq": {
+      "title": "Questions we expect.",
+      "meta": "§ 04 · Before you upload",
+      "q1": "Is this legal advice?",
+      "a1": "No. Redline is a first-pass reading produced by a generative AI model. It is informational only and not a substitute for a lawyer licensed in the relevant jurisdiction. Every report carries this disclaimer up front.",
+      "q2": "Where does my contract go?",
+      "a2": "Your file is parsed in the browser. Names, emails, IBANs and addresses are redacted locally before the scrubbed text is sent to Mistral's Paris region. Nothing is kept unless you save it from a signed-in session.",
+      "q3": "Which jurisdictions do you cover?",
+      "a3": "Dedicated statute shortlists for Germany, the Netherlands, France, Spain, Italy and Poland, plus EU-wide directives. Contracts from other EU-27 countries receive EU-only citations; non-EU contracts fall back to general principles.",
+      "q4": "Do you train on my data?",
+      "a4": "No. Mistral La Plateforme's contractual terms exclude training on customer data. Redline doesn't log contract text and doesn't retain anything past the request cycle unless you explicitly save the analysis."
+    }
   }
 }

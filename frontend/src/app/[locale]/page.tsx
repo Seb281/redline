@@ -8,8 +8,16 @@ import { useTranslations } from "next-intl";
 import { AnalysisLocalePicker } from "@/components/AnalysisLocalePicker";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FileUpload } from "@/components/FileUpload";
+import { PageShell } from "@/components/PageShell";
 import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
+import { FaqSection } from "@/components/landing/FaqSection";
+import { HeroAside } from "@/components/landing/HeroAside";
+import { HeroRules } from "@/components/landing/HeroRules";
+import { HowItReads } from "@/components/landing/HowItReads";
+import { Pillars } from "@/components/landing/Pillars";
+import { SampleRow } from "@/components/landing/SampleRow";
+import { MonoLabel } from "@/components/ui/MonoLabel";
 import { useAnalysisLocale } from "@/contexts/AnalysisLocaleContext";
 import { DE_SAAS_DPA_TEXT, DE_SAAS_DPA_UPLOAD } from "@/data/sample-contracts/de-saas-dpa";
 import { ES_SAAS_SERVICES_TEXT, ES_SAAS_SERVICES_UPLOAD } from "@/data/sample-contracts/es-saas-services";
@@ -18,7 +26,6 @@ import { IT_EMPLOYMENT_TEXT, IT_EMPLOYMENT_UPLOAD } from "@/data/sample-contract
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contracts/nl-freelance";
 import { PL_DISTRIBUTION_TEXT, PL_DISTRIBUTION_UPLOAD } from "@/data/sample-contracts/pl-distribution";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
-import { Link } from "@/i18n/navigation";
 import { saveAnalysis, uploadContract, warmBackend } from "@/lib/api";
 import type { AnalysisMode, AnalyzedClause, AnalyzeResponse, UploadResponse } from "@/types";
 
@@ -250,177 +257,117 @@ export default function Home() {
   }, [state, mode]);
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
+    <main>
       {state.view === "upload" && (
-        <>
-          {/* Hero */}
-          <div className="pb-10 pt-18 text-center">
-            <p className="mb-4 text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-              {t("tagline")}
-            </p>
-            <h1 className="mx-auto mb-4 max-w-[560px] text-[40px] font-normal leading-[1.3] text-[var(--text-primary)] font-[var(--font-heading)]">
-              {t("heading")}
-            </h1>
-            <p className="mx-auto max-w-[450px] text-[17px] text-[var(--text-tertiary)] font-[var(--font-body)]">
-              {t("subheading")}
-            </p>
-          </div>
+        <PageShell width="lg" className="py-10 sm:py-14">
+          {/* Hero — editorial headline + upload / aside two-column */}
+          <section className="relative">
+            <HeroRules variant="default" />
+            <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-[1.4fr_1fr]">
+              <div>
+                <MonoLabel tone="red" className="block mb-7 md:mb-9">
+                  {t("tagline")}
+                </MonoLabel>
+                <h1 className="m-0 font-serif text-[64px] font-light leading-[0.96] tracking-[-0.02em] text-ink md:text-[88px] lg:text-[104px]">
+                  {t.rich("heading", {
+                    em: (chunks) => (
+                      <em className="not-italic font-light italic text-red-accent">
+                        {chunks}
+                      </em>
+                    ),
+                    br: () => <br />,
+                  })}
+                </h1>
+                <p className="t-reading text-ink-2 mt-8 max-w-[48ch] text-[20px] leading-[1.5] m-0">
+                  {t.rich("subheading", {
+                    em: (chunks) => (
+                      <em className="italic text-ink">{chunks}</em>
+                    ),
+                  })}
+                </p>
 
-          {/* Two equal entry-point tiles */}
-          <div className="mx-auto mb-10 grid max-w-[620px] grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Analyze tile — primary, active on this page */}
-            <div className="rounded border-2 border-[var(--accent)] bg-[var(--accent-subtle)] p-6 theme-transition">
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-                {t("primary")}
-              </p>
-              <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                {t("analyzeContract")}
-              </h2>
-              <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t("analyzeDesc")}
-              </p>
-              <p className="text-[13px] font-medium text-[var(--accent)] font-[var(--font-body)]">
-                {t("uploadCta")}
-              </p>
-            </div>
+                <div className="mt-10">
+                  <FileUpload
+                    onFileSelected={handleFileSelected}
+                    isUploading={isUploading}
+                    error={error}
+                  />
+                </div>
 
-            {/* Redact tile — links to /redact */}
-            <Link
-              href="/redact"
-              className="block rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-6 no-underline transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] theme-transition"
-            >
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[2px] text-[var(--text-muted)] font-[var(--font-body)]">
-                {t("privacy")}
-              </p>
-              <h2 className="mb-2 text-[18px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]">
-                {t("redactExport")}
-              </h2>
-              <p className="mb-4 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)]">
-                {t("redactDesc")}
-              </p>
-              <p className="text-[13px] font-medium text-[var(--text-tertiary)] font-[var(--font-body)] transition-colors group-hover:text-[var(--accent)]">
-                {t("goRedact")}
-              </p>
-            </Link>
-          </div>
-
-          {/* Upload zone — Analyze entry point */}
-          <FileUpload
-            onFileSelected={handleFileSelected}
-            isUploading={isUploading}
-            error={error}
-          />
-
-          {/* SP-7 Phase 5 — analysis-output language (independent of UI locale) */}
-          <div className="mx-auto mt-5 flex max-w-[540px] items-center justify-center">
-            <AnalysisLocalePicker />
-          </div>
-
-          {/* Analysis mode toggle */}
-          <div className="mx-auto mt-3 flex max-w-[540px] items-center justify-center">
-            <div className="inline-flex rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-1">
-              <button
-                type="button"
-                onClick={() => setMode("fast")}
-                className={`rounded px-5 py-2 text-[15px] font-medium font-[var(--font-body)] transition-colors ${
-                  mode === "fast"
-                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
-              >
-                {t("fast")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("deep")}
-                className={`rounded px-5 py-2 text-[15px] font-medium font-[var(--font-body)] transition-colors ${
-                  mode === "deep"
-                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
-              >
-                {t("deep")}
-              </button>
-            </div>
-          </div>
-          <p className="mt-2 text-center text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-            {mode === "fast" ? t("fastDesc") : t("deepDesc")}
-          </p>
-
-          {/* Demo CTA — 3 EU sample contracts */}
-          <div className="mt-6 text-center">
-            <p className="mb-2 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
-              {t("demoIntro")}
-            </p>
-            <div className="inline-flex flex-wrap justify-center gap-2">
-              {(
-                [
-                  { id: "nl", labelKey: "demoNl" },
-                  { id: "fr", labelKey: "demoFr" },
-                  { id: "de", labelKey: "demoDe" },
-                  { id: "es", labelKey: "demoEs" },
-                  { id: "it", labelKey: "demoIt" },
-                  { id: "pl", labelKey: "demoPl" },
-                ] as const
-              ).map(({ id, labelKey }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => handleDemo(id)}
-                  disabled={isUploading}
-                  className="rounded border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-1.5 text-[14px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {t(labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* How it works */}
-          <div className="mx-auto mt-14 max-w-[540px]">
-            <p className="mb-4 text-center text-[13px] font-semibold uppercase tracking-[2px] text-[var(--accent)] font-[var(--font-body)]">
-              {t("howItWorks")}
-            </p>
-            <div className="flex gap-4">
-              <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step1Title")}</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step1Body")}</p>
+                {/* Analysis controls — editorial baseline */}
+                <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-paper-edge pt-5">
+                  <AnalysisLocalePicker />
+                  <div
+                    className="flex items-center gap-3"
+                    role="radiogroup"
+                    aria-label={t("modeLabel")}
+                  >
+                    <span className="font-mono text-[11px] uppercase tracking-[1.5px] text-ink-muted">
+                      {t("modeLabel")}
+                    </span>
+                    <div className="inline-flex border border-ink">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={mode === "fast"}
+                        onClick={() => setMode("fast")}
+                        className={`px-3 py-1.5 font-mono text-[11px] uppercase tracking-[1.2px] transition-colors ${
+                          mode === "fast"
+                            ? "bg-ink text-paper"
+                            : "bg-paper text-ink hover:bg-paper-2"
+                        }`}
+                      >
+                        {t("fast")}
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={mode === "deep"}
+                        onClick={() => setMode("deep")}
+                        className={`border-l border-ink px-3 py-1.5 font-mono text-[11px] uppercase tracking-[1.2px] transition-colors ${
+                          mode === "deep"
+                            ? "bg-ink text-paper"
+                            : "bg-paper text-ink hover:bg-paper-2"
+                        }`}
+                      >
+                        {t("deep")}
+                      </button>
+                    </div>
+                    <span className="font-mono text-[11px] text-ink-muted">
+                      {mode === "fast" ? t("fastDesc") : t("deepDesc")}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step2Title")}</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step2Body")}</p>
-              </div>
-              <div className="flex-1 rounded border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 theme-transition">
-                <p className="text-[15px] font-semibold text-[var(--text-primary)] font-[var(--font-body)]">{t("step3Title")}</p>
-                <p className="mt-1.5 text-sm text-[var(--text-muted)] font-[var(--font-body)]">{t("step3Body")}</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Built-by line */}
-          <div className="mx-auto mt-12 max-w-[540px] border-t border-[var(--border-primary)] pt-5 text-center">
-            <p className="text-[15px] italic text-[var(--text-muted)] font-[var(--font-heading)]">
-              {t("footer")}
-            </p>
-          </div>
-        </>
+              <HeroAside />
+            </div>
+          </section>
+
+          <HowItReads />
+          <Pillars />
+          <SampleRow onPick={handleDemo} disabled={isUploading} />
+          <FaqSection namespace="Landing.Faq" count={4} />
+        </PageShell>
       )}
 
       {state.view === "analyzing" && (
-        <StreamingReportView
-          state={streaming}
-          upload={state.upload}
-          onReset={handleReset}
-          onRolePicked={handleRolePicked}
-          onRedactionConfirmed={handleRedactionConfirmed}
-          onEditPartyLabel={streaming.updatePartyLabel}
-          onRetry={handleRetry}
-          retryCount={retryCount}
-        />
+        <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
+          <StreamingReportView
+            state={streaming}
+            upload={state.upload}
+            onReset={handleReset}
+            onRolePicked={handleRolePicked}
+            onRedactionConfirmed={handleRedactionConfirmed}
+            onEditPartyLabel={streaming.updatePartyLabel}
+            onRetry={handleRetry}
+            retryCount={retryCount}
+          />
+        </div>
       )}
 
       {state.view === "report" && (
-        <>
+        <div className="mx-auto max-w-4xl px-5 py-9 sm:px-7">
           <ReportView
             data={state.analysis}
             onReset={handleReset}
@@ -436,7 +383,7 @@ export default function Home() {
             initialQuestion={chatQuestion}
             onInitialQuestionConsumed={() => setChatQuestion(null)}
           />
-        </>
+        </div>
       )}
     </main>
   );

@@ -13,7 +13,6 @@
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Lora, DM_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { AnalysisLocaleProvider } from "@/contexts/AnalysisLocaleContext";
@@ -22,19 +21,8 @@ import { RehydrateProvider } from "@/contexts/RehydrateContext";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { fontVariables } from "@/lib/fonts";
 import { routing, type Locale } from "@/i18n/routing";
-
-const lora = Lora({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Redline — AI Contract Analyzer",
@@ -63,9 +51,9 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${lora.variable} ${dmSans.variable}`}
+      className={fontVariables}
     >
-      <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased theme-transition font-[var(--font-body)]">
+      <body className="bg-paper text-ink antialiased theme-transition font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <RehydrateProvider>

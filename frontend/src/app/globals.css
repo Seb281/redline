@@ -1,95 +1,250 @@
 @import "tailwindcss";
 
-/* --- Light theme tokens --- */
+/*
+ * Redline design system — editorial / legal-document, modernised.
+ *
+ * Palette expressed as raw tokens (paper / ink / red / ok / warn / info)
+ * plus semantic aliases (bg / text / border / accent / risk) so existing
+ * components keep working while new editorial primitives reference the
+ * raw tokens directly.
+ *
+ * The palette is defined for light (paper) in :root and inverted for
+ * dark mode under .dark. The single red accent is lightened under dark
+ * for AA contrast.
+ */
+
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9f8f6;
-  --bg-tertiary: #f2f0ec;
-  --bg-card: #ffffff;
-  --border-primary: #e8e4de;
-  --border-secondary: #d4cfc7;
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a4540;
-  --text-tertiary: #7a756d;
-  --text-muted: #a8a29e;
-  --accent: #b91c1c;
-  --accent-hover: #991b1b;
-  --accent-subtle: #fef2f2;
+  /* Paper — cool off-white */
+  --paper: #f5f5f3;
+  --paper-2: #ececea;
+  --paper-3: #e3e2dd;
+  --paper-edge: #cac9c5;
 
-  /* Risk colors */
-  --risk-high: #b91c1c;
-  --risk-high-bg: #fef2f2;
-  --risk-high-border: #fecaca;
-  --risk-medium: #a16207;
-  --risk-medium-bg: #fefce8;
-  --risk-medium-border: #fde68a;
-  --risk-low: #15803d;
-  --risk-low-bg: #f0fdf4;
-  --risk-low-border: #bbf7d0;
-  --risk-info: #6b7280;
-  --risk-info-bg: #f9fafb;
-  --risk-info-border: #e5e7eb;
-  --risk-unusual: #7c3aed;
-  --risk-unusual-bg: #faf5ff;
-  --risk-unusual-border: #e9d5ff;
+  /* Ink — neutral cool-black */
+  --ink: #131311;
+  --ink-2: #2f2e2b;
+  --ink-3: #4a4944;
+  --ink-muted: #7a7872;
+
+  /* Accent — one red, used sparingly */
+  --red: #c3321b;
+  --red-deep: #9a2513;
+  --red-soft: #f5e4df;
+
+  /* Status palette */
+  --ok: #2d7a4f;
+  --ok-soft: #e3efe7;
+  --warn: #c08a1f;
+  --warn-soft: #f4ead0;
+  --info: #6b6a66;
+  --info-soft: #e6e6e1;
+
+  /* Semantic aliases — remap legacy tokens onto the new palette so the
+   * ~485 call-sites that reference them keep rendering until each
+   * component is refactored in later phases. */
+  --bg-primary: var(--paper);
+  --bg-secondary: var(--paper-2);
+  --bg-tertiary: var(--paper-3);
+  --bg-card: var(--paper);
+  --border-primary: var(--paper-edge);
+  --border-secondary: var(--ink-muted);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-muted: var(--ink-muted);
+  --accent: var(--red);
+  --accent-hover: var(--red-deep);
+  --accent-subtle: var(--red-soft);
+
+  /* Risk palette — collapsed onto the five semantic tones.
+   * "Unusual" kept distinct as a subtle document-edge tone so the
+   * UnusualClausesCallout treatment remains visually identifiable. */
+  --risk-high: var(--red);
+  --risk-high-bg: var(--red-soft);
+  --risk-high-border: #e8bfb4;
+  --risk-medium: var(--warn);
+  --risk-medium-bg: var(--warn-soft);
+  --risk-medium-border: #e5d29a;
+  --risk-low: var(--ok);
+  --risk-low-bg: var(--ok-soft);
+  --risk-low-border: #c3d8c9;
+  --risk-info: var(--info);
+  --risk-info-bg: var(--info-soft);
+  --risk-info-border: var(--paper-edge);
+  --risk-unusual: var(--ink-3);
+  --risk-unusual-bg: var(--paper-3);
+  --risk-unusual-border: var(--paper-edge);
 }
 
-/* --- Dark theme tokens --- */
+/* --- Dark theme — paper palette inverted, ink becomes bg, ink becomes fg.
+ * Red lightened for contrast; softs rendered as low-alpha tints. --- */
 .dark {
-  --bg-primary: #141210;
-  --bg-secondary: #1c1a17;
-  --bg-tertiary: #252320;
-  --bg-card: #1c1a17;
-  --border-primary: #2e2b27;
-  --border-secondary: #3d3a34;
-  --text-primary: #f0ede8;
-  --text-secondary: #b5b0a8;
-  --text-tertiary: #8a857d;
-  --text-muted: #5f5b54;
-  --accent: #dc2626;
-  --accent-hover: #b91c1c;
-  --accent-subtle: #2a1515;
+  --paper: #141210;
+  --paper-2: #1c1a17;
+  --paper-3: #252320;
+  --paper-edge: #3a3733;
 
-  /* Risk colors — brighter for dark bg contrast */
-  --risk-high: #fca5a5;
-  --risk-high-bg: #2a1515;
-  --risk-high-border: #5c2020;
-  --risk-medium: #fcd34d;
-  --risk-medium-bg: #2a2515;
-  --risk-medium-border: #5c4a15;
-  --risk-low: #86efac;
-  --risk-low-bg: #152a1a;
-  --risk-low-border: #1a4a2a;
-  --risk-info: #9ca3af;
-  --risk-info-bg: #1c1c1e;
-  --risk-info-border: #374151;
-  --risk-unusual: #c4b5fd;
-  --risk-unusual-bg: #1f1529;
-  --risk-unusual-border: #3b2960;
+  --ink: #f0ede8;
+  --ink-2: #c5c0b8;
+  --ink-3: #8a857d;
+  --ink-muted: #5f5b54;
+
+  --red: #e0634c;
+  --red-deep: #c3321b;
+  --red-soft: rgba(224, 99, 76, 0.14);
+
+  --ok: #7dbd97;
+  --ok-soft: rgba(125, 189, 151, 0.12);
+  --warn: #e0c17a;
+  --warn-soft: rgba(224, 193, 122, 0.12);
+  --info: #a8a6a0;
+  --info-soft: rgba(168, 166, 160, 0.12);
+
+  /* Risk borders re-tinted so the subtle outline still reads on dark bg. */
+  --risk-high-border: rgba(224, 99, 76, 0.35);
+  --risk-medium-border: rgba(224, 193, 122, 0.35);
+  --risk-low-border: rgba(125, 189, 151, 0.32);
+  --risk-info-border: var(--paper-edge);
+  --risk-unusual-border: var(--paper-edge);
 }
 
+/* --- Tailwind 4 @theme bridge ---
+ * Exposes the raw tokens as Tailwind utility classes (e.g. `bg-paper`,
+ * `text-ink`, `border-paper-edge`, `text-red-accent`, `font-serif`).
+ * `inline` keeps these resolvable via `var(--...)` so the .dark overrides
+ * flow through without rebuilding the stylesheet per theme.
+ */
 @theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
-  --font-heading: var(--font-heading);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-paper-edge: var(--paper-edge);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-red-accent: var(--red);
+  --color-red-deep: var(--red-deep);
+  --color-red-soft: var(--red-soft);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --font-serif: var(--font-serif);
+  --font-reading: var(--font-reading);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Legacy aliases retained so existing `font-heading` / `font-body`
+   * references in older component code continue to resolve until each
+   * component is refactored in later phases. */
+  --font-heading: var(--font-serif);
+  --font-body: var(--font-sans);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Smooth transitions for theme-aware elements */
+/* Hover / focus rules keep transitions minimal per design direction:
+ * "read a newspaper, not watch a pitch deck". */
 .theme-transition {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-/* Fade-and-slide animation for streaming clause cards */
+/* Editorial typography utilities — composed by shared primitives in
+ * Phase 2. Kept here (not in a separate CSS module) so they are
+ * globally available without an extra import. */
+.t-display {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(52px, 6vw, 76px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.t-masthead-h1 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(40px, 3.2vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.t-hh {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(28px, 2.4vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.t-sh {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.t-kicker {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.t-mono-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+
+.t-lede {
+  font-family: var(--font-reading), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(17px, 1.35vw, 20px);
+  line-height: 1.5;
+}
+
+.t-reading {
+  font-family: var(--font-reading), Georgia, serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Decorative: left-hanging 28px rule used by Kicker and section heads. */
+.rule-leader::before {
+  content: "";
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+  vertical-align: middle;
+  margin-right: 10px;
+  opacity: 0.6;
+}
+
+/* Fade-and-slide animation for streaming clause cards. */
 @keyframes clause-enter {
   from {
     opacity: 0;
@@ -106,10 +261,13 @@ body {
 
 /* Brief highlight flash when jumping to/from a citation target. */
 @keyframes citation-flash {
-  0%   { background-color: var(--accent-subtle); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: var(--red-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 .citation-flash {
   animation: citation-flash 800ms ease-out;
-  border-radius: 4px;
 }

@@ -6,12 +6,16 @@
  * the UI honest: the primary button stays disabled until the user
  * types their own email. Pressing Escape or clicking the backdrop
  * dismisses the modal so a stray click cannot commit the deletion.
+ *
+ * Editorial treatment: ink-drenched backdrop, paper body inside a 2px
+ * red-accent BorderedCard so the destructive boundary reads at a glance.
  */
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { BorderedCard, Button, MonoLabel } from "@/components/ui";
 
 interface DeleteAccountModalProps {
   /** The email address the user must type to confirm. */
@@ -58,16 +62,14 @@ export function DeleteAccountModal({
     try {
       await onConfirm(input.trim());
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t("failedFallback"),
-      );
+      setError(err instanceof Error ? err.message : t("failedFallback"));
       setIsDeleting(false);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-account-title"
@@ -75,29 +77,34 @@ export function DeleteAccountModal({
         if (!isDeleting) onCancel();
       }}
     >
-      <div
-        className="max-w-md rounded border border-[var(--border-primary)] bg-[var(--bg-primary)] p-6 shadow-lg theme-transition"
+      <BorderedCard
+        tone="red"
+        padding="md"
+        className="w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
+        <MonoLabel tone="red" className="block">
+          {t("title")}
+        </MonoLabel>
         <h2
           id="delete-account-title"
-          className="mb-2 text-[20px] font-semibold text-[var(--text-primary)] font-[var(--font-heading)]"
+          className="mt-2 m-0 font-serif text-[24px] font-light italic leading-tight text-ink"
         >
           {t("title")}
         </h2>
-        <p className="mb-4 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)]">
-          {t("body")}
-        </p>
-        <p className="mb-3 text-sm text-[var(--text-muted)] font-[var(--font-body)]">
+        <p className="mt-3 t-reading text-[15px] text-ink-2">{t("body")}</p>
+        <p className="mt-3 font-mono text-[10.5px] uppercase tracking-[1.2px] text-ink-muted">
           {t.rich("typeToConfirm", {
             email,
             strong: (chunks) => (
-              <strong className="text-[var(--text-primary)]">{chunks}</strong>
+              <strong className="font-mono font-semibold text-ink">
+                {chunks}
+              </strong>
             ),
           })}
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mt-3">
           <input
             type="email"
             value={input}
@@ -105,13 +112,13 @@ export function DeleteAccountModal({
             placeholder={email}
             autoFocus
             disabled={isDeleting}
-            className="w-full rounded border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[15px] text-[var(--text-primary)] font-[var(--font-body)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none disabled:opacity-50"
+            className="w-full border border-paper-edge bg-paper-2 px-3 py-2 font-serif text-[15px] text-ink placeholder:font-mono placeholder:text-[12px] placeholder:uppercase placeholder:tracking-[1.2px] placeholder:text-ink-muted focus:border-red-accent focus:outline-none disabled:opacity-50"
             data-testid="delete-confirm-input"
           />
 
           {error && (
             <p
-              className="mt-2 text-sm text-[var(--accent)] font-[var(--font-body)]"
+              className="mt-2 font-mono text-[10.5px] uppercase tracking-[1.2px] text-red-accent"
               role="alert"
             >
               {error}
@@ -119,25 +126,26 @@ export function DeleteAccountModal({
           )}
 
           <div className="mt-5 flex justify-end gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="md"
               onClick={onCancel}
               disabled={isDeleting}
-              className="rounded border border-[var(--border-primary)] px-4 py-2 text-[15px] text-[var(--text-secondary)] font-[var(--font-body)] transition-colors hover:bg-[var(--bg-secondary)] disabled:opacity-50"
             >
               {t("cancel")}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="danger"
+              size="md"
               disabled={!matches || isDeleting}
               data-testid="delete-confirm-button"
-              className="rounded bg-[var(--accent)] px-4 py-2 text-[15px] font-medium text-white font-[var(--font-body)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isDeleting ? t("deleting") : t("confirm")}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </BorderedCard>
     </div>
   );
 }

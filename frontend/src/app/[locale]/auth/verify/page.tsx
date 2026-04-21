@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { verifyToken } from "@/lib/api";
+import { PageShell } from "@/components/PageShell";
+import { Kicker, MonoLabel } from "@/components/ui";
 
 type VerifyState = "verifying" | "success" | "error";
 
@@ -15,10 +17,8 @@ function VerifyLoading() {
   const t = useTranslations("AuthVerify");
   return (
     <div className="flex flex-col items-center">
-      <div className="mb-6 h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-primary)] border-t-[var(--accent)]" />
-      <p className="text-[17px] text-[var(--text-primary)] font-[var(--font-body)]">
-        {t("verifying")}
-      </p>
+      <div className="mb-6 h-8 w-8 animate-spin rounded-full border-2 border-paper-edge border-t-ink" />
+      <MonoLabel tone="muted">{t("verifying")}</MonoLabel>
     </div>
   );
 }
@@ -46,9 +46,7 @@ function VerifyContent() {
       .then(() => setState("success"))
       .catch((err) => {
         setState("error");
-        setError(
-          err instanceof Error ? err.message : t("genericFailure"),
-        );
+        setError(err instanceof Error ? err.message : t("genericFailure"));
       });
   }, [token, t]);
 
@@ -59,33 +57,16 @@ function VerifyContent() {
   if (state === "success") {
     return (
       <>
-        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full border-2 border-green-500/30 bg-green-500/10">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-green-600 dark:text-green-400"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-        <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
+        <Kicker tone="red">{t("loggedIn")}</Kicker>
+        <h1 className="mt-3 m-0 font-serif text-[36px] font-light italic leading-tight text-ink">
           {t("loggedIn")}
         </h1>
-        <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
-          {t("closeTab")}
-        </p>
+        <p className="mt-4 t-reading text-[16px] text-ink-2">{t("closeTab")}</p>
         <Link
           href="/"
-          className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+          className="mt-6 inline-block font-mono text-[11px] uppercase tracking-[1.5px] text-ink underline-offset-4 hover:text-red-accent hover:underline"
         >
-          {t("goHome")}
+          {t("goHome")} →
         </Link>
       </>
     );
@@ -93,17 +74,18 @@ function VerifyContent() {
 
   return (
     <>
-      <h1 className="mb-2 text-xl font-medium text-[var(--text-primary)] font-[var(--font-heading)]">
+      <Kicker tone="muted">{t("failed")}</Kicker>
+      <h1 className="mt-3 m-0 font-serif text-[36px] font-light italic leading-tight text-ink">
         {t("failed")}
       </h1>
-      <p className="mb-6 text-[15px] text-[var(--text-muted)] font-[var(--font-body)]">
+      <p className="mt-4 t-reading text-[16px] text-ink-2">
         {error ?? t("expiredLink")}
       </p>
       <Link
         href="/"
-        className="text-[15px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+        className="mt-6 inline-block font-mono text-[11px] uppercase tracking-[1.5px] text-ink underline-offset-4 hover:text-red-accent hover:underline"
       >
-        {t("goHome")}
+        {t("goHome")} →
       </Link>
     </>
   );
@@ -111,10 +93,12 @@ function VerifyContent() {
 
 export default function VerifyPage() {
   return (
-    <main className="mx-auto max-w-md px-5 py-24 text-center">
-      <Suspense fallback={<VerifyLoading />}>
-        <VerifyContent />
-      </Suspense>
+    <main>
+      <PageShell width="sm" className="py-24 text-center">
+        <Suspense fallback={<VerifyLoading />}>
+          <VerifyContent />
+        </Suspense>
+      </PageShell>
     </main>
   );
 }

@@ -220,6 +220,13 @@ class AnalyzedClause(BaseModel):
     is_unusual: bool = False
     unusual_explanation: str | None = None
     applicable_law: ApplicableLaw | None = None
+    # SP-11 Phase 2: Magistral chain-of-thought trace for this clause.
+    # Populated on Deep-mode analyses where each clause had its own
+    # generateObject call against a reasoning-capable model. Absent on
+    # Fast-mode analyses (batch reasoning can't be split per-clause)
+    # and on pre-SP-11 saved rows. Rendered as a collapsible "thinking"
+    # block in the report UI for AI Act auditability.
+    reasoning: str | None = None
 
 
 class RiskBreakdown(BaseModel):

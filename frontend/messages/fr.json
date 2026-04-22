@@ -132,6 +132,7 @@
     "suggestion": "Suggestion :",
     "unusual": "Insolite :",
     "originalText": "Texte original de la clause",
+    "reasoning": "Raisonnement du modèle (trace d'audit AI Act)",
     "askAbout": "Renseignez-vous sur cette clause →"
   },
   "ClauseCategory": {

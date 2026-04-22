@@ -7,18 +7,19 @@
  * keep a stable surface for provenance (snapshot + region) and for a
  * possible future EU-only redundancy provider.
  *
- * Pass-aware routing (SP-11 Phase 1): `model()` now takes a
- * `{ effort, pass }` descriptor so different pipeline passes can
- * resolve to different model IDs. Phase 1 keeps every pass on
- * `mistral-small-latest` (zero behavior change) — Phase 2 flips
- * `risk` and `think_hard` onto Magistral Medium for native reasoning.
+ * Pass-aware routing (SP-11): `model()` takes a `{ effort, pass }`
+ * descriptor so different pipeline passes resolve to different model
+ * IDs. Metadata passes (overview, extraction, chat) stay on Mistral
+ * Small for strict structured-output compliance; risk passes (risk,
+ * think_hard) route to Magistral Medium for native reasoning, and
+ * the emitted chain-of-thought is surfaced as a collapsible UI
+ * affordance for AI Act auditability.
  *
- * Reasoning-effort caveat: `@ai-sdk/mistral@3.0.x` exposes
- * `reasoningEffort` only on a subset of models (Magistral family) and
- * only accepts `"none" | "high"` via `providerOptions.mistral` at
- * request time, not at model construction. The boundary still accepts
- * the effort label (uniform call sites + transparency-receipt data)
- * but Phase 1 does not forward it to the SDK.
+ * Reasoning-effort caveat: `@ai-sdk/mistral` only accepts
+ * `"none" | "high"` on `providerOptions.mistral.reasoningEffort` at
+ * request time (not at model construction), and only for Magistral
+ * models. The `effort` label on `model()` is still recorded for the
+ * transparency receipt but is collapsed to `"high"` for the SDK call.
  */
 
 import { mistral } from "@ai-sdk/mistral";
@@ -62,27 +63,55 @@ const MISTRAL_SMALL: ModelDescriptor = {
 };
 
 /**
- * Magistral Medium — native-reasoning model for risk passes. Declared
- * here so Phase 1 can ship the per-pass plumbing without behavior
- * change; Phase 2 swaps `risk` and `think_hard` onto this descriptor.
+ * Magistral Medium — Mistral's native-reasoning model. Routed to by
+ * the risk and think-hard passes so the analysis surfaces a visible
+ * chain-of-thought for AI Act auditors and end-users.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAGISTRAL_MEDIUM: ModelDescriptor = {
   id: "magistral-medium-latest",
   snapshot: "magistral-medium-2509",
 };
 
 /**
- * Pass-to-model routing table. Phase 1: all passes → Mistral Small
- * (zero behavior change vs the single-model world). Phase 2 flips
- * `risk` and `think_hard` to `MAGISTRAL_MEDIUM`.
+ * Pass-to-model routing table.
+ *
+ * Metadata passes (overview, extraction, chat) stay on Mistral Small:
+ * structured output compliance matters more than reasoning depth.
+ *
+ * Risk passes (risk, think_hard) route to Magistral Medium so the
+ * model emits a `reasoningText` blob the pipeline can persist and
+ * surface as a collapsible "thinking" block on the report.
  */
 const PASS_MODEL_MAP: Record<PipelinePass, ModelDescriptor> = {
   overview: MISTRAL_SMALL,
   extraction: MISTRAL_SMALL,
-  risk: MISTRAL_SMALL,
-  think_hard: MISTRAL_SMALL,
+  risk: MAGISTRAL_MEDIUM,
+  think_hard: MAGISTRAL_MEDIUM,
   chat: MISTRAL_SMALL,
+};
+
+/**
+ * Passes that emit a native reasoning trace. Call sites consult this
+ * to know whether to thread `providerOptions.mistral.reasoningEffort`
+ * onto the request and whether to expect a non-empty `reasoning`
+ * field on the result. Keeping this centralised avoids each call site
+ * hard-coding "risk" / "think_hard" and lets Phase-3+ changes stay
+ * in one place.
+ */
+const REASONING_PASSES: ReadonlySet<PipelinePass> = new Set([
+  "risk",
+  "think_hard",
+]);
+
+/**
+ * Provider-options payload threaded onto `generateObject` / `streamText`
+ * calls when the pass targets a reasoning-capable model. Typed loosely
+ * as a plain record because the AI SDK's `ProviderOptions` shape is
+ * call-site specific — forcing a concrete type here just leaks
+ * ai-sdk internals.
+ */
+export type ReasoningProviderOptions = {
+  mistral: { reasoningEffort: "high" | "none" };
 };
 
 /** Uniform provider surface consumed by the analysis pipeline. */
@@ -94,19 +123,34 @@ export interface LLMProvider {
   modelIdFor: (pass: AnalysisPass) => string;
   /** Provenance: pinned snapshot tag for the model that `pass` resolved to. */
   snapshotFor: (pass: AnalysisPass) => string;
+  /**
+   * `providerOptions` payload for a pass that targets a reasoning
+   * model (Magistral family). Returns `undefined` for passes on a
+   * metadata model so call sites can spread-or-omit without a branch.
+   */
+  reasoningOptionsFor: (pass: PipelinePass) => ReasoningProviderOptions | undefined;
+  /** Whether the given pass targets a reasoning-capable model. */
+  emitsReasoning: (pass: PipelinePass) => boolean;
   /** Provenance: hosting region label. */
   region: string;
 }
 
-// `effort` is currently unused — see file-level comment. Keeping it on
-// the signature means Phase 2 (Magistral `reasoning_effort`) will not
-// need another call-site migration.
+// `effort` is currently unused by the SDK for non-Magistral models —
+// see file-level comment. The reasoning-effort label is still
+// propagated onto Magistral calls via `reasoningOptionsFor`, which
+// maps `"high"` / `"medium"` → `"high"` (the only non-`"none"` value
+// the SDK exposes today) and `"low"` → `"none"`.
 const mistralProvider: LLMProvider = {
   name: "mistral",
   model: ({ pass }) =>
     mistral(PASS_MODEL_MAP[pass].id) as unknown as LanguageModel,
   modelIdFor: (pass) => PASS_MODEL_MAP[pass].id,
   snapshotFor: (pass) => PASS_MODEL_MAP[pass].snapshot,
+  reasoningOptionsFor: (pass) =>
+    REASONING_PASSES.has(pass)
+      ? { mistral: { reasoningEffort: "high" } }
+      : undefined,
+  emitsReasoning: (pass) => REASONING_PASSES.has(pass),
   region: "eu-west-paris",
 };
 

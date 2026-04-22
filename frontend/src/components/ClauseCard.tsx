@@ -33,8 +33,12 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
   // `clause.category.replace(/_/g, " ").toUpperCase()`, which always
   // rendered English regardless of UI locale.
   const categoryLabel = tCat(clause.category).toUpperCase();
+  // Expand panel is offered whenever there is *something* inside it
+  // to look at — risk details (non-informational), or a Magistral
+  // chain-of-thought trace. An informational clause with a trace
+  // still needs the affordance so the audit evidence is reachable.
   const hasDetails =
-    clause.risk_level !== "informational";
+    clause.risk_level !== "informational" || Boolean(clause.reasoning);
 
   return (
     <div
@@ -102,6 +106,19 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
               {clause.clause_text}
             </p>
           </details>
+          {clause.reasoning && (
+            <details
+              className="mt-2.5"
+              data-testid="clause-reasoning"
+            >
+              <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
+                {t("reasoning")}
+              </summary>
+              <p className="mt-1.5 whitespace-pre-wrap text-sm text-[var(--text-tertiary)]">
+                {clause.reasoning}
+              </p>
+            </details>
+          )}
           {onAskAbout && (
             <button
               type="button"

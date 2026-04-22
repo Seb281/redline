@@ -132,6 +132,7 @@
     "suggestion": "Sugerencia:",
     "unusual": "Insólito:",
     "originalText": "Texto original de la cláusula",
+    "reasoning": "Razonamiento del modelo (rastro de auditoría del Reglamento de IA)",
     "askAbout": "Pregunta sobre esta cláusula →"
   },
   "ClauseCategory": {

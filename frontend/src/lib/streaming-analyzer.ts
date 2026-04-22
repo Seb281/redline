@@ -29,6 +29,8 @@ import {
   extractionResultSchema,
   analyzedClauseSchema,
   OVERVIEW_SEED,
+  DEEP_MODE_MAX_CONCURRENCY,
+  mapWithConcurrency,
   buildOverviewSystemPrompt,
   buildExtractionSystemPrompt,
   buildAnalysisSystemPrompt,
@@ -180,24 +182,43 @@ export function streamExtractAndAnalyze(
 
         // Pass 2 — analyze clauses. Input is already scrubbed; the
         // client rehydrates complete clause objects when they arrive.
+        // SP-11 Phase 2: `risk` routes to Magistral Medium;
+        // `providerOptions` flips `reasoningEffort: "high"` on the call,
+        // and `emitsReasoning` guards the per-clause attach so the trace
+        // is only written when the call actually ran on a reasoning
+        // model.
+        const pass2ProviderOptions = provider.reasoningOptionsFor("risk");
+        const pass2EmitsReasoning = provider.emitsReasoning("risk");
         const pass2Start = Date.now();
         let allClauses: AnalyzedClause[];
         let pass2Retried = false;
 
         if (mode === "deep") {
           // Fan-out: one LLM call per clause, stream each as it resolves.
-          const promises = extraction.clauses.map(async (clause) => {
-            const { object } = await generateObject({
-              model: provider.model({ effort: "high", pass: "risk" }),
-              schema: analyzedClauseSchema,
-              system: analysisSystemPrompt,
-              prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
-            });
-            const analyzed = object as AnalyzedClause;
-            controller.enqueue(encode({ type: "clause", data: analyzed }));
-            return analyzed;
-          });
-          allClauses = await Promise.all(promises);
+          // Bounded concurrency so a 30-clause contract does not spawn
+          // 30 concurrent Magistral calls — see analyzer.ts for the
+          // cap rationale. Emission order is non-deterministic across
+          // the wire (first-finished wins) but `allClauses` preserves
+          // extraction order via `mapWithConcurrency`.
+          allClauses = await mapWithConcurrency(
+            extraction.clauses,
+            DEEP_MODE_MAX_CONCURRENCY,
+            async (clause) => {
+              const { object, reasoning } = await generateObject({
+                model: provider.model({ effort: "high", pass: "risk" }),
+                providerOptions: pass2ProviderOptions,
+                schema: analyzedClauseSchema,
+                system: analysisSystemPrompt,
+                prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
+              });
+              const analyzed: AnalyzedClause =
+                pass2EmitsReasoning && reasoning
+                  ? { ...(object as AnalyzedClause), reasoning }
+                  : (object as AnalyzedClause);
+              controller.enqueue(encode({ type: "clause", data: analyzed }));
+              return analyzed;
+            },
+          );
         } else {
           // Batch: stream elements from a single LLM call via Output.array.
           // If the first attempt returns fewer than half the expected
@@ -207,11 +228,17 @@ export function streamExtractAndAnalyze(
           // a contract with legitimately repeated titles (e.g. two
           // "Confidentiality" clauses) isn't silently deduplicated into a
           // spurious collapse.
+          //
+          // Batch mode does not attach `reasoning` to individual clauses:
+          // one streamText call emits a single reasoning blob covering
+          // every element, with no way to split it per-clause. Users who
+          // want per-clause traces pick Deep mode.
           allClauses = [];
           const emittedTitles = new Set<string>();
           const runBatchStream = async (isRetry: boolean) => {
             const result = streamText({
               model: provider.model({ effort: "high", pass: "risk" }),
+              providerOptions: pass2ProviderOptions,
               output: Output.array({ element: analyzedClauseSchema }),
               system: analysisSystemPrompt,
               prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
@@ -272,12 +299,17 @@ export function streamExtractAndAnalyze(
         // keyword overlap. Anonymous sessions keep embeddings only in
         // browser memory; save-path persistence is gated by auth.
         const clauseEmbeddings = await embedClauses(allClauses);
+        // SP-11 Phase 2 — `reasoning_emitted` reflects actual capture,
+        // not configured intent: if a reasoning-capable model returned
+        // an empty trace, the audit log must say "no trace" rather
+        // than claim one exists.
+        const reasoningEmitted = allClauses.some((c) => Boolean(c.reasoning));
         controller.enqueue(
           encode({
             type: "complete",
             data: {
               ...summary,
-              provenance: buildProvenance(provider, locale),
+              provenance: buildProvenance(provider, locale, reasoningEmitted),
               ...(clauseEmbeddings !== null
                 ? { clause_embeddings: clauseEmbeddings }
                 : {}),

@@ -132,6 +132,7 @@
     "suggestion": "Suggestion:",
     "unusual": "Unusual:",
     "originalText": "Original clause text",
+    "reasoning": "Model reasoning (AI Act audit trace)",
     "askAbout": "Ask about this clause →"
   },
   "ClauseCategory": {

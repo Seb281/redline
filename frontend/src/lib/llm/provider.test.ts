@@ -44,11 +44,43 @@ describe("getProvider", () => {
     }
   });
 
-  it("routes every pass onto Mistral Small in Phase 1 (no behavior change)", () => {
+  it("routes metadata passes to Mistral Small (structured-output compliance)", () => {
     const p = getProvider();
-    for (const pass of ANALYSIS_PASSES) {
+    for (const pass of ["overview", "extraction"] as const) {
       expect(p.modelIdFor(pass)).toBe("mistral-small-latest");
       expect(p.snapshotFor(pass)).toBe("mistral-small-2603");
     }
+  });
+
+  it("routes risk passes to Magistral Medium (native reasoning)", () => {
+    const p = getProvider();
+    for (const pass of ["risk", "think_hard"] as const) {
+      expect(p.modelIdFor(pass)).toBe("magistral-medium-latest");
+      expect(p.snapshotFor(pass)).toBe("magistral-medium-2509");
+    }
+  });
+
+  it("threads reasoningEffort:high onto risk-pass provider options", () => {
+    const p = getProvider();
+    expect(p.reasoningOptionsFor("risk")).toEqual({
+      mistral: { reasoningEffort: "high" },
+    });
+    expect(p.reasoningOptionsFor("think_hard")).toEqual({
+      mistral: { reasoningEffort: "high" },
+    });
+  });
+
+  it("returns no reasoning options on metadata passes", () => {
+    const p = getProvider();
+    for (const pass of ["overview", "extraction", "chat"] as const) {
+      expect(p.reasoningOptionsFor(pass)).toBeUndefined();
+      expect(p.emitsReasoning(pass)).toBe(false);
+    }
+  });
+
+  it("flags risk passes as reasoning-emitting", () => {
+    const p = getProvider();
+    expect(p.emitsReasoning("risk")).toBe(true);
+    expect(p.emitsReasoning("think_hard")).toBe(true);
   });
 });

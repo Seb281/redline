@@ -132,6 +132,7 @@
     "suggestion": "Vorschlag:",
     "unusual": "Ungewöhnlich:",
     "originalText": "Ursprünglicher Wortlaut der Klausel",
+    "reasoning": "Modell-Begründung (KI-VO-Audit-Spur)",
     "askAbout": "Fragen Sie nach dieser Klausel →"
   },
   "ClauseCategory": {

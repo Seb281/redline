@@ -833,6 +833,7 @@ export function legacyProvenance(): AnalysisProvenance {
 export function buildProvenance(
   provider: LLMProvider,
   analysisLocale: string = "en",
+  reasoningEmitted: boolean = false,
 ): AnalysisProvenance {
   // Top-level `model` / `snapshot` track the overview pass for
   // backward compat with pre-SP-11 consumers. `model_per_pass` is the
@@ -854,9 +855,12 @@ export function buildProvenance(
       risk: provider.modelIdFor("risk"),
       think_hard: provider.modelIdFor("think_hard"),
     },
-    // Phase 1 always false — every pass still routes to mistral-small.
-    // Phase 2 flips this when the risk pass starts emitting a trace.
-    reasoning_emitted: false,
+    // True only when the pipeline actually captured at least one
+    // `reasoning` trace (Deep mode on a reasoning-capable model).
+    // Batch mode + Fast mode always leave this false — the model may
+    // have reasoned internally but the trace was not attributable per
+    // clause and not surfaced to the UI.
+    reasoning_emitted: reasoningEmitted,
     prompt_template_version: PROMPT_TEMPLATE_VERSION,
     timestamp: new Date().toISOString(),
     redaction_location: "client",
@@ -949,6 +953,48 @@ export function capInventory(
     capped: true,
     originalCount,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Pass 2 concurrency + retry helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Maximum in-flight calls for Pass 2 Deep-mode fan-out. Magistral
+ * Medium is ~4× the per-token price of Mistral Small, so an unbounded
+ * `Promise.all` on a 30-clause contract would spike spend without a
+ * latency win past the ~4-connection network-saturation point. Kept
+ * conservative to stay well under Mistral's RPM limits under typical
+ * load.
+ */
+export const DEEP_MODE_MAX_CONCURRENCY = 4;
+
+/**
+ * Map over `items` with bounded concurrency, preserving index order in
+ * the result. Simpler than pulling in `p-limit` — Redline's only fan-out
+ * path is Pass 2, and a 20-line scheduler has no dependencies to audit.
+ */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (limit <= 0) throw new RangeError("concurrency limit must be positive");
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  };
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    worker,
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 // ---------------------------------------------------------------------------
@@ -1070,23 +1116,42 @@ export async function analyzeContract(
     returned: extraction.clauses.length,
   });
 
-  // Pass 2 — risk analysis (high effort)
+  // Pass 2 — risk analysis (high effort, Magistral Medium via SP-11).
+  // `providerOptions` flips `reasoningEffort: "high"` on the Magistral
+  // request; `emitsReasoning` guards the post-call attach so we don't
+  // spuriously write the field on calls that didn't run on a reasoning
+  // model (e.g. if PASS_MODEL_MAP is flipped back during an incident).
   const passEffort: ReasoningEffort = "high";
+  const pass2ProviderOptions = provider.reasoningOptionsFor("risk");
+  const pass2EmitsReasoning = provider.emitsReasoning("risk");
   const pass2Start = Date.now();
-  let analyzedClauses: z.infer<typeof analyzedClauseSchema>[];
+  let analyzedClauses: (z.infer<typeof analyzedClauseSchema> & {
+    reasoning?: string;
+  })[];
   let pass2Retried = false;
 
   if (mode === "deep") {
-    analyzedClauses = await Promise.all(
-      extraction.clauses.map(async (clause) => {
-        const { object } = await generateObject({
+    // Bounded concurrency: Magistral is ~4× the per-token cost of
+    // Mistral Small, and an unbounded Promise.all on a 30-clause
+    // contract would fire 30 simultaneous reasoning-model calls.
+    // DEEP_MODE_MAX_CONCURRENCY caps parallelism at 4 — enough to
+    // saturate a single network connection without spiking spend on
+    // long contracts.
+    analyzedClauses = await mapWithConcurrency(
+      extraction.clauses,
+      DEEP_MODE_MAX_CONCURRENCY,
+      async (clause) => {
+        const { object, reasoning } = await generateObject({
           model: provider.model({ effort: passEffort, pass: "risk" }),
+          providerOptions: pass2ProviderOptions,
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
         });
-        return object;
-      })
+        return pass2EmitsReasoning && reasoning
+          ? { ...object, reasoning }
+          : object;
+      },
     );
   } else {
     // Non-streaming batch: issue the call, and if the model returns fewer
@@ -1095,9 +1160,15 @@ export async function analyzeContract(
     // reissuing is atomic and safe. Retry is opt-out via
     // PASS2_RETRY_ENABLED=false for prod cost control during provider
     // incidents where every call short-returns.
+    //
+    // Batch mode does not attribute `reasoning` to individual clauses —
+    // a single generateObject call emits one reasoning blob covering
+    // every clause in the batch, with no way to split it cleanly. Users
+    // who want per-clause traces pick Deep mode.
     const runBatch = () =>
       generateObject({
         model: provider.model({ effort: passEffort, pass: "risk" }),
+        providerOptions: pass2ProviderOptions,
         schema: batchAnalysisSchema,
         system: analysisSystemPrompt,
         prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
@@ -1151,11 +1222,17 @@ export async function analyzeContract(
   // sessions and only persist on an explicit authenticated save.
   const clauseEmbeddings = await embedClauses(analyzedClauses);
 
+  // SP-11 Phase 2 — `reasoning_emitted` on provenance reflects the
+  // *actual* outcome, not the configured intent. A reasoning model
+  // that returned an empty/absent trace should not show up as "trace
+  // present" in the audit log.
+  const reasoningEmitted = analyzedClauses.some((c) => Boolean(c.reasoning));
+
   return {
     overview,
     summary,
     clauses: analyzedClauses,
-    provenance: buildProvenance(provider, locale),
+    provenance: buildProvenance(provider, locale, reasoningEmitted),
     ...(clauseEmbeddings !== null ? { clause_embeddings: clauseEmbeddings } : {}),
   };
 }

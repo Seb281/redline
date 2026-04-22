@@ -132,6 +132,7 @@
     "suggestion": "Suggestie:",
     "unusual": "Ongebruikelijk:",
     "originalText": "Oorspronkelijke tekst van de clausule",
+    "reasoning": "Modelredenering (AI-verordening audit-spoor)",
     "askAbout": "Vraag naar deze clausule →"
   },
   "ClauseCategory": {

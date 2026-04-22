@@ -211,6 +211,18 @@ export interface AnalyzedClause {
     id: number;
     quoted_text: string;
   }>;
+  /**
+   * SP-11 Phase 2 — Magistral chain-of-thought trace for this clause.
+   * Populated only when the risk pass ran on a reasoning-capable model
+   * (Magistral family) *and* the pipeline could attribute the trace
+   * to this clause — i.e. Deep mode, where each clause has its own
+   * generateObject call. Batch/Fast mode leaves this absent because a
+   * single reasoning blob covers all clauses in the batch and can't be
+   * split cleanly. Surfaced in the UI as a collapsible "thinking" block
+   * on `ClauseCard` for AI Act auditability. Absent on pre-SP-11 saved
+   * analyses and on chat responses.
+   */
+  reasoning?: string;
 }
 
 /** Count of clauses by risk level. */

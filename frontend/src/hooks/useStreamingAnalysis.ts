@@ -24,6 +24,7 @@ import type {
   AnalyzedClause,
   AnalysisSummary,
   AnalysisProvenance,
+  ClauseEmbedding,
   AnalyzeResponse,
   ContractOverview,
   AnalysisMode,
@@ -407,6 +408,10 @@ export function useStreamingAnalysis(analysisLocale?: string) {
       // closure on React state).
       let finalSummary: AnalysisSummary | null = null;
       let finalProvenance: AnalysisProvenance | null = null;
+      // SP-10 Arc 1 Phase 2 — Mistral-embed vectors ride on the `complete`
+      // event. Kept alongside the other finaliser refs so they survive the
+      // `AsyncIterator` boundary into the returned `AnalyzeResponse`.
+      let finalClauseEmbeddings: ClauseEmbedding[] | undefined;
       const finalClauses: AnalyzedClause[] = [];
 
       // Pulled from the ref so we don't have to depend on stale closure
@@ -517,12 +522,19 @@ export function useStreamingAnalysis(analysisLocale?: string) {
                 break;
               }
               case "complete": {
-                // Split provenance off the event payload before storing
-                // the summary — `AnalysisSummary` has no provenance field
-                // and React state stays cleaner without a superset shape.
-                const { provenance, ...summaryOnly } = event.data;
+                // Split provenance + embeddings off the event payload
+                // before storing the summary — `AnalysisSummary` has
+                // neither field, and React state stays cleaner without
+                // a superset shape. Embeddings are optional: chat falls
+                // back to keyword overlap when they're missing.
+                const {
+                  provenance,
+                  clause_embeddings: streamedEmbeddings,
+                  ...summaryOnly
+                } = event.data;
                 finalSummary = summaryOnly;
                 finalProvenance = provenance;
+                finalClauseEmbeddings = streamedEmbeddings;
                 setState((prev) => ({
                   ...prev,
                   status: "complete",
@@ -544,6 +556,9 @@ export function useStreamingAnalysis(analysisLocale?: string) {
             summary: finalSummary,
             clauses: finalClauses,
             provenance: finalProvenance,
+            ...(finalClauseEmbeddings !== undefined
+              ? { clause_embeddings: finalClauseEmbeddings }
+              : {}),
           };
         }
         return null;

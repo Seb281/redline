@@ -18,9 +18,11 @@ import type {
   AnalysisSummary,
   AnalysisMode,
   AnalysisProvenance,
+  ClauseEmbedding,
   JurisdictionEvidence,
 } from "@/types";
 import { getProvider, type LLMProvider } from "@/lib/llm/provider";
+import { embedClauses } from "@/lib/llm/embeddings";
 import {
   capInventory,
   contractOverviewSchema,
@@ -50,7 +52,19 @@ import { logPass } from "@/lib/llm/debug-log";
 export type AnalysisEvent =
   | { type: "extraction-complete"; data: { clauseCount: number } }
   | { type: "clause"; data: AnalyzedClause }
-  | { type: "complete"; data: AnalysisSummary & { provenance: AnalysisProvenance } }
+  | {
+      type: "complete";
+      data: AnalysisSummary & {
+        provenance: AnalysisProvenance;
+        /**
+         * SP-10 Arc 1 Phase 2 — per-clause Mistral-embed vectors. Absent
+         * when embedding failed upstream; chat then falls back to the
+         * keyword path. Indexed 1:1 positionally with the streamed
+         * clauses (order preserved through Pass 2).
+         */
+        clause_embeddings?: ClauseEmbedding[];
+      };
+    }
   | { type: "error"; data: { message: string } };
 
 /** Encode an event as an NDJSON line (UTF-8). */
@@ -252,10 +266,22 @@ export function streamExtractAndAnalyze(
             .filter((c) => c.risk_level === "high")
             .map((c) => `${c.title}: ${c.risk_explanation}`),
         };
+        // SP-10 Arc 1 Phase 2 — embed all clauses once Pass 2 finishes.
+        // Fail-soft: on error `embedClauses` returns null, the field is
+        // omitted from the `complete` payload and chat falls back to
+        // keyword overlap. Anonymous sessions keep embeddings only in
+        // browser memory; save-path persistence is gated by auth.
+        const clauseEmbeddings = await embedClauses(allClauses);
         controller.enqueue(
           encode({
             type: "complete",
-            data: { ...summary, provenance: buildProvenance(provider, locale) },
+            data: {
+              ...summary,
+              provenance: buildProvenance(provider, locale),
+              ...(clauseEmbeddings !== null
+                ? { clause_embeddings: clauseEmbeddings }
+                : {}),
+            },
           }),
         );
       } catch (err) {

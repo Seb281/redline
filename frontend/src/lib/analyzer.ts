@@ -18,6 +18,7 @@ import type { AnalysisProvenance, AnalyzeResponse, AnalysisMode, JurisdictionEvi
 import { EU_COUNTRY_CODES } from "@/types";
 import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/provider";
 import { logPass } from "@/lib/llm/debug-log";
+import { embedClauses } from "@/lib/llm/embeddings";
 import { STATUTE_CODES, filterStatutes } from "@/lib/applicable-law";
 
 // ---------------------------------------------------------------------------
@@ -1123,10 +1124,18 @@ export async function analyzeContract(
       .map((c) => `${c.title}: ${c.risk_explanation}`),
   };
 
+  // SP-10 Arc 1 Phase 2 — embed every clause for the hybrid retriever.
+  // Fail-soft: on error `embedClauses` returns null, we log (via its own
+  // debug-log call) and omit the field. Chat then falls back to the
+  // keyword path. Embeddings live in browser memory for anonymous
+  // sessions and only persist on an explicit authenticated save.
+  const clauseEmbeddings = await embedClauses(analyzedClauses);
+
   return {
     overview,
     summary,
     clauses: analyzedClauses,
     provenance: buildProvenance(provider, locale),
+    ...(clauseEmbeddings !== null ? { clause_embeddings: clauseEmbeddings } : {}),
   };
 }

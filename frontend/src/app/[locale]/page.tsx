@@ -245,6 +245,13 @@ export default function Home() {
       clauses: state.analysis.clauses,
       analysis_mode: mode,
       provenance: state.analysis.provenance,
+      // SP-10 Arc 1 Phase 2 — forward Mistral-embed vectors on the
+      // authenticated save path. Privacy invariant holds: backend
+      // persists them only in the same transaction as the parent
+      // analysis, gated by the same session check.
+      ...(state.analysis.clause_embeddings !== undefined
+        ? { clause_embeddings: state.analysis.clause_embeddings }
+        : {}),
     });
     return result.id;
   }, [state, mode]);

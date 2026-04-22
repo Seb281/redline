@@ -28,6 +28,7 @@ import {
   contractOverviewSchema,
   extractionResultSchema,
   analyzedClauseSchema,
+  batchAnalysisSchema,
   OVERVIEW_SEED,
   DEEP_MODE_MAX_CONCURRENCY,
   mapWithConcurrency,
@@ -219,29 +220,67 @@ export function streamExtractAndAnalyze(
             },
           );
         } else {
-          // Batch: stream elements from a single LLM call via Output.array.
-          // If the first attempt returns fewer than half the expected
-          // clauses, fire a second streamText call on the same HTTP stream
-          // and continue emitting. Dedupe is ONLY active during the retry
-          // pass — on the first attempt every clause is emitted as-is so
-          // a contract with legitimately repeated titles (e.g. two
-          // "Confidentiality" clauses) isn't silently deduplicated into a
-          // spurious collapse.
+          // Batch mode has two paths:
+          //   1. Happy path — `streamText + Output.array` progressively
+          //      emits clauses as they parse. Works when the model
+          //      respects the `{elements: [...]}` wrapper that AI SDK
+          //      forces via its JSON schema hint.
+          //   2. Fallback path — `generateObject + batchAnalysisSchema`
+          //      with a Zod preprocess that accepts both the wrapped
+          //      `{clauses: [...]}` shape and a bare top-level array.
+          //      Magistral frequently emits the bare-array shape, which
+          //      Output.array rejects with a schema error and yields zero
+          //      elements. We detect that via try/catch + zero-emission
+          //      guard, then rerun via the tolerant path and emit all
+          //      clauses in one batch.
+          //
+          // Dedupe is ONLY active during retry — on the first attempt
+          // every clause is emitted as-is so a contract with legitimately
+          // repeated titles (e.g. two "Confidentiality" clauses) isn't
+          // silently deduplicated into a spurious collapse.
           //
           // Batch mode does not attach `reasoning` to individual clauses:
-          // one streamText call emits a single reasoning blob covering
-          // every element, with no way to split it per-clause. Users who
-          // want per-clause traces pick Deep mode.
+          // one call emits a single reasoning blob covering every
+          // element, with no way to split it per-clause. Users who want
+          // per-clause traces pick Deep mode.
           allClauses = [];
           const emittedTitles = new Set<string>();
-          const runBatchStream = async (isRetry: boolean) => {
-            const result = streamText({
+          const batchPrompt = `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`;
+
+          const runStreamAttempt = async (): Promise<"ok" | "schema-error"> => {
+            try {
+              const result = streamText({
+                model: provider.model({ effort: "high", pass: "risk" }),
+                output: Output.array({ element: analyzedClauseSchema }),
+                system: analysisSystemPrompt,
+                prompt: batchPrompt,
+              });
+              for await (const clause of result.elementStream) {
+                const analyzed = clause as AnalyzedClause;
+                emittedTitles.add(analyzed.title);
+                allClauses.push(analyzed);
+                controller.enqueue(encode({ type: "clause", data: analyzed }));
+              }
+              return "ok";
+            } catch (err) {
+              // Output.array throws on shape mismatch (e.g. bare-array
+              // responses from Magistral). Treat as a schema error so we
+              // fall back to the tolerant generateObject path.
+              logPass("pass2", {
+                stream_error: err instanceof Error ? err.message : String(err),
+              });
+              return "schema-error";
+            }
+          };
+
+          const runTolerantBatch = async (isRetry: boolean) => {
+            const { object } = await generateObject({
               model: provider.model({ effort: "high", pass: "risk" }),
-              output: Output.array({ element: analyzedClauseSchema }),
+              schema: batchAnalysisSchema,
               system: analysisSystemPrompt,
-              prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,
+              prompt: batchPrompt,
             });
-            for await (const clause of result.elementStream) {
+            for (const clause of object.clauses) {
               const analyzed = clause as AnalyzedClause;
               if (isRetry && emittedTitles.has(analyzed.title)) continue;
               emittedTitles.add(analyzed.title);
@@ -249,12 +288,22 @@ export function streamExtractAndAnalyze(
               controller.enqueue(encode({ type: "clause", data: analyzed }));
             }
           };
-          await runBatchStream(false);
-          // Retry is opt-out via PASS2_RETRY_ENABLED=false. Worst case on a
-          // collapsed first attempt is 2x Pass 2 latency and LLM cost —
-          // acceptable for the rare collapse path, but prod operators can
-          // disable it if a provider incident is causing every call to
-          // short-return and they don't want to pay 2x during an outage.
+
+          const streamStatus = await runStreamAttempt();
+          if (streamStatus === "schema-error" || allClauses.length === 0) {
+            // First streaming attempt produced nothing usable — run the
+            // tolerant path to recover. Magistral bare-array responses
+            // land here deterministically.
+            await runTolerantBatch(false);
+          }
+
+          // Retry is opt-out via PASS2_RETRY_ENABLED=false. Worst case on
+          // a collapsed first attempt is 2x Pass 2 latency and LLM cost —
+          // acceptable for the rare collapse path, but prod operators
+          // can disable it if a provider incident is causing every call
+          // to short-return and they don't want to pay 2x during an
+          // outage. Retry always uses the tolerant path so a second
+          // schema-error does not waste a call.
           const retryEnabled = process.env.PASS2_RETRY_ENABLED !== "false";
           const didRetry =
             retryEnabled &&
@@ -266,7 +315,7 @@ export function streamExtractAndAnalyze(
               streamed: allClauses.length,
               expected: extraction.clauses.length,
             });
-            await runBatchStream(true);
+            await runTolerantBatch(true);
           }
           pass2Retried = didRetry;
         }

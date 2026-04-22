@@ -1,6 +1,7 @@
 /**
- * BrandMark — the Redline wordmark preceded by a 2px × 20px red
- * vertical bar. This is the only mandatory use of the red accent.
+ * BrandMark — the Redline wordmark preceded by a 20px × 3px red
+ * horizontal dash. Matches the favicon (`app/icon.svg` is a single
+ * horizontal red rule) and the original product mark.
  */
 
 import Link from "next/link";
@@ -16,7 +17,7 @@ export function BrandMark({ asLink = true, className = "" }: BrandMarkProps) {
     <span
       className={`inline-flex items-center gap-2.5 font-serif text-[22px] leading-none tracking-[-0.02em] text-ink ${className}`}
     >
-      <span aria-hidden className="inline-block h-5 w-[2px] bg-red-accent" />
+      <span aria-hidden className="inline-block h-[3px] w-5 bg-red-accent" />
       <span>Redline</span>
     </span>
   );

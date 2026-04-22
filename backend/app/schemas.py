@@ -338,6 +338,37 @@ class ProvenanceModel(BaseModel):
         return v
 
 
+# SP-10 Arc 1 — embedding dimensionality enforced end-to-end.
+# Mistral ``mistral-embed`` emits exactly 1024-float vectors (Paris, EU);
+# pgvector column VECTOR(1024) has to match. Validator runs on save so
+# mis-shaped input never reaches the INSERT.
+MISTRAL_EMBED_DIM = 1024
+
+
+class ClauseEmbedding(BaseModel):
+    """SP-10 — One Mistral-embed vector anchored to a clause index.
+
+    ``clause_index`` is a positional pointer into the saved ``clauses``
+    list on the same analysis. ``embedding`` is exactly
+    :data:`MISTRAL_EMBED_DIM` floats — shape parity with the pgvector
+    column is enforced at the API boundary so a silent dimension drift
+    (e.g. swapped embedding model) cannot corrupt the index.
+    """
+
+    clause_index: int = Field(ge=0)
+    embedding: list[float]
+
+    @field_validator("embedding")
+    @classmethod
+    def _enforce_dimension(cls, v: list[float]) -> list[float]:
+        """Reject any vector whose length does not match the Mistral dim."""
+        if len(v) != MISTRAL_EMBED_DIM:
+            raise ValueError(
+                f"embedding must be {MISTRAL_EMBED_DIM} floats, got {len(v)}",
+            )
+        return v
+
+
 class SaveAnalysisRequest(BaseModel):
     """Request body for saving an analysis.
 
@@ -345,6 +376,11 @@ class SaveAnalysisRequest(BaseModel):
     model, snapshot, region, reasoning effort, prompt template version,
     timestamp). Required end-to-end as of SP-1 Phase 5 — the frontend
     assembles it in every pipeline run and must forward it here.
+
+    SP-10 Arc 1: ``clause_embeddings`` carries per-clause Mistral-embed
+    vectors for the RAG retrieval index. Optional so callers that don't
+    need chat retrieval (legacy tests, non-authenticated flows that we
+    reject upstream anyway) still succeed.
     """
 
     filename: str
@@ -357,6 +393,7 @@ class SaveAnalysisRequest(BaseModel):
     clauses: list[dict]
     analysis_mode: str
     provenance: ProvenanceModel
+    clause_embeddings: list[ClauseEmbedding] | None = None
 
 
 class AnalysisListItem(BaseModel):
@@ -406,6 +443,10 @@ class SavedAnalysisResponse(BaseModel):
     provenance: dict = Field(default_factory=dict)
     expires_at: str | None = None
     pinned: bool = False
+    # SP-10 Arc 1 — populated when the owning analysis has saved embeddings.
+    # Absent on pre-SP-10 rows; the chat router falls back to keyword
+    # overlap in that case.
+    clause_embeddings: list[ClauseEmbedding] | None = None
 
 
 class UpdateAnalysisRequest(BaseModel):

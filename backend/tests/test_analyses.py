@@ -257,6 +257,100 @@ def test_get_analysis_wrong_owner_returns_404():
 # --- DELETE /api/analyses/{id} ---
 
 
+# --- SP-10 clause embeddings (RAG Arc 1) ---
+
+
+def test_save_analysis_with_embeddings_persists_vectors():
+    """POST /api/analyses with a clause_embeddings block writes vectors in the same transaction.
+
+    Arc 1 Phase 1 guarantees the save path round-trips 1024-dim Mistral
+    embeddings alongside the analyses row. The handler must:
+      - Accept the new optional ``clause_embeddings`` field on the body
+      - Issue one INSERT into ``analyses`` plus one INSERT into
+        ``clause_embeddings`` per clause (same mocked db.execute calls)
+    """
+    from unittest.mock import patch
+
+    payload = {
+        **SAVE_PAYLOAD,
+        "clause_embeddings": [
+            {"clause_index": 0, "embedding": [0.1] * 1024},
+            {"clause_index": 1, "embedding": [0.2] * 1024},
+        ],
+    }
+
+    db = AsyncMock()
+
+    with (
+        patch(
+            "app.routers.analyses.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 201
+    # One INSERT into analyses + one bulk INSERT into clause_embeddings.
+    assert db.execute.await_count == 2
+    embedding_sql = db.execute.await_args_list[1].args[0]
+    assert "INSERT INTO clause_embeddings" in embedding_sql
+    embedding_params = db.execute.await_args_list[1].args[1]
+    # Either a list of dicts (executemany-style) or a single dict with
+    # arrays — the router picks one shape. We assert enough structure to
+    # verify both clauses are present.
+    if isinstance(embedding_params, list):
+        assert len(embedding_params) == 2
+        assert embedding_params[0]["clause_index"] == 0
+        assert embedding_params[1]["clause_index"] == 1
+    else:
+        # Single-call shape: array params keyed by name.
+        assert len(embedding_params.get("clause_indexes", [])) == 2
+
+
+def test_save_analysis_rejects_wrong_embedding_dimension():
+    """Embeddings must be exactly 1024 dims (Mistral ``mistral-embed``)."""
+    from unittest.mock import patch
+
+    payload = {
+        **SAVE_PAYLOAD,
+        "clause_embeddings": [
+            {"clause_index": 0, "embedding": [0.1] * 768},
+        ],
+    }
+
+    with patch(
+        "app.routers.analyses.get_current_user",
+        new_callable=AsyncMock,
+        return_value=MOCK_USER,
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 422
+
+
+def test_save_analysis_without_embeddings_still_works():
+    """Legacy payloads (no clause_embeddings) must still succeed — the field is optional."""
+    from unittest.mock import patch
+
+    db = AsyncMock()
+
+    with (
+        patch(
+            "app.routers.analyses.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.post("/api/analyses", json=SAVE_PAYLOAD)
+
+    assert resp.status_code == 201
+    # Only the analyses INSERT fires — no embedding table write.
+    assert db.execute.await_count == 1
+
+
 def test_save_analysis_persists_provenance():
     """POST with a provenance block passes it verbatim into the INSERT."""
     import json

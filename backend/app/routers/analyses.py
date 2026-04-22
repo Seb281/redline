@@ -103,7 +103,40 @@ async def save_analysis(body: SaveAnalysisRequest, request: Request) -> dict:
         },
     )
 
+    # SP-10 Arc 1 — persist per-clause embeddings when the caller supplied
+    # them. pgvector accepts the "[f1,f2,...]" text form for parameterised
+    # inserts across all async drivers; using a list of dicts keeps the
+    # same INSERT reusable by databases.execute_many-style callers later.
+    if body.clause_embeddings:
+        await db.execute(
+            """
+            INSERT INTO clause_embeddings
+                (analysis_id, clause_index, embedding)
+            VALUES
+                (:analysis_id, :clause_index, :embedding)
+            """,
+            [
+                {
+                    "analysis_id": analysis_id,
+                    "clause_index": ce.clause_index,
+                    "embedding": _format_vector(ce.embedding),
+                }
+                for ce in body.clause_embeddings
+            ],
+        )
+
     return {"id": analysis_id}
+
+
+def _format_vector(values: list[float]) -> str:
+    """Encode a float vector as pgvector's text literal.
+
+    pgvector accepts ``[f1,f2,...]`` directly in parameterised queries
+    without requiring a driver-specific array codec. Using the textual
+    form keeps the router agnostic to whether ``db`` is ``databases``,
+    ``asyncpg``, or a test mock.
+    """
+    return "[" + ",".join(repr(float(v)) for v in values) + "]"
 
 
 @router.get("")
@@ -250,6 +283,31 @@ async def get_analysis(analysis_id: str, request: Request) -> SavedAnalysisRespo
     if isinstance(raw_expires_at, datetime):
         expires_at = raw_expires_at.isoformat()
 
+    # SP-10 Arc 1 — attach saved embeddings when the analysis has them.
+    # Pre-SP-10 rows (and rows saved before the pipeline embeds) won't
+    # return any vectors; the chat route then falls back to keyword
+    # overlap rather than a broken retrieval path.
+    embedding_rows = await db.fetch_all(
+        """
+        SELECT clause_index, embedding
+        FROM clause_embeddings
+        WHERE analysis_id = :analysis_id
+        ORDER BY clause_index ASC
+        """,
+        {"analysis_id": analysis_id},
+    )
+    clause_embeddings = (
+        [
+            {
+                "clause_index": er["clause_index"],
+                "embedding": _parse_vector(er["embedding"]),
+            }
+            for er in embedding_rows
+        ]
+        if embedding_rows
+        else None
+    )
+
     return SavedAnalysisResponse(
         id=str(row["id"]),
         filename=row["filename"],
@@ -266,7 +324,25 @@ async def get_analysis(analysis_id: str, request: Request) -> SavedAnalysisRespo
         provenance=provenance,
         expires_at=expires_at,
         pinned=pinned,
+        clause_embeddings=clause_embeddings,
     )
+
+
+def _parse_vector(raw) -> list[float]:
+    """Decode a pgvector column value back into a Python float list.
+
+    pgvector returns ``"[f1,f2,...]"`` as text over most drivers; a few
+    return a native list already (e.g. asyncpg with a registered codec).
+    Handle both so the router doesn't depend on the driver's config.
+    """
+    if isinstance(raw, list):
+        return [float(v) for v in raw]
+    if isinstance(raw, str):
+        stripped = raw.strip().lstrip("[").rstrip("]")
+        if not stripped:
+            return []
+        return [float(v) for v in stripped.split(",")]
+    raise TypeError(f"unexpected embedding row type: {type(raw)!r}")
 
 
 @router.get("/{analysis_id}/receipt")

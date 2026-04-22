@@ -287,6 +287,26 @@ export interface AnalysisProvenance {
   schema_version?: string;
 }
 
+/**
+ * SP-10 Arc 1 — Mistral `mistral-embed` fixed dimensionality. The
+ * pgvector column, the Pydantic validator, and the analyzer all assume
+ * this exact length. Changing the embedding model means a new migration
+ * plus a re-index, not a runtime swap.
+ */
+export const MISTRAL_EMBED_DIM = 1024 as const;
+
+/**
+ * SP-10 Arc 1 — One Mistral-embed vector anchored to a clause index.
+ * `clause_index` is a positional pointer into the sibling `clauses`
+ * array. `embedding` is exactly {@link MISTRAL_EMBED_DIM} floats —
+ * enforced at the API boundary so dimension drift cannot corrupt the
+ * pgvector index.
+ */
+export interface ClauseEmbedding {
+  clause_index: number;
+  embedding: number[];
+}
+
 /** Full response from POST /api/analyze. */
 export interface AnalyzeResponse {
   overview: ContractOverview;
@@ -299,6 +319,13 @@ export interface AnalyzeResponse {
    * timestamp).
    */
   provenance: AnalysisProvenance;
+  /**
+   * SP-10 Arc 1 — per-clause Mistral-embed vectors assembled alongside
+   * the analysis. Optional so the front-end reducer tolerates pipeline
+   * variants that skip the embedding step (e.g. fast tests, ops
+   * rollback).
+   */
+  clause_embeddings?: ClauseEmbedding[];
 }
 
 /** User info returned by auth endpoints. */
@@ -342,6 +369,13 @@ export interface SaveAnalysisPayload {
   analysis_mode: string;
   /** Required — pipeline attaches this to every freshly-run analysis. */
   provenance: AnalysisProvenance;
+  /**
+   * SP-10 Arc 1 — per-clause embeddings forwarded to the backend so the
+   * chat route can run vector retrieval on saved analyses. Optional so
+   * unauthenticated sessions (which never reach the save endpoint) and
+   * legacy re-saves still serialise cleanly.
+   */
+  clause_embeddings?: ClauseEmbedding[];
 }
 
 /** Full saved analysis returned by GET /api/analyses/{id}. */
@@ -363,4 +397,10 @@ export interface SavedAnalysis {
   /** SP-5 retention — see AnalysisListItem for the semantics. */
   expires_at?: string | null;
   pinned?: boolean;
+  /**
+   * SP-10 Arc 1 — saved embeddings the backend attaches when the row has
+   * them. Absent on pre-SP-10 rows; the chat route falls back to
+   * keyword overlap in that case.
+   */
+  clause_embeddings?: ClauseEmbedding[] | null;
 }

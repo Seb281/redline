@@ -248,9 +248,18 @@ export const analyzedClauseSchema = z.object({
     ),
 });
 
-export const batchAnalysisSchema = z.object({
-  clauses: z.array(analyzedClauseSchema),
-});
+// Magistral under `output: "object"` sometimes emits a bare JSON array at
+// the top level instead of honoring the `{clauses: [...]}` wrapper. The
+// preprocess normalizes both shapes so the pipeline tolerates the
+// reasoning model's looser structured-output discipline without
+// dropping the wrapper schema the model is instructed to produce.
+export const batchAnalysisSchema = z.preprocess(
+  (value) =>
+    Array.isArray(value) ? { clauses: value } : value,
+  z.object({
+    clauses: z.array(analyzedClauseSchema),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Locale plumbing
@@ -1116,13 +1125,13 @@ export async function analyzeContract(
     returned: extraction.clauses.length,
   });
 
-  // Pass 2 — risk analysis (high effort, Magistral Medium via SP-11).
-  // `providerOptions` flips `reasoningEffort: "high"` on the Magistral
-  // request; `emitsReasoning` guards the post-call attach so we don't
-  // spuriously write the field on calls that didn't run on a reasoning
-  // model (e.g. if PASS_MODEL_MAP is flipped back during an incident).
+  // Pass 2 — risk analysis (Magistral Medium via SP-11). Magistral emits
+  // reasoning by default — no `reasoning_effort` header needed (the API
+  // rejects it). `emitsReasoning` guards the post-call attach so we
+  // don't spuriously write the field on calls that didn't run on a
+  // reasoning model (e.g. if PASS_MODEL_MAP is flipped back during an
+  // incident).
   const passEffort: ReasoningEffort = "high";
-  const pass2ProviderOptions = provider.reasoningOptionsFor("risk");
   const pass2EmitsReasoning = provider.emitsReasoning("risk");
   const pass2Start = Date.now();
   let analyzedClauses: (z.infer<typeof analyzedClauseSchema> & {
@@ -1143,7 +1152,6 @@ export async function analyzeContract(
       async (clause) => {
         const { object, reasoning } = await generateObject({
           model: provider.model({ effort: passEffort, pass: "risk" }),
-          providerOptions: pass2ProviderOptions,
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -1165,10 +1173,15 @@ export async function analyzeContract(
     // a single generateObject call emits one reasoning blob covering
     // every clause in the batch, with no way to split it cleanly. Users
     // who want per-clause traces pick Deep mode.
+    //
+    // `batchAnalysisSchema` carries a Zod preprocess that accepts both
+    // the `{clauses: [...]}` wrapper (Mistral Small compliant output)
+    // and a bare top-level array (Magistral's frequent shape). The
+    // model still sees the object schema in its JSON schema hint, but
+    // either response shape validates.
     const runBatch = () =>
       generateObject({
         model: provider.model({ effort: passEffort, pass: "risk" }),
-        providerOptions: pass2ProviderOptions,
         schema: batchAnalysisSchema,
         system: analysisSystemPrompt,
         prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

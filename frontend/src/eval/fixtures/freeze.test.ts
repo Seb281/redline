@@ -38,7 +38,11 @@ const SHOULD_RUN =
   process.env.FREEZE_FIXTURES === "1" && Boolean(process.env.MISTRAL_API_KEY);
 
 const describeIfFreeze = SHOULD_RUN ? describe : describe.skip;
-const TIMEOUT_MS = 180_000;
+// Magistral Medium emits long reasoning traces before producing the
+// structured Pass-2 payload, so a single batch call for a 10–15 clause
+// contract can push past 3 minutes. Keep the per-fixture budget
+// generous — the harness is a one-shot offline capture.
+const TIMEOUT_MS = 600_000;
 
 describeIfFreeze("eval fixture freeze harness", () => {
   for (const fixture of FIXTURES) {

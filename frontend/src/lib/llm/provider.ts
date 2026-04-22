@@ -15,11 +15,13 @@
  * the emitted chain-of-thought is surfaced as a collapsible UI
  * affordance for AI Act auditability.
  *
- * Reasoning-effort caveat: `@ai-sdk/mistral` only accepts
- * `"none" | "high"` on `providerOptions.mistral.reasoningEffort` at
- * request time (not at model construction), and only for Magistral
- * models. The `effort` label on `model()` is still recorded for the
- * transparency receipt but is collapsed to `"high"` for the SDK call.
+ * Reasoning-effort caveat: Magistral models on Mistral La Plateforme
+ * run reasoning by default — the API rejects `reasoning_effort` as an
+ * unsupported parameter, so we do NOT thread it through. The model
+ * emits `reasoning` on every response regardless; call sites read it
+ * off the `generateObject` result via the AI SDK side-channel.
+ * The `effort` label on `model()` is still recorded for the
+ * transparency receipt.
  */
 
 import { mistral } from "@ai-sdk/mistral";
@@ -92,11 +94,10 @@ const PASS_MODEL_MAP: Record<PipelinePass, ModelDescriptor> = {
 
 /**
  * Passes that emit a native reasoning trace. Call sites consult this
- * to know whether to thread `providerOptions.mistral.reasoningEffort`
- * onto the request and whether to expect a non-empty `reasoning`
- * field on the result. Keeping this centralised avoids each call site
- * hard-coding "risk" / "think_hard" and lets Phase-3+ changes stay
- * in one place.
+ * to know whether to expect a non-empty `reasoning` field on the
+ * `generateObject` result. Magistral models always emit reasoning, so
+ * no request-time opt-in is needed. Keeping this centralised avoids
+ * each call site hard-coding "risk" / "think_hard".
  */
 const REASONING_PASSES: ReadonlySet<PipelinePass> = new Set([
   "risk",
@@ -104,11 +105,10 @@ const REASONING_PASSES: ReadonlySet<PipelinePass> = new Set([
 ]);
 
 /**
- * Provider-options payload threaded onto `generateObject` / `streamText`
- * calls when the pass targets a reasoning-capable model. Typed loosely
- * as a plain record because the AI SDK's `ProviderOptions` shape is
- * call-site specific — forcing a concrete type here just leaks
- * ai-sdk internals.
+ * Historic shape of the Magistral `providerOptions` payload. Preserved
+ * on the provider interface to keep the public type stable, but no
+ * call site should thread this today — Mistral La Plateforme rejects
+ * `reasoning_effort` on Magistral, which emits reasoning by default.
  */
 export type ReasoningProviderOptions = {
   mistral: { reasoningEffort: "high" | "none" };
@@ -146,10 +146,7 @@ const mistralProvider: LLMProvider = {
     mistral(PASS_MODEL_MAP[pass].id) as unknown as LanguageModel,
   modelIdFor: (pass) => PASS_MODEL_MAP[pass].id,
   snapshotFor: (pass) => PASS_MODEL_MAP[pass].snapshot,
-  reasoningOptionsFor: (pass) =>
-    REASONING_PASSES.has(pass)
-      ? { mistral: { reasoningEffort: "high" } }
-      : undefined,
+  reasoningOptionsFor: () => undefined,
   emitsReasoning: (pass) => REASONING_PASSES.has(pass),
   region: "eu-west-paris",
 };

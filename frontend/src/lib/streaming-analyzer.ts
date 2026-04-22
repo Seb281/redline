@@ -182,12 +182,12 @@ export function streamExtractAndAnalyze(
 
         // Pass 2 — analyze clauses. Input is already scrubbed; the
         // client rehydrates complete clause objects when they arrive.
-        // SP-11 Phase 2: `risk` routes to Magistral Medium;
-        // `providerOptions` flips `reasoningEffort: "high"` on the call,
-        // and `emitsReasoning` guards the per-clause attach so the trace
-        // is only written when the call actually ran on a reasoning
-        // model.
-        const pass2ProviderOptions = provider.reasoningOptionsFor("risk");
+        // SP-11 Phase 2: `risk` routes to Magistral Medium. Magistral
+        // emits reasoning by default, and Mistral La Plateforme rejects
+        // `reasoning_effort` as an unsupported parameter, so we do NOT
+        // thread `providerOptions`. `emitsReasoning` guards the
+        // per-clause attach so the trace is only written when the call
+        // actually ran on a reasoning model.
         const pass2EmitsReasoning = provider.emitsReasoning("risk");
         const pass2Start = Date.now();
         let allClauses: AnalyzedClause[];
@@ -206,7 +206,6 @@ export function streamExtractAndAnalyze(
             async (clause) => {
               const { object, reasoning } = await generateObject({
                 model: provider.model({ effort: "high", pass: "risk" }),
-                providerOptions: pass2ProviderOptions,
                 schema: analyzedClauseSchema,
                 system: analysisSystemPrompt,
                 prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -238,7 +237,6 @@ export function streamExtractAndAnalyze(
           const runBatchStream = async (isRetry: boolean) => {
             const result = streamText({
               model: provider.model({ effort: "high", pass: "risk" }),
-              providerOptions: pass2ProviderOptions,
               output: Output.array({ element: analyzedClauseSchema }),
               system: analysisSystemPrompt,
               prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

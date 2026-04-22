@@ -60,20 +60,26 @@ describe("getProvider", () => {
     }
   });
 
-  it("threads reasoningEffort:high onto risk-pass provider options", () => {
+  it("never threads providerOptions — Magistral rejects reasoning_effort", () => {
     const p = getProvider();
-    expect(p.reasoningOptionsFor("risk")).toEqual({
-      mistral: { reasoningEffort: "high" },
-    });
-    expect(p.reasoningOptionsFor("think_hard")).toEqual({
-      mistral: { reasoningEffort: "high" },
-    });
+    // Magistral models on Mistral La Plateforme run reasoning by default
+    // and reject `reasoning_effort` as an unsupported parameter. We keep
+    // the hook on the provider surface but always return undefined so
+    // future call sites do not accidentally reintroduce the bad header.
+    for (const pass of [
+      "overview",
+      "extraction",
+      "chat",
+      "risk",
+      "think_hard",
+    ] as const) {
+      expect(p.reasoningOptionsFor(pass)).toBeUndefined();
+    }
   });
 
-  it("returns no reasoning options on metadata passes", () => {
+  it("flags metadata passes as non-reasoning", () => {
     const p = getProvider();
     for (const pass of ["overview", "extraction", "chat"] as const) {
-      expect(p.reasoningOptionsFor(pass)).toBeUndefined();
       expect(p.emitsReasoning(pass)).toBe(false);
     }
   });

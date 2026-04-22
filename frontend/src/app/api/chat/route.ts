@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     ?.reduce((acc: string, p) => (p.type === "text" ? acc + " " + p.text : acc), "")
     .trim() ?? "";
 
-  const ctx = buildChatContext(question, analysis);
+  const ctx = await buildChatContext(question, analysis);
 
   const contextBlock = [
     `CONTRACT TYPE: ${ctx.overview.contract_type}`,

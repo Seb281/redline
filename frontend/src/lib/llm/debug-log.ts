@@ -18,7 +18,8 @@ export type Pass =
   | "redact"
   | "extraction"
   | "pass2"
-  | "locale_resolved";
+  | "locale_resolved"
+  | "chat_retrieval";
 
 export type MetricValue = number | boolean | string;
 

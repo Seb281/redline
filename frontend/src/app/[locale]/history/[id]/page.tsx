@@ -10,9 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SavedAnalysisReport } from "@/components/SavedAnalysisReport";
 import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
-import { legacyProvenance } from "@/lib/analyzer";
+import { hydrateSavedAnalysis } from "@/lib/saved-analysis";
 import { getRetentionStatus } from "@/lib/retention";
-import type { AnalyzedClause, AnalyzeResponse, SavedAnalysis } from "@/types";
+import type { AnalyzedClause, SavedAnalysis } from "@/types";
 
 export default function HistoryDetailPage() {
   const t = useTranslations("HistoryDetail");
@@ -127,18 +127,11 @@ export default function HistoryDetailPage() {
     );
   }
 
-  // Reconstruct AnalyzeResponse from saved data. Rows saved before
-  // SP-1 Phase 5 have no provenance — the backend migration seeds the
-  // column with `'{}'::jsonb`, so an empty object (not just
-  // null/undefined) must also trigger the legacy placeholder.
-  const hasProvenance =
-    analysis.provenance && Object.keys(analysis.provenance).length > 0;
-  const analyzeResponse: AnalyzeResponse = {
-    overview: analysis.overview,
-    summary: analysis.summary,
-    clauses: analysis.clauses,
-    provenance: hasProvenance ? analysis.provenance! : legacyProvenance(),
-  };
+  // Reconstruct AnalyzeResponse from saved data via the SP-10 Arc 1
+  // hydration helper. It handles the pre-SP-1-Phase-5 "empty-provenance
+  // object" case and forwards `clause_embeddings` so the chat route's
+  // vector branch stays live on historical analyses.
+  const analyzeResponse = hydrateSavedAnalysis(analysis);
 
   const retention = getRetentionStatus(analysis.expires_at, analysis.pinned);
 

@@ -309,6 +309,145 @@ def test_save_analysis_with_embeddings_persists_vectors():
         assert len(embedding_params.get("clause_indexes", [])) == 2
 
 
+def test_save_analysis_anonymous_with_embeddings_writes_nothing():
+    """Privacy invariant: an unauthenticated caller submitting a full
+    payload with ``clause_embeddings`` must be rejected 401 *before* any
+    DB write, not just before the embedding INSERT. Regression guard for
+    SP-10 Arc 1 Phase 5 — anonymous sessions never trigger an embedding
+    write under any circumstances.
+    """
+    from unittest.mock import patch
+
+    payload = {
+        **SAVE_PAYLOAD,
+        "clause_embeddings": [
+            {"clause_index": 0, "embedding": [0.1] * 1024},
+            {"clause_index": 1, "embedding": [0.2] * 1024},
+        ],
+    }
+    db = AsyncMock()
+
+    with (
+        patch(
+            "app.routers.analyses.get_current_user",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.post("/api/analyses", json=payload)
+
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Not authenticated"
+    # No INSERT into analyses, no INSERT into clause_embeddings.
+    db.execute.assert_not_awaited()
+    db.fetch_all.assert_not_awaited()
+    db.fetch_one.assert_not_awaited()
+
+
+def test_get_analysis_round_trips_clause_embeddings():
+    """GET returns the persisted embedding block with dims + indices intact.
+
+    Owner-authenticated GET must attach ``clause_embeddings`` built from
+    the ``clause_embeddings`` table — one 1024-dim vector per clause_index,
+    preserving the on-disk order. The frontend history page relies on
+    this shape so the chat route's vector branch remains live for saved
+    analyses.
+    """
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "file_type": "pdf",
+        "page_count": 5,
+        "char_count": 12000,
+        "contract_text": "Full contract text...",
+        "overview": {"contract_type": "SaaS"},
+        "summary": {"total_clauses": 2},
+        "clauses": [
+            {"title": "Non-Compete", "risk_level": "high"},
+            {"title": "Governing Law", "risk_level": "low"},
+        ],
+        "analysis_mode": "fast",
+        "created_at": datetime(2026, 4, 13, tzinfo=timezone.utc),
+        "updated_at": None,
+        "expires_at": datetime(2099, 1, 1, tzinfo=timezone.utc),
+        "pinned": False,
+    }
+    # pgvector returns the text form over most drivers; parser must
+    # cope. Use a short-but-valid 1024-dim construction.
+    vec0 = [0.1] * 1024
+    vec1 = [0.2] * 1024
+    db.fetch_all.return_value = [
+        {"clause_index": 0, "embedding": "[" + ",".join(f"{v}" for v in vec0) + "]"},
+        {"clause_index": 1, "embedding": vec1},  # native-list driver shape
+    ]
+
+    with (
+        patch(
+            "app.routers.analyses.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    embeddings = data["clause_embeddings"]
+    assert embeddings is not None
+    assert len(embeddings) == 2
+    assert [e["clause_index"] for e in embeddings] == [0, 1]
+    assert len(embeddings[0]["embedding"]) == 1024
+    assert len(embeddings[1]["embedding"]) == 1024
+    assert embeddings[0]["embedding"][0] == pytest.approx(0.1)
+    assert embeddings[1]["embedding"][0] == pytest.approx(0.2)
+
+
+def test_get_analysis_with_no_embeddings_returns_null_block():
+    """Pre-SP-10 rows (no embedding_rows) must return ``clause_embeddings: None``
+    so the frontend degrades to BM25-only retrieval cleanly.
+    """
+    from unittest.mock import patch
+
+    db = AsyncMock()
+    db.fetch_one.return_value = {
+        "id": "analysis-1",
+        "user_id": "user-123",
+        "filename": "contract.pdf",
+        "file_type": "pdf",
+        "page_count": 5,
+        "char_count": 12000,
+        "contract_text": "Full contract text...",
+        "overview": {"contract_type": "SaaS"},
+        "summary": {"total_clauses": 0},
+        "clauses": [],
+        "analysis_mode": "fast",
+        "created_at": datetime(2026, 4, 13, tzinfo=timezone.utc),
+        "updated_at": None,
+        "expires_at": datetime(2099, 1, 1, tzinfo=timezone.utc),
+        "pinned": False,
+    }
+    db.fetch_all.return_value = []
+
+    with (
+        patch(
+            "app.routers.analyses.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.analyses.get_db", return_value=db),
+    ):
+        resp = client.get("/api/analyses/analysis-1")
+
+    assert resp.status_code == 200
+    assert resp.json()["clause_embeddings"] is None
+
+
 def test_save_analysis_rejects_wrong_embedding_dimension():
     """Embeddings must be exactly 1024 dims (Mistral ``mistral-embed``)."""
     from unittest.mock import patch

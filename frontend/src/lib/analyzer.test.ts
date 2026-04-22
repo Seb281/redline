@@ -108,14 +108,16 @@ describe("buildAnalysisSystemPrompt", () => {
 
 describe("buildProvenance", () => {
   /**
-   * Minimal fake provider for provenance assembly tests. The `model`
-   * factory is unused — `buildProvenance` only reads name/snapshot/region.
+   * Minimal fake provider for provenance assembly tests. `model` is a
+   * no-op factory since `buildProvenance` only reads
+   * name/region/modelIdFor/snapshotFor.
    */
   function fakeProvider(overrides: Partial<LLMProvider> = {}): LLMProvider {
     return {
       name: "mistral",
       model: () => ({}) as never,
-      snapshot: () => "mistral-small-2603",
+      modelIdFor: () => "mistral-small-latest",
+      snapshotFor: () => "mistral-small-2603",
       region: "eu-west-paris",
       ...overrides,
     };
@@ -131,7 +133,7 @@ describe("buildProvenance", () => {
 
   it("records the Mistral model identifier on provenance", () => {
     expect(buildProvenance(fakeProvider({ name: "mistral" })).model).toBe(
-      "mistral-small-4",
+      "mistral-small-latest",
     );
   });
 
@@ -151,6 +153,30 @@ describe("buildProvenance", () => {
     // ISO-8601 round-trip — parsing back gives a valid date.
     expect(Number.isNaN(new Date(prov.timestamp).getTime())).toBe(false);
     expect(prov.timestamp).toMatch(/T.*Z$/);
+  });
+
+  it("records the per-pass model routing (SP-11 Phase 1)", () => {
+    // Route every pass to a distinguishable sentinel so the test verifies
+    // buildProvenance actually calls modelIdFor for each of the four
+    // analysis passes — not just the overview pass.
+    const prov = buildProvenance(
+      fakeProvider({
+        modelIdFor: (pass) => `model-for-${pass}`,
+      }),
+    );
+    expect(prov.model_per_pass).toEqual({
+      overview: "model-for-overview",
+      extraction: "model-for-extraction",
+      risk: "model-for-risk",
+      think_hard: "model-for-think_hard",
+    });
+  });
+
+  it("records reasoning_emitted=false in Phase 1 (no Magistral trace yet)", () => {
+    // Phase 2 flips this when the risk pass starts emitting
+    // `reasoningText`. Locking the Phase 1 baseline here so the flip is
+    // visible as a test diff.
+    expect(buildProvenance(fakeProvider()).reasoning_emitted).toBe(false);
   });
 });
 
@@ -856,7 +882,8 @@ describe("buildProvenance — analysis_locale (SP-7 Layer B')", () => {
     return {
       name: "mistral" as const,
       model: () => ({}) as never,
-      snapshot: () => "mistral-small-2603",
+      modelIdFor: () => "mistral-small-latest",
+      snapshotFor: () => "mistral-small-2603",
       region: "eu-west-paris",
     };
   }

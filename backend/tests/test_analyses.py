@@ -524,7 +524,9 @@ def test_save_analysis_persists_provenance():
     # `redaction_location` defaults to None in SP-1.6; `text_source`
     # defaults to None in SP-1.5; `analysis_locale` defaults to None in
     # SP-7 Layer B' (pre-locale rows round-trip as unknown);
-    # `schema_version` defaults to None in SP-9 for pre-receipt rows.
+    # `schema_version` defaults to None in SP-9 for pre-receipt rows;
+    # `model_per_pass` / `reasoning_emitted` default to None in SP-11
+    # Phase 1 for pre-routing rows.
     # Round-tripped provenance carries the optional fields alongside the input.
     expected = {
         **provenance,
@@ -532,6 +534,8 @@ def test_save_analysis_persists_provenance():
         "text_source": None,
         "analysis_locale": None,
         "schema_version": None,
+        "model_per_pass": None,
+        "reasoning_emitted": None,
     }
     assert json.loads(call_params["provenance"]) == expected
 

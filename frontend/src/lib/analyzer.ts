@@ -2,8 +2,10 @@
  * LLM pipeline orchestration using Vercel AI SDK.
  *
  * Provider selection is delegated to `lib/llm/provider.ts`. Each pipeline
- * pass calls `provider.model(effort)` rather than importing a model
- * directly — that keeps prompt/schema code provider-agnostic.
+ * pass calls `provider.model({ effort, pass })` rather than importing a
+ * model directly — that keeps prompt/schema code provider-agnostic and
+ * lets the provider route `risk` / `think_hard` to a reasoning model
+ * (SP-11 Phase 2) without touching call sites.
  *
  * Reasoning effort per pass (validated in spec):
  *   - Pass 0 (overview):   "low"
@@ -800,6 +802,13 @@ export function legacyProvenance(): AnalysisProvenance {
       risk: "high",
       think_hard: "high",
     },
+    model_per_pass: {
+      overview: "legacy",
+      extraction: "legacy",
+      risk: "legacy",
+      think_hard: "legacy",
+    },
+    reasoning_emitted: false,
     prompt_template_version: "0.0",
     timestamp: new Date(0).toISOString(),
     // analysis_locale intentionally omitted: pre-Layer-B' rows have no
@@ -825,11 +834,13 @@ export function buildProvenance(
   provider: LLMProvider,
   analysisLocale: string = "en",
 ): AnalysisProvenance {
-  const model = "mistral-small-4";
+  // Top-level `model` / `snapshot` track the overview pass for
+  // backward compat with pre-SP-11 consumers. `model_per_pass` is the
+  // authoritative per-pass record for auditors.
   return {
     provider: provider.name,
-    model,
-    snapshot: provider.snapshot(),
+    model: provider.modelIdFor("overview"),
+    snapshot: provider.snapshotFor("overview"),
     region: provider.region,
     reasoning_effort_per_pass: {
       overview: "low",
@@ -837,6 +848,15 @@ export function buildProvenance(
       risk: "high",
       think_hard: "high",
     },
+    model_per_pass: {
+      overview: provider.modelIdFor("overview"),
+      extraction: provider.modelIdFor("extraction"),
+      risk: provider.modelIdFor("risk"),
+      think_hard: provider.modelIdFor("think_hard"),
+    },
+    // Phase 1 always false — every pass still routes to mistral-small.
+    // Phase 2 flips this when the risk pass starts emitting a trace.
+    reasoning_emitted: false,
     prompt_template_version: PROMPT_TEMPLATE_VERSION,
     timestamp: new Date().toISOString(),
     redaction_location: "client",
@@ -1003,7 +1023,7 @@ export async function analyzeContract(
   // transcript 2026-04-16-nl-freelance-mistral-small.md).
   const pass0Start = Date.now();
   const { object: rawOverview } = await generateObject({
-    model: provider.model("low"),
+    model: provider.model({ effort: "low", pass: "overview" }),
     schema: contractOverviewSchema,
     system: buildOverviewSystemPrompt(locale),
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
@@ -1039,7 +1059,7 @@ export async function analyzeContract(
   // Pass 1 — extraction (medium effort)
   const pass1Start = Date.now();
   const { object: extraction } = await generateObject({
-    model: provider.model("medium"),
+    model: provider.model({ effort: "medium", pass: "extraction" }),
     schema: extractionResultSchema,
     system: buildExtractionSystemPrompt(locale),
     prompt: buildExtractionPrompt(text, overview.clause_inventory),
@@ -1060,7 +1080,7 @@ export async function analyzeContract(
     analyzedClauses = await Promise.all(
       extraction.clauses.map(async (clause) => {
         const { object } = await generateObject({
-          model: provider.model(passEffort),
+          model: provider.model({ effort: passEffort, pass: "risk" }),
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -1077,7 +1097,7 @@ export async function analyzeContract(
     // incidents where every call short-returns.
     const runBatch = () =>
       generateObject({
-        model: provider.model(passEffort),
+        model: provider.model({ effort: passEffort, pass: "risk" }),
         schema: batchAnalysisSchema,
         system: analysisSystemPrompt,
         prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

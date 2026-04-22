@@ -91,7 +91,7 @@ export async function generateOverview(
   // this, inventory count drifted 24→46 on identical input and collapsed
   // the downstream Pass 2 batch analysis.
   const { object } = await generateObject({
-    model: provider.model("low"),
+    model: provider.model({ effort: "low", pass: "overview" }),
     schema: contractOverviewSchema,
     system: buildOverviewSystemPrompt(locale),
     prompt: `Extract the high-level overview from this contract:\n\n${text}`,
@@ -164,7 +164,7 @@ export function streamExtractAndAnalyze(
         // Pass 1 — extract clauses guided by inventory from overview.
         const pass1Start = Date.now();
         const { object: extraction } = await generateObject({
-          model: provider.model("medium"),
+          model: provider.model({ effort: "medium", pass: "extraction" }),
           schema: extractionResultSchema,
           system: extractionSystemPrompt,
           prompt: buildExtractionPrompt(text, clauseInventory),
@@ -188,7 +188,7 @@ export function streamExtractAndAnalyze(
           // Fan-out: one LLM call per clause, stream each as it resolves.
           const promises = extraction.clauses.map(async (clause) => {
             const { object } = await generateObject({
-              model: provider.model("high"),
+              model: provider.model({ effort: "high", pass: "risk" }),
               schema: analyzedClauseSchema,
               system: analysisSystemPrompt,
               prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -211,7 +211,7 @@ export function streamExtractAndAnalyze(
           const emittedTitles = new Set<string>();
           const runBatchStream = async (isRetry: boolean) => {
             const result = streamText({
-              model: provider.model("high"),
+              model: provider.model({ effort: "high", pass: "risk" }),
               output: Output.array({ element: analyzedClauseSchema }),
               system: analysisSystemPrompt,
               prompt: `Analyze all of the following contract clauses:\n\n${JSON.stringify(extraction.clauses, null, 2)}`,

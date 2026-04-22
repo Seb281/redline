@@ -285,6 +285,29 @@ export interface AnalysisProvenance {
    * absent value as "1" (the initial release).
    */
   schema_version?: string;
+  /**
+   * SP-11 Phase 1 — per-pass model routing for AI Act auditability.
+   * Records which Mistral model each pipeline pass resolved to, so
+   * the Phase-2 Magistral swap on risk passes is visible in the
+   * transparency receipt. Optional so pre-SP-11 saved analyses
+   * deserialize unchanged — receipt consumers fall back to the
+   * top-level `model` field when absent.
+   */
+  model_per_pass?: {
+    overview: string;
+    extraction: string;
+    risk: string;
+    think_hard: string;
+  };
+  /**
+   * SP-11 Phase 1 — true when at least one pass emitted a native
+   * reasoning trace (Magistral family). Phase 1 always writes `false`
+   * (every pass still routes to mistral-small-latest, which does not
+   * emit `reasoningText`). Phase 2 flips this when the risk pass
+   * starts producing a trace. Optional so pre-SP-11 saved analyses
+   * deserialize unchanged — absent means "unknown / legacy".
+   */
+  reasoning_emitted?: boolean;
 }
 
 /**

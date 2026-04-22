@@ -284,6 +284,21 @@ class ReasoningEffortPerPass(BaseModel):
     think_hard: ReasoningEffortLabel
 
 
+class ModelPerPass(BaseModel):
+    """Per-pass model ID for AI Act transparency (SP-11 Phase 1).
+
+    Records which Mistral model each pipeline pass resolved to so the
+    Phase-2 Magistral swap on risk passes shows up in the saved
+    provenance. Every field is required when the parent block is
+    present — an all-or-nothing contract avoids half-filled receipts.
+    """
+
+    overview: str = Field(min_length=1)
+    extraction: str = Field(min_length=1)
+    risk: str = Field(min_length=1)
+    think_hard: str = Field(min_length=1)
+
+
 # Sentinel `provider` value emitted by the frontend when reconstructing
 # an `AnalyzeResponse` from a pre-Phase-5 saved analysis that has no
 # stored provenance. Rejected on save so placeholder transparency data
@@ -326,6 +341,17 @@ class ProvenanceModel(BaseModel):
     # unchanged; the receipt endpoint treats ``None`` as ``"1"`` (initial
     # release).
     schema_version: str | None = None
+    # SP-11 Phase 1: per-pass model routing. Phase 2 uses this to surface
+    # the Magistral swap on risk passes in the transparency receipt.
+    # Optional so pre-SP-11 payloads deserialize unchanged; receipt
+    # consumers fall back to the top-level ``model`` when absent.
+    model_per_pass: ModelPerPass | None = None
+    # SP-11 Phase 1: ``True`` when at least one pass emitted a native
+    # reasoning trace (Magistral family). Phase 1 always records
+    # ``False`` (every pass still routes to ``mistral-small-latest``).
+    # Optional so pre-SP-11 payloads deserialize unchanged; ``None``
+    # means "unknown / legacy".
+    reasoning_emitted: bool | None = None
 
     @field_validator("provider")
     @classmethod

@@ -157,7 +157,7 @@ consulting a local attorney.
   const modelMessages = await convertToModelMessages(scrubbedMessages);
 
   const result = streamText({
-    model: provider.model("medium"),
+    model: provider.model({ effort: "medium", pass: "chat" }),
     system: scrubbedSystemPrompt,
     messages: modelMessages,
   });

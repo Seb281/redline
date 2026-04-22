@@ -1,0 +1,22 @@
+{
+  "note": "Committed baseline — deliberately updated by explicit commit, never auto-pinned. See frontend/EVAL.md for methodology and harness.test.ts for how this file is consumed. Floor values are lower bounds the harness asserts >= against on every CI run.",
+  "bm25": {
+    "generated_at": "2026-04-22",
+    "generator": "claude-opus-4-7",
+    "golden_set_review_status": "pre-human-review",
+    "overall": { "recallAt1": 0.6875, "recallAt3": 0.8333, "recallAt5": 0.875, "mrr": 0.7832, "n": 48 },
+    "perTier": {
+      "easy":   { "recallAt1": 0.8889, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9444, "n": 18 },
+      "medium": { "recallAt1": 0.4444, "recallAt3": 0.7222, "recallAt5": 0.8333, "mrr": 0.6177, "n": 18 },
+      "hard":   { "recallAt1": 0.75, "recallAt3": 0.75, "recallAt5": 0.75, "mrr": 0.7897, "n": 12 }
+    },
+    "perFixture": {
+      "nl-freelance":      { "recallAt1": 0.75, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.8021, "n": 8 },
+      "fr-employment":     { "recallAt1": 0.625, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7708, "n": 8 },
+      "de-saas-dpa":       { "recallAt1": 0.25, "recallAt3": 0.625, "recallAt5": 0.625, "mrr": 0.4836, "n": 8 },
+      "es-saas-services":  { "recallAt1": 0.625, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.7366, "n": 8 },
+      "it-employment":     { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+    }
+  }
+}

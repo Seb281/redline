@@ -425,6 +425,73 @@ Pending the initial freeze. Ablation vs `hybrid_graph` will isolate
 Task 2.3's single-layer contribution and be re-pinned in the same PR
 as the first cached baseline row.
 
+## 8a. Cross-contract retrieval — Arc 3 ship gate (2026-04-23)
+
+The Arc 3 product surfaces (`/history` semantic search bar, library
+comparison panel, similar-clauses drawer) all ask the same question:
+given a natural-language query, rank every clause across the user's
+entire saved library. Retrieval runs backend-side via pgvector
+(`services/semantic_search.py`); the frontend embeds the query with
+`mistral-embed` and hands the 1024-float vector to the cosine
+ORDER BY. No BM25, no metadata boost, no rerank — the production
+surface is deliberately single-stage.
+
+### Methodology
+
+- **Golden set.** 24 cross-contract questions in
+  `src/eval/cross-doc-questions.ts` (8 easy / 10 medium / 6 hard),
+  authored by Claude Opus 4.7 using the same different-model-family
+  discipline as the intra-doc set. Each question has one or more
+  `{ fixture, clause_index }` expectations; a hit scores the tuple
+  set as binary.
+- **Corpus.** The 6 frozen fixtures (83 clauses total, 1024-dim
+  mistral-embed vectors committed alongside each fixture).
+- **Retriever.** `cross-doc-harness.ts::rankCrossDocPool` — merges
+  every fixture's clauses into one pool, sorts by cosine similarity
+  against the query embedding. Mathematically identical to
+  `ORDER BY embedding <=> :q` on pgvector, just in memory.
+- **Query embedding cache.**
+  `src/eval/cross-doc-query-embeddings.json` — 24 entries, frozen via
+  `cross-doc-query-embeddings.freeze.test.ts`. Committed so the CI
+  gate runs deterministic + offline.
+- **Gate.** `cross-doc-harness.test.ts` asserts overall + per-tier
+  recall / MRR ≥ the `cross_doc` floor pinned in `baseline.json`.
+  Fresh checkouts without the cache skip cleanly rather than fail.
+
+Review status: `pre-human-review` (generator-model self-check only) —
+same discipline as the intra-doc numbers. `reviewed_by` and the
+numbers both refresh together after the owner's review pass.
+
+### Numbers
+
+| slice | n | recall@1 | recall@3 | recall@5 | MRR |
+| --- | --- | --- | --- | --- | --- |
+| overall | 24 | 0.833 | 0.958 | 1.000 | 0.906 |
+| tier: easy | 8 | 0.875 | 0.875 | 1.000 | 0.906 |
+| tier: medium | 10 | 0.900 | 1.000 | 1.000 | 0.950 |
+| tier: hard | 6 | 0.667 | 1.000 | 1.000 | 0.833 |
+
+### Observations (pre-human-review)
+
+- **Recall@5 = 1.000 across every tier.** Every question's expected
+  clause set has at least one member in the top 5 results — cosine
+  over `mistral-embed` is sufficient for the product surface, which
+  is the point Arc 3 needed to establish.
+- **Recall@1 = 0.833.** 20 of 24 questions land the right clause
+  first. The four misses cluster on hard-tier aggregation queries
+  (`xd-h1` "broadest post-termination restrictions", `xd-h6` "most
+  clearly excludes remedies") where multiple plausible contracts
+  match semantically and the query has no unique lexical anchor.
+- **Medium > easy on recall@1 (0.9 vs 0.875).** Small-n noise: one
+  easy question (`xd-e7` cross-border data transfers) ranks the
+  broader DPA data-transfers lead-in above the third-countries
+  clause; everything else on easy is first-try correct.
+- **No BM25 delta measured here.** Mixing EN queries against
+  PL/IT/FR/DE/ES clause text makes lexical retrieval unreliable by
+  construction. If cross-contract search ever moves to monolingual
+  corpora, the harness extends with a hybrid ablation row; until
+  then the single-stage pgvector floor is the honest number.
+
 ## 9. Reproducing these numbers
 
 ```bash
@@ -444,6 +511,13 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 
 # Re-freeze the fixtures (requires MISTRAL_API_KEY, 10+ min, costs tokens):
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
+
+# Cross-doc regression gate (deterministic, no network):
+pnpm vitest run src/eval/cross-doc-harness.test.ts
+
+# Re-freeze cross-doc query embeddings (requires MISTRAL_API_KEY):
+FREEZE_CROSS_DOC_QUERY_EMBEDDINGS=1 MISTRAL_API_KEY=... \
+  pnpm vitest run src/eval/cross-doc-query-embeddings.freeze.test.ts
 ```
 
 ## 10. Change policy

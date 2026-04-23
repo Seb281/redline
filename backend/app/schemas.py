@@ -502,6 +502,68 @@ class UpdateAnalysisRequest(BaseModel):
 # --- SP-6 DSAR schemas ---
 
 
+# --- SP-10 Arc 3 — semantic search ---
+
+
+# Upper bound on hits returned in a single search request. Guards the
+# pgvector index from being asked to surface thousands of rows per
+# query — the UI never needs more than a few dozen.
+SEMANTIC_SEARCH_MAX_TOP_K = 50
+
+
+class SemanticSearchRequest(BaseModel):
+    """Request body for the cross-analysis semantic search endpoint.
+
+    ``query_embedding`` is the Mistral-embed vector computed by the
+    frontend. Keeping the embedding model on the client keeps
+    ``MISTRAL_API_KEY`` off the backend (mirrors the rest of the
+    pipeline). The dim matches :data:`MISTRAL_EMBED_DIM` — a mis-shaped
+    embedding would silently corrupt the cosine query so we reject it
+    at the API boundary.
+    """
+
+    query_embedding: list[float]
+    top_k: int = Field(default=20, ge=1, le=SEMANTIC_SEARCH_MAX_TOP_K)
+
+    @field_validator("query_embedding")
+    @classmethod
+    def _enforce_dimension(cls, v: list[float]) -> list[float]:
+        """Reject query embeddings whose length is not Mistral's dim."""
+        if len(v) != MISTRAL_EMBED_DIM:
+            raise ValueError(
+                f"query_embedding must be {MISTRAL_EMBED_DIM} floats, got {len(v)}",
+            )
+        return v
+
+
+class SemanticSearchHit(BaseModel):
+    """One ranked clause hit surfaced by the semantic search endpoint.
+
+    The history UI needs enough context to render a hit card without a
+    follow-up GET — hence the contract metadata (``filename``,
+    ``contract_type``) and clause excerpt (``clause_title``,
+    ``clause_text``, ``risk_level``) alongside the ``similarity`` score.
+    ``analysis_id`` + ``clause_index`` let the UI deep-link into the
+    saved report.
+    """
+
+    analysis_id: str
+    clause_index: int
+    similarity: float
+    clause_title: str | None = None
+    clause_text: str | None = None
+    risk_level: str | None = None
+    filename: str
+    contract_type: str | None = None
+    created_at: str
+
+
+class SemanticSearchResponse(BaseModel):
+    """Top-k ranked clauses across the user's saved analyses."""
+
+    results: list[SemanticSearchHit]
+
+
 class DeleteAccountRequest(BaseModel):
     """Typed-confirmation body for DELETE /api/account.
 

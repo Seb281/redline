@@ -42,6 +42,7 @@ import {
   shouldRetryPass2,
 } from "@/lib/analyzer";
 import { logPass } from "@/lib/llm/debug-log";
+import { mergeCrossRefs } from "@/lib/retrieval/cross-refs-extract";
 
 /**
  * Events emitted over the NDJSON stream (extraction + analysis only).
@@ -211,10 +212,18 @@ export function streamExtractAndAnalyze(
                 system: analysisSystemPrompt,
                 prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
               });
-              const analyzed: AnalyzedClause =
+              const base: AnalyzedClause =
                 pass2EmitsReasoning && reasoning
                   ? { ...(object as AnalyzedClause), reasoning }
                   : (object as AnalyzedClause);
+              // SP-10 Arc 2 Task 2.2 — supplement LLM cross_refs with
+              // regex-derived structural references before streaming
+              // to the UI. Keeps the wire payload consistent with the
+              // final persisted clause.
+              const analyzed: AnalyzedClause = {
+                ...base,
+                cross_refs: mergeCrossRefs(base.clause_text, base.cross_refs),
+              };
               controller.enqueue(encode({ type: "clause", data: analyzed }));
               return analyzed;
             },
@@ -256,7 +265,11 @@ export function streamExtractAndAnalyze(
                 prompt: batchPrompt,
               });
               for await (const clause of result.elementStream) {
-                const analyzed = clause as AnalyzedClause;
+                const base = clause as AnalyzedClause;
+                const analyzed: AnalyzedClause = {
+                  ...base,
+                  cross_refs: mergeCrossRefs(base.clause_text, base.cross_refs),
+                };
                 emittedTitles.add(analyzed.title);
                 allClauses.push(analyzed);
                 controller.enqueue(encode({ type: "clause", data: analyzed }));
@@ -281,7 +294,11 @@ export function streamExtractAndAnalyze(
               prompt: batchPrompt,
             });
             for (const clause of object.clauses) {
-              const analyzed = clause as AnalyzedClause;
+              const base = clause as AnalyzedClause;
+              const analyzed: AnalyzedClause = {
+                ...base,
+                cross_refs: mergeCrossRefs(base.clause_text, base.cross_refs),
+              };
               if (isRetry && emittedTitles.has(analyzed.title)) continue;
               emittedTitles.add(analyzed.title);
               allClauses.push(analyzed);

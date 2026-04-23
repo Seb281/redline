@@ -590,3 +590,37 @@ class TestAnalyzedClauseSP17:
         )
         assert c.applicable_law is not None
         assert c.applicable_law.observation == "o"
+
+
+class TestAnalyzedClauseCrossRefs:
+    """SP-10 Arc 2 Task 2.2 — AnalyzedClause carries cross_refs."""
+
+    def test_cross_refs_defaults_to_empty_list(self):
+        """Legacy clauses without cross_refs round-trip as an empty list.
+
+        Pre-SP-10 saved analyses never emitted the field; the default
+        keeps GET /api/analyses/{id} working on those rows without a
+        DB migration.
+        """
+        c = AnalyzedClause(
+            clause_text="x",
+            category="other",
+            title="t",
+            plain_english="p",
+            risk_level="low",
+            risk_explanation="r",
+        )
+        assert c.cross_refs == []
+
+    def test_cross_refs_round_trips(self):
+        """A clause with cross_refs survives validation verbatim."""
+        c = AnalyzedClause(
+            clause_text="See Section 4.2 and Schedule B.",
+            category="other",
+            title="t",
+            plain_english="p",
+            risk_level="low",
+            risk_explanation="r",
+            cross_refs=["Section 4.2", "Schedule B"],
+        )
+        assert c.cross_refs == ["Section 4.2", "Schedule B"]

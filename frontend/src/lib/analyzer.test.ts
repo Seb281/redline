@@ -316,6 +316,7 @@ describe("analyzedClauseSchema — applicable_law (SP-1.7)", () => {
     is_unusual: false,
     unusual_explanation: null,
     citations: [],
+    cross_refs: [],
   };
 
   it("accepts applicable_law=null (the common case)", () => {
@@ -848,6 +849,7 @@ describe("analyzedClauseSchema — locale leakage guards (SP-7 Layer B')", () =>
     unusual_explanation: null,
     applicable_law: null,
     citations: [],
+    cross_refs: [],
   };
 
   it("rejects a translated risk_level (German 'hoch' must not replace 'high')", () => {

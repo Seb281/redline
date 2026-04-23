@@ -144,7 +144,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Le parti convengono un periodo di prova di sei (6) mesi di effettiva prestazione lavorativa. Durante tale periodo ciascuna delle parti potrà recedere dal contratto senza preavviso e senza obbligo di motivazione.",
@@ -157,7 +158,8 @@
       "is_unusual": true,
       "unusual_explanation": "The probation period is longer than the standard three months, which may be unusual and could be seen as unfavorable to the employee.",
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "L'orario normale di lavoro è fissato in quaranta (40) ore settimanali, distribuite dal lunedì al venerdì. Considerato l'inquadramento, la Lavoratrice è tenuta a prestare la propria opera anche oltre l'orario normale di lavoro, senza diritto ad alcuna maggiorazione, in funzione delle esigenze aziendali.",
@@ -170,7 +172,8 @@
       "is_unusual": true,
       "unusual_explanation": "The lack of compensation for overtime is unusual and could be seen as unfavorable to the employee.",
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "La retribuzione annua lorda è fissata in settantaduemila euro (72.000,00 €), comprensiva della tredicesima e quattordicesima mensilità, corrisposta in dodici (12) rate mensili posticipate.",
@@ -183,7 +186,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Competono alla Lavoratrice quattro (4) settimane di ferie annue retribuite, da fruire compatibilmente con le esigenze organizzative e produttive aziendali, previa autorizzazione del superiore gerarchico.",
@@ -196,7 +200,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "La Lavoratrice potrà essere inviata in trasferta in Italia e all'estero. Le spese di viaggio, vitto e alloggio saranno rimborsate a piè di lista previa presentazione di idonea documentazione, secondo le policy aziendali unilateralmente definite dal Datore di lavoro.",
@@ -209,7 +214,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Ogni invenzione, opera dell'ingegno, software, know-how o risultato creativo realizzato dalla Lavoratrice nell'esecuzione del rapporto o comunque utilizzando mezzi o informazioni aziendali, si intende di esclusiva proprietà del Datore di lavoro, senza obbligo di ulteriore corrispettivo rispetto alla retribuzione ordinaria.",
@@ -222,7 +228,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "La Lavoratrice assume in proprio ogni responsabilità per danni arrecati al Datore di lavoro o a terzi, anche in caso di colpa grave o dolo, con espressa rinuncia a far valere nei confronti del Datore di lavoro qualsiasi eccezione o compensazione. La responsabilità del Datore di lavoro per eventuali danni subiti dalla Lavoratrice è in ogni caso limitata a una mensilità di retribuzione.",
@@ -243,7 +250,8 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Il Datore di lavoro si riserva la facoltà, a propria insindacabile discrezione e senza necessità di specifica motivazione, di (i) modificare in qualsiasi momento le mansioni assegnate, anche assegnando mansioni inferiori rispetto a quelle di cui all'art. 1, e (ii) trasferire la Lavoratrice presso qualsiasi sede, filiale, cantiere o società del gruppo, in Italia o all'estero, con preavviso di sette (7) giorni. La Lavoratrice rinuncia sin d'ora a qualsiasi contestazione al riguardo.",
@@ -256,7 +264,10 @@
       "is_unusual": true,
       "unusual_explanation": "The broad discretion given to the employer to change job duties and transfer the employee with minimal notice is unusual and highly unfavorable to the employee.",
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": [
+        "Article 1"
+      ]
     },
     {
       "clause_text": "(1) Per un periodo di cinque (5) anni successivi alla cessazione del rapporto, per qualsivoglia causa, la Lavoratrice si impegna a non svolgere, direttamente o indirettamente, alcuna attività lavorativa, imprenditoriale o di consulenza a favore di soggetti operanti nel settore dello sviluppo software, sull'intero territorio nazionale italiano e nell'ambito dell'Unione europea.\n\n(2) A titolo di corrispettivo per l'assunzione del presente patto, verrà corrisposta alla Lavoratrice, alla cessazione del rapporto, una somma una tantum pari a cinquemila euro (5.000,00 €) lordi.",
@@ -277,7 +288,8 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Le parti espressamente convengono che (i) qualsiasi controversia relativa al presente contratto sarà devoluta in via esclusiva al Tribunale del Lavoro di Milano, (ii) eventuali inadempimenti della Lavoratrice comporteranno il pagamento di una penale pari a tre (3) mensilità di retribuzione, (iii) il Datore di lavoro potrà recedere unilateralmente dal contratto con preavviso di quindici (15) giorni nelle ipotesi di riorganizzazione aziendale, e (iv) la Lavoratrice rinuncia preventivamente a qualsiasi diritto di contestazione del provvedimento disciplinare.",
@@ -290,7 +302,8 @@
       "is_unusual": true,
       "unusual_explanation": "The combination of harsh penalties, minimal notice for termination, and waiver of contestation rights is unusual and highly unfavorable to the employee.",
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "I dati personali della Lavoratrice saranno trattati dal Datore di lavoro in qualità di titolare del trattamento, in conformità al Regolamento (UE) 2016/679 (\"GDPR\") e al D.Lgs. 196/2003 (Codice Privacy). La Lavoratrice prende atto dell'informativa di cui all'art. 13 GDPR consegnata contestualmente al presente contratto.",
@@ -311,7 +324,10 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": [
+        "Article 13"
+      ]
     },
     {
       "clause_text": "Il presente contratto è disciplinato dalla legge italiana. Per quanto non espressamente previsto si rinvia alle disposizioni del Codice Civile, alle leggi speciali in materia di lavoro subordinato e al CCNL applicabile.",
@@ -324,7 +340,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     }
   ],
   "provenance": {

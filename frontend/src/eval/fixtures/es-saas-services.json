@@ -129,7 +129,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "El presente contrato tendrá una duración inicial de treinta y seis (36) meses contados desde la fecha de firma, prorrogándose tácitamente por períodos anuales salvo denuncia expresa comunicada por escrito con una antelación mínima de seis (6) meses a la fecha de vencimiento.",
@@ -150,7 +151,8 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "El Cliente abonará al Proveedor una cuota mensual de doce mil euros (12.000 €), más el IVA correspondiente, mediante domiciliación bancaria en la cuenta designada por el Proveedor.",
@@ -163,7 +165,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "El Proveedor podrá revisar unilateralmente y a su entera discreción la cuota mensual mediante preaviso de treinta (30) días, sin que el Cliente tenga derecho a oposición ni a resolución anticipada del contrato por tal motivo. No se aplicarán índices externos, fórmulas objetivas ni topes máximos a dicha revisión.",
@@ -189,7 +192,8 @@
           "id": 1,
           "quoted_text": "El Proveedor podrá revisar unilateralmente y a su entera discreción la cuota mensual"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) El Proveedor se compromete a mantener una disponibilidad mensual del noventa y nueve por ciento (99%) medida sobre base calendario.\n\n(2) El Proveedor se reserva el derecho a modificar, reducir o sustituir funcionalidades de la plataforma, así como las métricas y umbrales del SLA, en cualquier momento y sin necesidad de acuerdo previo con el Cliente.\n\n(3) El incumplimiento del SLA mensual dará derecho al Cliente a un crédito máximo equivalente al cinco por ciento (5%) de la cuota del mes afectado, quedando expresamente excluida cualquier otra reclamación de daños y perjuicios.",
@@ -219,7 +223,8 @@
           "id": 2,
           "quoted_text": "El incumplimiento del SLA mensual dará derecho al Cliente a un crédito máximo equivalente al cinco por ciento (5%) de la cuota del mes afectado"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "La responsabilidad agregada del Proveedor por cualquier causa, contractual o extracontractual, queda limitada al importe efectivamente abonado por el Cliente en los tres (3) meses inmediatamente anteriores al hecho generador. En ningún caso el Proveedor responderá por lucro cesante, daños indirectos, pérdida de datos o pérdida de oportunidades de negocio.",
@@ -232,7 +237,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "En caso de incumplimiento del Proveedor, incluido el incumplimiento reiterado de los niveles de servicio, el único remedio a disposición del Cliente consistirá en los créditos de servicio previstos en la cláusula 5ª(3), renunciando expresamente el Cliente a la facultad de resolución del contrato por incumplimiento y a la reclamación de cualesquiera otros daños. Esta renuncia se aplicará con independencia de la gravedad o reiteración del incumplimiento.",
@@ -253,7 +259,8 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) El Proveedor podrá auditar el uso de la plataforma por parte del Cliente en cualquier momento, con un preaviso de veinticuatro (24) horas.\n\n(2) El Cliente facilitará acceso inmediato a sus instalaciones, sistemas y documentación. La negativa o demora en facilitar dicho acceso se considerará incumplimiento grave y dará lugar a una penalización de diez mil euros (10.000 €) por día de retraso, así como a la facultad del Proveedor de suspender el servicio sin preaviso adicional.",
@@ -266,7 +273,8 @@
       "is_unusual": true,
       "unusual_explanation": "The severe penalties and the Provider's right to suspend service without additional notice for audit non-compliance are unusual and highly favorable to the Provider.",
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) El Proveedor tratará los datos personales del Cliente en calidad de encargado del tratamiento, conforme al Reglamento (UE) 2016/679 (RGPD) y a la Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales.\n\n(2) El Cliente autoriza al Proveedor a recurrir a subencargados sin necesidad de notificación ni aprobación previa, quedando bajo la exclusiva responsabilidad del Proveedor su selección y control.\n\n(3) En caso de quiebra de seguridad, el Proveedor notificará al Cliente tan pronto como sea razonablemente posible, sin sujetarse a los plazos establecidos en el artículo 33 del RGPD.",
@@ -287,7 +295,10 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": [
+        "Artículo 33"
+      ]
     },
     {
       "clause_text": "El Cliente renuncia, en la máxima medida permitida por la legislación aplicable, a cualesquiera derechos y remedios derivados de la normativa española de consumidores y usuarios, de la normativa laboral aplicable a su personal que acceda a la plataforma, y de cualquier otra norma imperativa nacional o autonómica que pudiera resultar de aplicación al presente contrato.",
@@ -308,7 +319,8 @@
           }
         ]
       },
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "Las partes someten el presente contrato a la legislación española. Para la resolución de cuantas cuestiones, diferencias o discrepancias pudieran derivarse de la interpretación, cumplimiento o ejecución del presente contrato, las partes, con renuncia expresa a cualquier otro fuero que pudiera corresponderles, se someten a los Juzgados y Tribunales de la ciudad de Madrid.",
@@ -321,7 +333,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "12.1 Integridad. El presente contrato y sus anexos constituyen el acuerdo íntegro entre las partes y sustituyen cualesquiera acuerdos previos, verbales o escritos, sobre su objeto.\n\n12.2 Divisibilidad. La nulidad o ineficacia de cualquier cláusula no afectará a la validez del resto del contrato.",
@@ -334,7 +347,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     }
   ],
   "provenance": {

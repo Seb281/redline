@@ -22,6 +22,7 @@ import { getProvider, type LLMProvider, type ReasoningEffort } from "@/lib/llm/p
 import { logPass } from "@/lib/llm/debug-log";
 import { embedClauses } from "@/lib/llm/embeddings";
 import { STATUTE_CODES, filterStatutes } from "@/lib/applicable-law";
+import { mergeCrossRefs } from "@/lib/retrieval/cross-refs-extract";
 
 // ---------------------------------------------------------------------------
 // Zod schemas for structured LLM output
@@ -35,6 +36,21 @@ export const extractedClauseSchema = z.object({
     .string()
     .nullable()
     .describe("Section number if identifiable, e.g. 'Section 3.1'"),
+  // SP-10 Arc 2 Task 2.2 — outbound references the clause makes to
+  // other parts of the contract. Populated best-effort by the LLM
+  // during extraction (catches prose refs like "the Confidentiality
+  // Clause"); a deterministic regex post-process in `analyzer.ts`
+  // supplements with structural patterns (Section X, § N, Schedule B,
+  // Artikel 12, etc.) the model may skip. `.default([])` keeps the
+  // Pass 1 call forgiving if Mistral Small drops the field — the
+  // regex post-process still populates the final cross_refs on every
+  // clause. Empty array when the clause stands alone.
+  cross_refs: z
+    .array(z.string())
+    .default([])
+    .describe(
+      "Outbound references to other clauses/sections/schedules. Copy verbatim from clause_text when present (e.g. 'Section 4.2', 'Schedule B', 'Art. 12', 'the Confidentiality Clause'). Empty array when none.",
+    ),
 });
 
 export const extractionResultSchema = z.object({
@@ -246,6 +262,21 @@ export const analyzedClauseSchema = z.object({
     .describe(
       "Citations for [^N] markers in plain_english. Empty array if no verbatim quote supports any claim.",
     ),
+  // SP-10 Arc 2 Task 2.2 — outbound cross-references for this clause.
+  // Pass 2 is instructed to copy the `cross_refs` field verbatim from
+  // the Pass 1 extraction input it receives (the full Pass 1 clause
+  // objects are serialised into the analysis prompt). `.default([])`
+  // guards against Magistral dropping the field under its looser
+  // structured-output discipline (same reason batchAnalysisSchema
+  // preprocesses bare arrays). A regex post-process in the analyzer
+  // supplements missed entries so retrieval has a complete edge set
+  // even when the model drops the field.
+  cross_refs: z
+    .array(z.string())
+    .default([])
+    .describe(
+      "Copy the `cross_refs` array verbatim from the input clause object. Preserve order and exact strings. Empty array when the input had none.",
+    ),
 });
 
 // Magistral under `output: "object"` sometimes emits a bare JSON array at
@@ -306,7 +337,22 @@ Rules:
   the text.
 - If a clause spans multiple paragraphs, include the full text as one clause.
 - Return exactly one extracted clause per inventory item, in the same order.
-- Do NOT skip any inventory item and do NOT add clauses not in the inventory.`;
+- Do NOT skip any inventory item and do NOT add clauses not in the inventory.
+
+Cross-references (\`cross_refs\`):
+- For EACH extracted clause, list every outbound reference the clause makes \
+  to other parts of the contract. Copy each reference verbatim from \
+  \`clause_text\`. Deduplicate within the clause.
+- Include structural references: "Section 4.2", "Clause 3", "Article 12", \
+  "Paragraph 5", "§ 307", "Schedule B", "Annex 2", "Appendix C", "Exhibit D", \
+  "Artikel 12", "Artículo 8", "Articolo 3", "Artykuł 9".
+- Include prose references to named sections: "the Confidentiality Clause", \
+  "the Termination Section", "the Schedule of Fees". Only when the phrase \
+  clearly points to another specific part of THIS contract — not to external \
+  laws or generic concepts.
+- Do NOT include statute citations that belong to applicable law (these are \
+  handled elsewhere): "GDPR Article 6", "BGB §307", "Art 101 TFEU".
+- Return \`cross_refs: []\` (empty array) when the clause stands alone.`;
 
 /**
  * Build the extraction system prompt for a given locale.
@@ -1207,6 +1253,17 @@ export async function analyzeContract(
       analyzedClauses = firstAttempt.clauses;
     }
   }
+
+  // SP-10 Arc 2 Task 2.2 — merge LLM-emitted cross_refs with the
+  // deterministic regex extractor so the downstream graph has a
+  // complete edge set even when the model drops or misses references.
+  // Pass 1 already populated `cross_refs` on each extraction clause;
+  // Pass 2 was instructed to copy them through. We union with regex
+  // output (dedup preserved by insertion order) before freezing.
+  analyzedClauses = analyzedClauses.map((c) => ({
+    ...c,
+    cross_refs: mergeCrossRefs(c.clause_text, c.cross_refs),
+  }));
 
   const pass2Histogram = buildRiskBreakdown(analyzedClauses);
   logPass("pass2", {

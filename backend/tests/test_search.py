@@ -264,3 +264,182 @@ def test_semantic_search_handles_out_of_bounds_clause_index():
 
     assert resp.status_code == 200
     assert resp.json()["results"] == []
+
+
+# --- SP-10 Arc 3 Task 3.3 — similar-contracts (library comparison panel) ---
+
+
+def _mock_similar_row(
+    analysis_id: str,
+    clause_index: int,
+    similarity: float,
+    filename: str = "contract.pdf",
+    contract_type: str = "SaaS",
+    title: str = "Termination",
+) -> dict:
+    """Shape a DB row matching the ROW_NUMBER() CTE projection.
+
+    The real query collapses per-analysis to the best clause, so each
+    row here represents one contract + its best-matching clause.
+    """
+
+    return {
+        "analysis_id": analysis_id,
+        "clause_index": clause_index,
+        "similarity": similarity,
+        "filename": filename,
+        "overview": {"contract_type": contract_type},
+        "clauses": [
+            {"title": title, "clause_text": "t", "risk_level": "high"}
+            for _ in range(clause_index + 1)
+        ],
+        "created_at": datetime(2026, 4, 13, tzinfo=timezone.utc),
+    }
+
+
+def test_similar_contracts_without_auth_returns_401():
+    """POST /api/search/similar-contracts without auth is 401."""
+    with patch(
+        "app.routers.search.get_current_user",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 5},
+        )
+
+    assert resp.status_code == 401
+
+
+def test_similar_contracts_without_db_returns_503():
+    """DATABASE_URL-less deploy returns 503 cleanly."""
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=None),
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 5},
+        )
+
+    assert resp.status_code == 503
+
+
+def test_similar_contracts_rejects_wrong_embedding_dim():
+    """Non-1024-dim embeddings are rejected at the API boundary."""
+    with patch(
+        "app.routers.search.get_current_user",
+        new_callable=AsyncMock,
+        return_value=MOCK_USER,
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": [0.1, 0.2], "top_k": 5},
+        )
+
+    assert resp.status_code == 422
+
+
+def test_similar_contracts_caps_top_k():
+    """top_k is capped — the panel only shows a few rows."""
+    with patch(
+        "app.routers.search.get_current_user",
+        new_callable=AsyncMock,
+        return_value=MOCK_USER,
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 500},
+        )
+
+    assert resp.status_code == 422
+
+
+def test_similar_contracts_returns_aggregated_hits():
+    """Returns contract-level hits with best-clause anchor + similarity."""
+    db = AsyncMock()
+    db.fetch_all.return_value = [
+        _mock_similar_row("a-1", 2, 0.91, filename="nda.pdf", title="Confidentiality"),
+        _mock_similar_row("a-2", 0, 0.78, filename="msa.pdf", title="Payment"),
+    ]
+
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=db),
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 5},
+        )
+
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    assert len(results) == 2
+    assert results[0]["analysis_id"] == "a-1"
+    assert results[0]["filename"] == "nda.pdf"
+    assert results[0]["best_clause_index"] == 2
+    assert results[0]["best_clause_title"] == "Confidentiality"
+    assert results[0]["contract_type"] == "SaaS"
+    assert [r["similarity"] for r in results] == [0.91, 0.78]
+
+
+def test_similar_contracts_passes_exclude_id_to_sql():
+    """The exclude_analysis_id arrives in the SQL params when supplied."""
+    db = AsyncMock()
+    db.fetch_all.return_value = []
+
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=db),
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={
+                "query_embedding": VALID_EMBEDDING,
+                "exclude_analysis_id": "current-id",
+                "top_k": 5,
+            },
+        )
+
+    assert resp.status_code == 200
+    params = db.fetch_all.await_args.args[1]
+    assert params["user_id"] == MOCK_USER["id"]
+    assert params["exclude_id"] == "current-id"
+
+
+def test_similar_contracts_omits_exclude_clause_when_absent():
+    """Without exclude_analysis_id the SQL should not reference it."""
+    db = AsyncMock()
+    db.fetch_all.return_value = []
+
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=db),
+    ):
+        resp = client.post(
+            "/api/search/similar-contracts",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 5},
+        )
+
+    assert resp.status_code == 200
+    sql = db.fetch_all.await_args.args[0]
+    params = db.fetch_all.await_args.args[1]
+    assert ":exclude_id" not in sql
+    assert "exclude_id" not in params

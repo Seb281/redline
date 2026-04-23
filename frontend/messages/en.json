@@ -687,6 +687,17 @@
     "similarity": "{percent}% match",
     "showingTopK": "Showing top {count} matches by relevance."
   },
+  "SimilarContracts": {
+    "title": "Similar contracts in your library",
+    "description": "Finds saved contracts whose clauses are semantically closest to this one.",
+    "loading": "Looking for similar contracts…",
+    "empty": "No similar contracts in your library yet.",
+    "error": "Could not load similar contracts.",
+    "retry": "Try again",
+    "similarity": "{percent}% match",
+    "bestClause": "closest on: {title}",
+    "openAria": "Open this contract"
+  },
   "HistoryDetail": {
     "notFound": "Analysis not found",
     "deletedFallback": "This analysis may have been deleted.",

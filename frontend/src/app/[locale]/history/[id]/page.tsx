@@ -9,6 +9,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SavedAnalysisReport } from "@/components/SavedAnalysisReport";
+import { SimilarContractsPanel } from "@/components/SimilarContractsPanel";
 import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
 import { hydrateSavedAnalysis } from "@/lib/saved-analysis";
 import { getRetentionStatus } from "@/lib/retention";
@@ -211,6 +212,11 @@ export default function HistoryDetailPage() {
         onAskAboutClause={handleAskAboutClause}
         filename={analysis.filename}
         savedId={analysis.id}
+      />
+      <SimilarContractsPanel
+        currentAnalysisId={analysis.id}
+        overview={analyzeResponse.overview}
+        clauses={analyzeResponse.clauses}
       />
       <ChatPanel
         isOpen={chatOpen}

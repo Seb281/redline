@@ -612,6 +612,17 @@
     "similarity": "{percent}% de coincidencia",
     "showingTopK": "Mostrando los {count} resultados más relevantes."
   },
+  "SimilarContracts": {
+    "title": "Contratos similares en tu biblioteca",
+    "description": "Busca contratos guardados cuyas cláusulas estén semánticamente más cercanas a este.",
+    "loading": "Buscando contratos similares…",
+    "empty": "Aún no hay contratos similares en tu biblioteca.",
+    "error": "No se han podido cargar los contratos similares.",
+    "retry": "Volver a intentar",
+    "similarity": "{percent}% de coincidencia",
+    "bestClause": "más cercana en: {title}",
+    "openAria": "Abrir este contrato"
+  },
   "HistoryDetail": {
     "notFound": "No se ha encontrado ningún análisis",
     "deletedFallback": "Es posible que este análisis haya sido eliminado.",

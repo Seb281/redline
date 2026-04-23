@@ -612,6 +612,17 @@
     "similarity": "{percent} % Übereinstimmung",
     "showingTopK": "Die {count} relevantesten Treffer werden angezeigt."
   },
+  "SimilarContracts": {
+    "title": "Ähnliche Verträge in Ihrer Bibliothek",
+    "description": "Findet gespeicherte Verträge, deren Klauseln diesem semantisch am nächsten sind.",
+    "loading": "Suche nach ähnlichen Verträgen…",
+    "empty": "Noch keine ähnlichen Verträge in Ihrer Bibliothek.",
+    "error": "Ähnliche Verträge konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "similarity": "{percent} % Übereinstimmung",
+    "bestClause": "am nächsten bei: {title}",
+    "openAria": "Diesen Vertrag öffnen"
+  },
   "HistoryDetail": {
     "notFound": "Analyse nicht gefunden",
     "deletedFallback": "Diese Analyse wurde möglicherweise gelöscht.",

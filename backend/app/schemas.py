@@ -564,6 +564,67 @@ class SemanticSearchResponse(BaseModel):
     results: list[SemanticSearchHit]
 
 
+# SP-10 Arc 3 Task 3.3 — library-comparison panel.
+# Contract-level similarity surface on the saved-analysis report page:
+# given one embedded query vector (aggregate of the current contract's
+# type + key terms + top-risk titles), return the other saved analyses
+# in the user's library whose closest clause is most similar.
+#
+# Cap is 20 because the panel is a passive discovery affordance, not a
+# search tool — nobody scrolls past a few rows on a report page.
+SIMILAR_CONTRACTS_MAX_TOP_K = 20
+
+
+class SimilarContractsRequest(BaseModel):
+    """Request body for the contract-level library comparison endpoint.
+
+    ``exclude_analysis_id`` is the id of the analysis the user is
+    currently looking at — always filtered out so a contract can't
+    appear as a match to itself. Optional because the same endpoint
+    could be called from a discovery surface with no "current" contract.
+    """
+
+    query_embedding: list[float]
+    exclude_analysis_id: str | None = None
+    top_k: int = Field(default=5, ge=1, le=SIMILAR_CONTRACTS_MAX_TOP_K)
+
+    @field_validator("query_embedding")
+    @classmethod
+    def _enforce_dimension(cls, v: list[float]) -> list[float]:
+        """Reject query embeddings whose length is not Mistral's dim."""
+        if len(v) != MISTRAL_EMBED_DIM:
+            raise ValueError(
+                f"query_embedding must be {MISTRAL_EMBED_DIM} floats, got {len(v)}",
+            )
+        return v
+
+
+class SimilarContractHit(BaseModel):
+    """One contract-level library match, aggregated from clause vectors.
+
+    ``similarity`` is the best (max) per-clause cosine similarity within
+    the matched analysis — a contract counts as relevant if at least one
+    of its clauses is close to the query, even if most are not.
+    ``best_clause_*`` surfaces that anchor so the panel row can deep-link
+    to the most-relevant clause inside the matched report, not just the
+    report's top.
+    """
+
+    analysis_id: str
+    filename: str
+    contract_type: str | None = None
+    similarity: float
+    best_clause_index: int
+    best_clause_title: str | None = None
+    created_at: str
+
+
+class SimilarContractsResponse(BaseModel):
+    """Top-k library-level similarity hits for the report comparison panel."""
+
+    results: list[SimilarContractHit]
+
+
 class DeleteAccountRequest(BaseModel):
     """Typed-confirmation body for DELETE /api/account.
 

@@ -9,6 +9,7 @@ import type {
   SaveAnalysisPayload,
   SavedAnalysis,
   SemanticSearchResponse,
+  SimilarContractsResponse,
 } from "@/types";
 
 /**
@@ -386,6 +387,39 @@ export async function semanticSearch(
 
   if (!res.ok) {
     throw new Error(await extractErrorMessage(res, "Search failed"));
+  }
+
+  return res.json();
+}
+
+/**
+ * Fetch the library-level contract matches for the current saved
+ * analysis (SP-10 Arc 3 Task 3.3).
+ *
+ * The backend collapses clause vectors per analysis and returns the
+ * best match per other contract. ``excludeAnalysisId`` is the id of the
+ * report the panel is mounted on — always filtered out so a contract
+ * cannot appear as a match to itself.
+ */
+export async function findSimilarContracts(
+  queryEmbedding: number[],
+  excludeAnalysisId: string | null,
+  topK: number = 5,
+): Promise<SimilarContractsResponse> {
+  const res = await backendFetch("/api/search/similar-contracts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query_embedding: queryEmbedding,
+      exclude_analysis_id: excludeAnalysisId,
+      top_k: topK,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      await extractErrorMessage(res, "Similar-contracts search failed"),
+    );
   }
 
   return res.json();

@@ -402,6 +402,30 @@ export interface SemanticSearchResponse {
   results: SemanticSearchHit[];
 }
 
+/**
+ * SP-10 Arc 3 Task 3.3 — one aggregated library-match row returned by
+ * the contract-level similarity endpoint. Shape parity with
+ * ``backend/app/schemas.py:SimilarContractHit``.
+ *
+ * The backend collapses clause-level vectors per contract and surfaces
+ * the best-matching clause (``best_clause_*``) so the panel can deep-
+ * link into the matched report at its most relevant position.
+ */
+export interface SimilarContractHit {
+  analysis_id: string;
+  filename: string;
+  contract_type: string | null;
+  similarity: number;
+  best_clause_index: number;
+  best_clause_title: string | null;
+  created_at: string;
+}
+
+/** Top-k response shape from ``POST /api/search/similar-contracts``. */
+export interface SimilarContractsResponse {
+  results: SimilarContractHit[];
+}
+
 /** User info returned by auth endpoints. */
 export interface AuthUser {
   id: string;

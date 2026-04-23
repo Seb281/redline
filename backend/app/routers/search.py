@@ -22,8 +22,10 @@ from app.middleware import get_current_user
 from app.schemas import (
     SemanticSearchRequest,
     SemanticSearchResponse,
+    SimilarContractsRequest,
+    SimilarContractsResponse,
 )
-from app.services.semantic_search import semantic_search
+from app.services.semantic_search import semantic_search, similar_contracts
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 limiter = Limiter(key_func=get_remote_address)
@@ -57,3 +59,33 @@ async def semantic_search_endpoint(
     )
 
     return SemanticSearchResponse(results=hits)
+
+
+@router.post("/similar-contracts")
+@limiter.limit("20/minute")
+async def similar_contracts_endpoint(
+    body: SimilarContractsRequest, request: Request
+) -> SimilarContractsResponse:
+    """Return contracts in the caller's library most similar to the query.
+
+    Unlike ``/api/search/semantic`` which returns clause-level hits, this
+    aggregates at contract granularity (one row per analysis). Used by
+    the SP-10 Arc 3 Task 3.3 library-comparison panel on the report page.
+    """
+    user = await get_current_user(request)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    db = get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    hits = await similar_contracts(
+        db,
+        user_id=user["id"],
+        query_embedding=body.query_embedding,
+        exclude_analysis_id=body.exclude_analysis_id,
+        top_k=body.top_k,
+    )
+
+    return SimilarContractsResponse(results=hits)

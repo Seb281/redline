@@ -612,6 +612,17 @@
     "similarity": "{percent}% overeenkomst",
     "showingTopK": "De {count} meest relevante resultaten worden getoond."
   },
+  "SimilarContracts": {
+    "title": "Vergelijkbare contracten in je bibliotheek",
+    "description": "Vindt opgeslagen contracten waarvan de clausules semantisch het dichtst bij deze liggen.",
+    "loading": "Zoeken naar vergelijkbare contracten…",
+    "empty": "Nog geen vergelijkbare contracten in je bibliotheek.",
+    "error": "Kan vergelijkbare contracten niet laden.",
+    "retry": "Opnieuw proberen",
+    "similarity": "{percent}% overeenkomst",
+    "bestClause": "dichtst bij: {title}",
+    "openAria": "Dit contract openen"
+  },
   "HistoryDetail": {
     "notFound": "Analyse niet gevonden",
     "deletedFallback": "Deze analyse is mogelijk verwijderd.",

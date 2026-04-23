@@ -612,6 +612,17 @@
     "similarity": "{percent} % de correspondance",
     "showingTopK": "Affichage des {count} meilleures correspondances par pertinence."
   },
+  "SimilarContracts": {
+    "title": "Contrats similaires dans votre bibliothèque",
+    "description": "Trouve les contrats enregistrés dont les clauses sont sémantiquement les plus proches de celui-ci.",
+    "loading": "Recherche de contrats similaires…",
+    "empty": "Aucun contrat similaire dans votre bibliothèque pour l'instant.",
+    "error": "Impossible de charger les contrats similaires.",
+    "retry": "Réessayer",
+    "similarity": "{percent} % de correspondance",
+    "bestClause": "plus proche sur : {title}",
+    "openAria": "Ouvrir ce contrat"
+  },
   "HistoryDetail": {
     "notFound": "Analyse introuvable",
     "deletedFallback": "Cette analyse a peut-être été supprimée.",

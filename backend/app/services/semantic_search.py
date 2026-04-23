@@ -29,7 +29,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from app.schemas import SemanticSearchHit
+from app.schemas import SemanticSearchHit, SimilarContractHit
 
 
 def _format_vector(values: list[float]) -> str:
@@ -131,6 +131,122 @@ async def semantic_search(
                 risk_level=clause.get("risk_level"),
                 filename=row["filename"],
                 contract_type=contract_type,
+                created_at=created_at_iso,
+            )
+        )
+
+    return hits
+
+
+async def similar_contracts(
+    db: Any,
+    *,
+    user_id: str,
+    query_embedding: list[float],
+    exclude_analysis_id: str | None,
+    top_k: int,
+) -> list[SimilarContractHit]:
+    """Return the top-``top_k`` *contracts* closest to ``query_embedding``.
+
+    Unlike :func:`semantic_search` which returns clause-level hits, this
+    collapses results by ``analysis_id`` and surfaces the best clause
+    within each matched contract. The aggregation picks ``MAX(similarity)``
+    so a single strongly-matching clause is enough to float the parent
+    contract — the library-panel question is "have I seen a contract
+    *like* this?" not "which clauses are nearest?".
+
+    ``exclude_analysis_id`` filters out the caller's current contract so
+    a report can't claim itself as a match. Retention + tenant rules
+    mirror :func:`semantic_search`.
+    """
+
+    now = datetime.now(timezone.utc)
+    params: dict[str, Any] = {
+        "query_embedding": _format_vector(query_embedding),
+        "user_id": user_id,
+        "now": now,
+        "top_k": top_k,
+    }
+
+    # The inner ranked CTE tags each clause row with its per-analysis
+    # rank by similarity. The outer select picks only rank=1 rows,
+    # i.e. the best-matching clause per contract. DISTINCT ON would be
+    # tighter, but a CTE + row_number is portable and keeps the join
+    # in one query — cheaper than a two-step aggregate + re-fetch.
+    exclude_clause = ""
+    if exclude_analysis_id is not None:
+        exclude_clause = "AND a.id != :exclude_id"
+        params["exclude_id"] = exclude_analysis_id
+
+    rows = await db.fetch_all(
+        f"""
+        WITH ranked AS (
+            SELECT
+                ce.analysis_id AS analysis_id,
+                ce.clause_index AS clause_index,
+                1 - (ce.embedding <=> :query_embedding) AS similarity,
+                a.filename AS filename,
+                a.overview AS overview,
+                a.clauses AS clauses,
+                a.created_at AS created_at,
+                ROW_NUMBER() OVER (
+                    PARTITION BY ce.analysis_id
+                    ORDER BY ce.embedding <=> :query_embedding ASC
+                ) AS rn
+            FROM clause_embeddings ce
+            JOIN analyses a ON a.id = ce.analysis_id
+            WHERE a.user_id = :user_id
+              AND (a.pinned = TRUE OR a.expires_at IS NULL OR a.expires_at > :now)
+              {exclude_clause}
+        )
+        SELECT
+            analysis_id,
+            clause_index,
+            similarity,
+            filename,
+            overview,
+            clauses,
+            created_at
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY similarity DESC
+        LIMIT :top_k
+        """,
+        params,
+    )
+
+    hits: list[SimilarContractHit] = []
+    for row in rows:
+        clauses = _coerce_json(row["clauses"])
+        overview = _coerce_json(row["overview"])
+        idx = int(row["clause_index"])
+
+        clause_title: str | None = None
+        if (
+            isinstance(clauses, list)
+            and 0 <= idx < len(clauses)
+            and isinstance(clauses[idx], dict)
+        ):
+            clause_title = clauses[idx].get("title")
+
+        contract_type = (
+            overview.get("contract_type") if isinstance(overview, dict) else None
+        )
+
+        created_at = row["created_at"]
+        if isinstance(created_at, datetime):
+            created_at_iso = created_at.isoformat()
+        else:
+            created_at_iso = str(created_at)
+
+        hits.append(
+            SimilarContractHit(
+                analysis_id=str(row["analysis_id"]),
+                filename=row["filename"],
+                contract_type=contract_type,
+                similarity=float(row["similarity"]),
+                best_clause_index=idx,
+                best_clause_title=clause_title,
                 created_at=created_at_iso,
             )
         )

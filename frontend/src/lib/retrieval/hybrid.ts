@@ -22,10 +22,13 @@
  * one branch dragging down precision in the fused list.
  */
 
-import type { AnalyzedClause, ClauseEmbedding } from "@/types";
+import type { AnalyzedClause, ClauseEmbedding, ClauseCategory } from "@/types";
+import type { StatuteCode } from "@/lib/applicable-law";
 import { bm25Rank } from "./bm25";
 import { vectorRank } from "./vector";
 import { reciprocalRankFusion } from "./fusion";
+import { extractQueryHints } from "./query-analysis";
+import { applyMetadataBoost, type CandidateMetadata } from "./metadata-boost";
 import { logPass } from "@/lib/llm/debug-log";
 
 const DEFAULT_TOP_N = 5;
@@ -36,12 +39,17 @@ const PER_BRANCH_TOP_K = 20;
  *
  * `embedding` is optional so callers can mix indexed and non-indexed
  * docs in one corpus (legacy rows, freshly-added clauses whose embed
- * job is still pending, etc.).
+ * job is still pending, etc.). `category` and `statuteCodes` are the
+ * per-clause metadata consumed by the Arc 2 metadata-boost layer —
+ * both optional so a candidate missing its Pass 2 metadata contributes
+ * zero boost instead of crashing the retrieval.
  */
 export interface HybridCandidate {
   id: number;
   text: string;
   embedding?: number[];
+  category?: ClauseCategory;
+  statuteCodes?: readonly StatuteCode[];
 }
 
 /** Input shape for {@link hybridRetrieve}. */
@@ -52,6 +60,12 @@ export interface HybridRetrieveInput {
   candidates: HybridCandidate[];
   /** Max fused results to return. Defaults to 5. */
   topN?: number;
+  /**
+   * SP-10 Arc 2 — toggle the metadata-boost layer. Default `true` in
+   * production; the eval harness passes `false` when measuring the
+   * pre-boost hybrid floor so ablation deltas stay clean.
+   */
+  metadataBoost?: boolean;
 }
 
 /** A fused ranked entry — clause id plus the raw RRF score for debugging. */
@@ -71,7 +85,13 @@ export interface HybridResult {
 export async function hybridRetrieve(
   input: HybridRetrieveInput,
 ): Promise<HybridResult[]> {
-  const { query, queryEmbedding, candidates, topN = DEFAULT_TOP_N } = input;
+  const {
+    query,
+    queryEmbedding,
+    candidates,
+    topN = DEFAULT_TOP_N,
+    metadataBoost = true,
+  } = input;
 
   if (candidates.length === 0) return [];
 
@@ -114,14 +134,34 @@ export async function hybridRetrieve(
     vectorOrder.length > 0 ? [bm25Order, vectorOrder] : [bm25Order],
   );
 
+  let ranked = fused;
+  if (metadataBoost) {
+    const hints = extractQueryHints(query);
+    if (hints.categories.size > 0 || hints.statuteCodes.size > 0) {
+      const metadata = new Map<number, CandidateMetadata>();
+      for (const c of candidates) {
+        if (c.category !== undefined) {
+          metadata.set(c.id, {
+            category: c.category,
+            statuteCodes: c.statuteCodes ?? [],
+          });
+        }
+      }
+      if (metadata.size > 0) {
+        ranked = applyMetadataBoost(fused, metadata, hints);
+      }
+    }
+  }
+
   logPass("chat_retrieval", {
     event: "hybrid_ok",
     bm25_hits: bm25Order.length,
     vector_hits: vectorOrder.length,
-    fused: fused.length,
+    fused: ranked.length,
+    metadata_boost: metadataBoost,
   });
 
-  return fused.slice(0, topN);
+  return ranked.slice(0, topN);
 }
 
 /**
@@ -154,6 +194,14 @@ export function buildHybridCandidates(
       .filter((s) => typeof s === "string" && s.trim().length > 0)
       .join("\n\n");
     const emb = byIndex.get(i);
-    return emb ? { id: i, text, embedding: emb } : { id: i, text };
+    const statuteCodes =
+      c.applicable_law?.citations?.map((cit) => cit.code) ?? [];
+    const base: HybridCandidate = {
+      id: i,
+      text,
+      category: c.category,
+      statuteCodes,
+    };
+    return emb ? { ...base, embedding: emb } : base;
   });
 }

@@ -1,19 +1,18 @@
 /**
- * SP-10 Arc 1 Phase 4b — retrievers-under-test for the eval harness.
+ * SP-10 Arc 1/2 — retrievers-under-test for the eval harness.
  *
- * Two retrievers ship here, both wrapping the production `hybridRetrieve`
- * from `@/lib/retrieval/hybrid` so the eval always exercises the same
- * code the chat route runs. Differences are isolated to what gets fed
- * in — embeddings or not.
+ * Three retrievers ship here, all wrapping the production
+ * `hybridRetrieve` from `@/lib/retrieval/hybrid` so the eval always
+ * exercises the same code the chat route runs. Differences are
+ * isolated to which composition knobs get flipped:
  *
- *   - `bm25Retriever`: passes `queryEmbedding: null` and strips clause
- *     embeddings. Forces the hybrid pipeline into BM25-only mode.
- *     Deterministic, zero external deps, safe to run in CI.
- *   - `hybridRetriever`: passes both query and clause embeddings
- *     through to the full RRF fusion path. Requires a cached map of
- *     `{questionId → queryEmbedding}` so CI can run without a live
- *     Mistral key. Degrades cleanly to BM25 for any question the cache
- *     is missing — matches the production degradation policy.
+ *   - `bm25Retriever` (Arc 1): BM25-only. `queryEmbedding: null`,
+ *     `metadataBoost: false`.
+ *   - `makeHybridRetriever` (Arc 1): BM25 + cosine via RRF, metadata
+ *     boost disabled. Measures the pure-fusion floor.
+ *   - `makeHybridMetadataRetriever` (Arc 2): full production path —
+ *     fusion + metadata boost. Ablation against the `hybrid` row in
+ *     `baseline.json` shows Task 2.1's isolated lift.
  */
 
 import type { AnalyzeResponse } from "@/types";
@@ -40,6 +39,7 @@ export const bm25Retriever: RetrieverFn = async (q, fixture) => {
     queryEmbedding: null,
     candidates,
     topN: HARNESS_TOP_N,
+    metadataBoost: false,
   });
   return { indices: ranking.map((r) => r.id) };
 };
@@ -64,6 +64,35 @@ export function makeHybridRetriever(
       queryEmbedding,
       candidates,
       topN: HARNESS_TOP_N,
+      metadataBoost: false,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 retriever — hybrid + metadata boost. Same cache contract as
+ * {@link makeHybridRetriever} (deterministic in CI, degrades to BM25
+ * when a question has no cached query embedding). Ablation vs `hybrid`
+ * isolates the Task 2.1 contribution; ablation vs `bm25` gives the
+ * cumulative lift of everything Arc 1 + 2 added on top of keyword.
+ */
+export function makeHybridMetadataRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
     });
     return { indices: ranking.map((r) => r.id) };
   };

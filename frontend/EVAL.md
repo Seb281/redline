@@ -197,7 +197,68 @@ match the numbers above exactly — any improvement has to re-pin in
 the same PR so future regressions don't hide under an inflated
 ceiling.
 
-## 6. Reproducing these numbers
+## 6. Metadata boost — Arc 2 Task 2.1 (shipped, no lift on this eval)
+
+The `hybrid_metadata` retriever adds an additive, content-aware layer
+between RRF fusion and the top-N slice:
+
+- `query-analysis.ts` extracts category synonyms ("termination",
+  "GDPR", "force majeure", …) and statute aliases ("BGB", "Codice
+  Civile", "Rome I", …) from the user query. Deterministic, zero
+  network, co-located with the catalog so aliases cannot drift.
+- `metadata-boost.ts` applies additive boosts to the fused RRF
+  scores: `+CATEGORY_BOOST` when the candidate's category is hinted at;
+  `+STATUTE_BOOST` (once max, regardless of how many codes match) when
+  any cited statute code is hinted at. Magnitudes sit deliberately
+  below RRF@rank-1 (~0.0164) so metadata can promote near-misses but
+  cannot override strong agreement across both retrievers.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_metadata` row in `baseline.json` equals `hybrid` exactly
+on the current golden set.** Two findings drive this:
+
+1. **Category boost at 0.006 regressed recall@1 by 0.062 overall** and
+   recall@1 by 0.25 on the hard tier. Within a single contract, 3–5
+   clauses typically share a category, and boosting all of them
+   uniformly adds noise without discriminating the expected answer from
+   its siblings. Disabled — `CATEGORY_BOOST = 0` as shipped.
+2. **Statute boost at 0.010 fires on ~0 of 48 golden questions.** The
+   golden set is written in a legally-naive user voice ("can I
+   terminate early?", "what's the liability cap?") — it deliberately
+   does *not* contain phrases like "BGB §307" or "GDPR Article 6". The
+   alias detector is functioning (unit-tested in
+   `query-analysis.test.ts`) but the eval does not exercise it.
+
+Net: the boost layer is currently a no-op *on this golden set*, pinned
+at the same numbers as `hybrid`. The regression gate remains useful as
+a tripwire — any future change to the alias map, synonym list, or
+magnitudes that *does* move the numbers will be caught.
+
+### Why ship it anyway
+
+1. The mechanism is the primary discriminator for **Arc 3 cross-
+   contract search**, where you're retrieving across hundreds of
+   clauses from different contracts and a `"GDPR"` query really should
+   float every GDPR-citing clause to the top regardless of which
+   contract they're from. Arc 2 Task 2.1 puts the plumbing in place so
+   Arc 3 inherits a tested boost function rather than bolting one on.
+2. A realistic legally-literate chat query ("is this BGB §307
+   enforceable?") will exercise the statute branch even on the single-
+   contract path. The eval just doesn't have that query shape.
+3. Negative results are signal. Ship + document beats silently deleting
+   the layer because the golden set didn't move.
+
+### What would actually lift medium/hard on this golden set
+
+- **Reranking (Task 2.3, Jina cross-encoder).** Cross-encoder over the
+  actual clause text, not metadata tags. Expected to be the biggest
+  single-layer delta per the plan.
+- **Cross-reference graph (Task 2.2).** Hard tier is multi-clause by
+  definition; surfacing referenced clauses alongside the retrieved set
+  should specifically move the hard recall@3.
+
+## 7. Reproducing these numbers
 
 ```bash
 cd frontend
@@ -218,7 +279,7 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
 ```
 
-## 7. Change policy
+## 8. Change policy
 
 - **BM25 baseline numbers in this doc and `baseline.json`** — update
   together in the same commit whenever the harness, retriever

@@ -18,7 +18,11 @@
 import { describe, it, expect } from "vitest";
 import baseline from "./baseline.json";
 import { runHarness, formatReportMarkdown, baselineShapeFromReport } from "./harness";
-import { bm25Retriever, makeHybridRetriever } from "./retrievers";
+import {
+  bm25Retriever,
+  makeHybridRetriever,
+  makeHybridMetadataRetriever,
+} from "./retrievers";
 import {
   goldenQueryCacheExists,
   goldenQueryEmbeddingMap,
@@ -81,3 +85,30 @@ describeIfHybridFloor("eval harness — hybrid regression gate", () => {
     assertReportBeatsFloor(report, hybridFloor);
   });
 });
+
+const hybridMetadataFloor = (baseline as unknown as {
+  hybrid_metadata?: typeof baseline.bm25;
+}).hybrid_metadata;
+const describeIfHybridMetadataFloor = hybridMetadataFloor
+  ? describeIfHybridCache
+  : describe.skip;
+
+describeIfHybridMetadataFloor(
+  "eval harness — hybrid + metadata boost regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const retriever = makeHybridMetadataRetriever(goldenQueryEmbeddingMap());
+      const report = await runHarness("hybrid_metadata", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_METADATA",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridMetadataFloor)
+        throw new Error("hybrid_metadata floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridMetadataFloor);
+    });
+  },
+);

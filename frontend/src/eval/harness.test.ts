@@ -23,11 +23,16 @@ import {
   makeHybridRetriever,
   makeHybridMetadataRetriever,
   makeHybridGraphRetriever,
+  makeHybridRerankRetriever,
 } from "./retrievers";
 import {
   goldenQueryCacheExists,
   goldenQueryEmbeddingMap,
 } from "./golden-queries";
+import {
+  goldenRerankCacheExists,
+  loadGoldenRerankCache,
+} from "./golden-rerank-scores";
 import type { HarnessMetrics, HarnessReport } from "./harness";
 
 const PRINT_REPORT = process.env.EVAL_PRINT === "1";
@@ -137,6 +142,41 @@ describeIfHybridGraphFloor(
       if (!hybridGraphFloor)
         throw new Error("hybrid_graph floor missing from baseline.json");
       assertReportBeatsFloor(report, hybridGraphFloor);
+    });
+  },
+);
+
+const hybridRerankFloor = (baseline as unknown as {
+  hybrid_rerank?: typeof baseline.bm25;
+}).hybrid_rerank;
+const describeIfHybridRerankCache =
+  goldenQueryCacheExists() && goldenRerankCacheExists() ? describe : describe.skip;
+const describeIfHybridRerankFloor = hybridRerankFloor
+  ? describeIfHybridRerankCache
+  : describe.skip;
+
+describeIfHybridRerankFloor(
+  "eval harness — hybrid + metadata + graph + Jina rerank regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const rerankCache = loadGoldenRerankCache();
+      if (!rerankCache)
+        throw new Error("rerank cache missing despite existence check");
+      const retriever = makeHybridRerankRetriever(
+        goldenQueryEmbeddingMap(),
+        rerankCache,
+      );
+      const report = await runHarness("hybrid_rerank", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_RERANK",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridRerankFloor)
+        throw new Error("hybrid_rerank floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridRerankFloor);
     });
   },
 );

@@ -16,12 +16,21 @@
  *   - `makeHybridGraphRetriever` (Arc 2 Task 2.2b): fusion + metadata
  *     boost + cross-ref graph + definitions widening. Ablation against
  *     `hybrid_metadata` isolates the Task 2.2 contribution.
+ *   - `makeHybridRerankRetriever` (Arc 2 Task 2.3): full stack + Jina
+ *     cross-encoder rerank on the top-20 fused head. The reranker is
+ *     fed a per-question `RerankFn` built from the frozen
+ *     `golden-rerank-scores.json` so CI stays deterministic + offline.
  */
 
 import type { AnalyzeResponse } from "@/types";
 import { buildHybridCandidates, hybridRetrieve } from "@/lib/retrieval/hybrid";
+import type { RerankFn } from "@/lib/retrieval/rerank";
 import type { GoldenQuestion } from "./golden-questions";
 import type { RetrieverFn } from "./harness";
+import {
+  buildCachedReranker,
+  type GoldenRerankCache,
+} from "./golden-rerank-scores";
 
 /**
  * How many top entries the retriever surfaces. Set above the largest
@@ -126,6 +135,43 @@ export function makeHybridGraphRetriever(
       metadataBoost: true,
       clauses: fixture.clauses,
       graphWidening: true,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 Task 2.3 retriever — full production stack: hybrid fusion +
+ * metadata boost + graph widening + Jina cross-encoder rerank. The
+ * reranker is materialised per-question from the frozen
+ * `golden-rerank-scores.json` cache so the harness runs deterministic
+ * + offline (no live Jina call in CI).
+ *
+ * Ablation vs `hybrid_graph` isolates the single-layer rerank lift,
+ * which Task 2.3 of the SP-10 plan calls out as the biggest expected
+ * delta (cross-encoder sees full clause text, not tokens or vectors).
+ */
+export function makeHybridRerankRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+  rerankCache: GoldenRerankCache,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const rerank: RerankFn = buildCachedReranker(rerankCache, q.id);
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
+      clauses: fixture.clauses,
+      graphWidening: true,
+      rerank,
     });
     return { indices: ranking.map((r) => r.id) };
   };

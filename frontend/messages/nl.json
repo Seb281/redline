@@ -561,6 +561,14 @@
           "Link voor eenmalige aanmelding"
         ],
         "notes": "Dit wordt alleen gebruikt als de omgevingsvariabele RESEND_API_KEY in de backend is ingesteld. E-mailadressen worden uitsluitend naar Resend verzonden om de aanmeldingslink te versturen en worden niet gebruikt voor marketingdoeleinden."
+      },
+      "jina": {
+        "purpose": "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+        "dataCategories": [
+          "User chat question (one per reranker call)",
+          "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever"
+        ],
+        "notes": "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina."
       }
     },
     "transparencyNote": "Zie de <link>pagina over transparantie</link> voor informatie over de inventarisatie van de standpunten met betrekking tot de EU-AI-wet, de maatregelen waarmee exploitanten hun activiteiten kunnen terugdraaien en het machinaal leesbare transparantiebewijs."

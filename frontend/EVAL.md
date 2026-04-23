@@ -317,7 +317,68 @@ the chat context when they weren't already there.
   actual clause text, not metadata tags. Expected to be the biggest
   single-layer delta per the plan — the only remaining lever.
 
-## 8. Reproducing these numbers
+## 8. Jina Rerank — Arc 2 Task 2.3 (client shipped; eval deferred to freeze)
+
+The final retrieval stage is a cross-encoder rerank of the top-20
+fused+widened candidates via Jina's `/v1/rerank` endpoint
+(`jina-reranker-v2-base-multilingual`, Berlin/EU). Cross-encoder sees
+the full clause text — not tokens, not vectors — so it can
+disambiguate near-identical BM25/cosine candidates, which the plan
+calls out as the biggest expected single-layer delta.
+
+### Pipeline position
+
+BM25 ⊕ cosine (RRF) → metadata boost → graph widening →
+**rerank (top-20 head, tail-preserved)**.
+
+The head depth is pinned at `RERANK_INPUT_DEPTH = 20` in
+`src/lib/retrieval/hybrid.ts`: 4× the harness recall-k cap, so no
+gold clause that reached the top-20 can be silently dropped by a
+rerank failure. Tail ids below rank 20 are spliced back untouched —
+the reranker only reorders its head.
+
+### Fail-soft contract
+
+The client (`src/lib/retrieval/rerank.ts`) absorbs every failure mode
+so chat answers never wedge on a best-effort ranker:
+
+- No `JINA_API_KEY` → lazy singleton in `chat-context.ts` returns
+  `undefined`, `hybridRetrieve` skips the rerank branch entirely.
+  Zero-config dev setups get no 401s.
+- Empty candidates / empty key → identity ranking, no fetch.
+- 429 + 5xx → retry with capped exponential backoff
+  (`250ms → 500 → 1000 → 2000` cap, up to 3 attempts).
+- 4xx (other than 429), malformed JSON, out-of-range index, duplicate
+  index, network error → identity ranking. The whole response is
+  distrusted; no partial results compose.
+
+### Eval gate
+
+Gated on BOTH `golden-query-embeddings.json` AND
+`golden-rerank-scores.json` existing on disk. A fresh checkout with
+neither cache skips the `hybrid_rerank` block cleanly so BM25 still
+runs green. The baseline row will be pinned to `baseline.json` once
+the freeze runs against a live `JINA_API_KEY`.
+
+Freeze command:
+
+```bash
+FREEZE_GOLDEN_RERANK_SCORES=1 JINA_API_KEY=... \
+  pnpm vitest run src/eval/golden-rerank-scores.freeze.test.ts
+```
+
+The cache shape is `{ questionId: { clauseId: relevance_score } }`.
+Re-freeze whenever the golden set or any fixture's clause ordering
+changes — indices are positional, so a shifted clause silently
+invalidates every cached score for that fixture.
+
+### Numbers
+
+Pending the initial freeze. Ablation vs `hybrid_graph` will isolate
+Task 2.3's single-layer contribution and be re-pinned in the same PR
+as the first cached baseline row.
+
+## 9. Reproducing these numbers
 
 ```bash
 cd frontend
@@ -338,7 +399,7 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
 ```
 
-## 9. Change policy
+## 10. Change policy
 
 - **BM25 baseline numbers in this doc and `baseline.json`** — update
   together in the same commit whenever the harness, retriever

@@ -31,6 +31,7 @@ import { extractQueryHints } from "./query-analysis";
 import { applyMetadataBoost, type CandidateMetadata } from "./metadata-boost";
 import { buildCrossRefGraph, depthOneNeighbours } from "./cross-refs";
 import { expandWithDefinitions } from "./definitions";
+import type { RerankFn } from "./rerank";
 import { logPass } from "@/lib/llm/debug-log";
 
 const DEFAULT_TOP_N = 5;
@@ -44,6 +45,15 @@ const PER_BRANCH_TOP_K = 20;
  * hasn't earned its place in the answer.
  */
 const GRAPH_WIDENING_SEED_DEPTH = 5;
+
+/**
+ * SP-10 Arc 2 Task 2.3 — how many of the fused+boosted+widened
+ * candidates are handed to the reranker. Matches `PER_BRANCH_TOP_K` —
+ * reranking the pre-slice top-20 gives the cross-encoder enough room
+ * to discover a rank-15 gold clause while keeping the per-call token
+ * budget + latency bounded.
+ */
+const RERANK_INPUT_DEPTH = 20;
 
 /**
  * One candidate doc for the hybrid retriever.
@@ -91,6 +101,15 @@ export interface HybridRetrieveInput {
    * the Arc 2 eval retriever flip it `true`.
    */
   graphWidening?: boolean;
+  /**
+   * SP-10 Arc 2 Task 2.3 — optional reranker run as the final stage.
+   * When provided, the top {@link RERANK_INPUT_DEPTH} results are
+   * reranked via the supplied function (the Jina client in production,
+   * a frozen cache in the eval). Fail-soft by caller contract — the
+   * returned `RerankFn` must never reject, so wiring it in is a no-op
+   * when the underlying client errors.
+   */
+  rerank?: RerankFn;
 }
 
 /** A fused ranked entry — clause id plus the raw RRF score for debugging. */
@@ -118,6 +137,7 @@ export async function hybridRetrieve(
     metadataBoost = true,
     clauses,
     graphWidening = false,
+    rerank,
   } = input;
 
   if (candidates.length === 0) return [];
@@ -187,6 +207,30 @@ export async function hybridRetrieve(
     widened = result.widened;
   }
 
+  let reranked = false;
+  if (rerank && ranked.length > 0) {
+    const textById = new Map(candidates.map((c) => [c.id, c.text]));
+    const head = ranked.slice(0, RERANK_INPUT_DEPTH);
+    const tail = ranked.slice(RERANK_INPUT_DEPTH);
+    const rerankCandidates = head
+      .map((r) => ({ id: r.id, text: textById.get(r.id) ?? "" }))
+      .filter((c) => c.text.length > 0);
+    if (rerankCandidates.length > 0) {
+      const scored = await rerank({
+        query,
+        candidates: rerankCandidates,
+      });
+      // Guard against a mis-wired RerankFn that somehow returned zero
+      // entries — identity-on-failure is the contract, but an impl
+      // bug shouldn't black-hole retrieval. Keep the pre-rerank order
+      // in that case.
+      if (scored.length > 0) {
+        ranked = [...scored, ...tail];
+        reranked = true;
+      }
+    }
+  }
+
   logPass("chat_retrieval", {
     event: "hybrid_ok",
     bm25_hits: bm25Order.length,
@@ -195,6 +239,7 @@ export async function hybridRetrieve(
     metadata_boost: metadataBoost,
     graph_widening: graphWidening,
     widened,
+    reranked,
   });
 
   return ranked.slice(0, topN);

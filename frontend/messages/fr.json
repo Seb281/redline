@@ -561,6 +561,14 @@
           "Lien d'inscription unique"
         ],
         "notes": "Cette option n'est utilisée que si la variable d'environnement RESEND_API_KEY est définie au niveau du serveur. Les adresses e-mail sont transmises à Resend uniquement dans le but d'envoyer le lien de connexion et ne sont pas utilisées à des fins de marketing."
+      },
+      "jina": {
+        "purpose": "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+        "dataCategories": [
+          "User chat question (one per reranker call)",
+          "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever"
+        ],
+        "notes": "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina."
       }
     },
     "transparencyNote": "Pour en savoir plus sur la cartographie des positions relatives à la loi européenne sur l'IA, les moyens de recours des opérateurs et le reçu de transparence lisible par machine, consultez la <link>page consacrée à la transparence</link>."

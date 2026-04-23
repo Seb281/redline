@@ -127,6 +127,53 @@ or future regressions hide under an inflated ceiling.
   enough English vocabulary present in the `plain_english` summary
   for BM25 to hit cleanly even though the clause text is Polish.
 
+## 4a. Arc 2 ablation roll-up
+
+Consolidated view of every retrieval layer shipped through Arc 2.
+Each row is the committed floor in `src/eval/baseline.json`; the CI
+gate fails if a layer regresses below these numbers without a
+re-pin. Per-fixture breakdowns are in the per-layer sections below.
+
+### Overall + per-tier
+
+| layer                               | overall R@1 | overall R@5 | overall MRR | medium R@1 | medium R@5 | hard R@1 | hard R@5 |
+| ----------------------------------- | ----------- | ----------- | ----------- | ---------- | ---------- | -------- | -------- |
+| **`bm25`** (Arc 1 baseline)         | 0.688       | 0.875       | 0.783       | 0.444      | 0.833      | 0.750    | 0.750    |
+| **`hybrid`** (+ cosine/RRF)         | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_metadata`** (+ boost)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_graph`** (+ widening)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_rerank`** (+ Jina)        | _pending_   | _pending_   | _pending_   | _pending_  | _pending_  | _pending_ | _pending_ |
+
+### Arc 2 targets vs current
+
+| tier   | target (plan spec) | current (`hybrid_graph`) | status |
+| ------ | ------------------ | ------------------------ | ------ |
+| medium | recall@5 ≥ 0.80    | **0.944**                |  met   |
+| hard   | recall@5 ≥ 0.65    | **1.000**                |  met   |
+
+### Layer-by-layer honest reporting
+
+- **Hybrid (§5)** — the only layer that moves the numbers. Cumulative
+  lift over BM25: overall recall@1 +0.145, medium recall@1 +0.333,
+  hard recall@5 +0.250. `de-saas-dpa` (the dense-German
+  near-duplicate-titles fixture) sees the biggest lift: recall@1
+  0.25 → 0.50. This is the semantic-vocabulary bridge.
+- **Metadata boost (§6)** — zero delta on this eval. Aliases fire on
+  ~0 of 48 questions because the golden set uses natural-language
+  phrasing, not statute-literate citations. Infrastructure retained
+  for Arc 3 cross-contract search. Category boost regressed and was
+  disabled.
+- **Graph widening (§7)** — zero delta on this eval. Additive-only
+  (tail-append below rank 20); can't lift a recall@5 that was
+  already a hit. Shipped because production chat context benefits
+  on every multi-clause question the eval can't score (context
+  completeness vs relevance ranking). Multiplicative-boost variant
+  regressed and was disabled.
+- **Jina rerank (§8)** — numbers pending the first live freeze
+  against `JINA_API_KEY`. Cross-encoder over full clause text is
+  the only remaining lever with plausible lift on medium tier; the
+  plan earmarks it as the biggest expected single-layer delta.
+
 ## 5. Hybrid retrieval (BM25 ⊕ cosine via RRF)
 
 The hybrid retriever (`src/lib/retrieval/hybrid.ts`) fuses BM25 with

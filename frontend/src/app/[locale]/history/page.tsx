@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { SemanticSearchBar } from "@/components/SemanticSearchBar";
 import {
   deleteAnalysis,
   extendAnalysis,
@@ -176,6 +177,12 @@ export default function HistoryPage() {
       <p className="mb-6 text-[13px] text-[var(--text-muted)] font-[var(--font-body)]">
         {t("infoLine")}
       </p>
+
+      {/* SP-10 Arc 3 Task 3.2 — semantic search bar. Only rendered when
+          there is at least one analysis to search across; hiding it on
+          an empty list avoids pointing users at a control that would
+          always return zero hits. */}
+      {!isLoading && !error && analyses.length > 0 && <SemanticSearchBar />}
 
       {/* Loading */}
       {isLoading && (

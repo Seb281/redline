@@ -672,6 +672,21 @@
     "compareClear": "Clear",
     "compareGo": "Compare selected"
   },
+  "SemanticSearch": {
+    "label": "Search across your analyses",
+    "placeholder": "e.g. auto-renewal, unusual liability caps, data processing…",
+    "submit": "Search",
+    "submitAria": "Search saved analyses",
+    "clearAria": "Clear search",
+    "searching": "Searching…",
+    "noResults": "No matches found. Try different wording.",
+    "error": "Search failed. Try again.",
+    "minLength": "Enter at least 3 characters.",
+    "resultCount": "{count, plural, one {# match} other {# matches}}",
+    "openAnalysis": "Open analysis",
+    "similarity": "{percent}% match",
+    "showingTopK": "Showing top {count} matches by relevance."
+  },
   "HistoryDetail": {
     "notFound": "Analysis not found",
     "deletedFallback": "This analysis may have been deleted.",

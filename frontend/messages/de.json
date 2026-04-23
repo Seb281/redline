@@ -597,6 +597,21 @@
     "compareClear": "Löschen",
     "compareGo": "Ausgewählte vergleichen"
   },
+  "SemanticSearch": {
+    "label": "In Ihren Analysen suchen",
+    "placeholder": "z. B. automatische Verlängerung, ungewöhnliche Haftungsobergrenzen, Datenverarbeitung…",
+    "submit": "Suchen",
+    "submitAria": "Gespeicherte Analysen durchsuchen",
+    "clearAria": "Suche leeren",
+    "searching": "Sucht…",
+    "noResults": "Keine Treffer. Versuchen Sie eine andere Formulierung.",
+    "error": "Suche fehlgeschlagen. Bitte erneut versuchen.",
+    "minLength": "Geben Sie mindestens 3 Zeichen ein.",
+    "resultCount": "{count, plural, one {# Treffer} other {# Treffer}}",
+    "openAnalysis": "Analyse öffnen",
+    "similarity": "{percent} % Übereinstimmung",
+    "showingTopK": "Die {count} relevantesten Treffer werden angezeigt."
+  },
   "HistoryDetail": {
     "notFound": "Analyse nicht gefunden",
     "deletedFallback": "Diese Analyse wurde möglicherweise gelöscht.",

@@ -597,6 +597,21 @@
     "compareClear": "Borrar",
     "compareGo": "Comparar los seleccionados"
   },
+  "SemanticSearch": {
+    "label": "Buscar en tus análisis",
+    "placeholder": "p. ej. renovación automática, límites de responsabilidad inusuales, tratamiento de datos…",
+    "submit": "Buscar",
+    "submitAria": "Buscar en los análisis guardados",
+    "clearAria": "Borrar búsqueda",
+    "searching": "Buscando…",
+    "noResults": "Sin coincidencias. Prueba con otras palabras.",
+    "error": "La búsqueda ha fallado. Inténtalo de nuevo.",
+    "minLength": "Introduce al menos 3 caracteres.",
+    "resultCount": "{count, plural, one {# coincidencia} other {# coincidencias}}",
+    "openAnalysis": "Abrir análisis",
+    "similarity": "{percent}% de coincidencia",
+    "showingTopK": "Mostrando los {count} resultados más relevantes."
+  },
   "HistoryDetail": {
     "notFound": "No se ha encontrado ningún análisis",
     "deletedFallback": "Es posible que este análisis haya sido eliminado.",

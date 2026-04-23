@@ -19,7 +19,8 @@ export type Pass =
   | "extraction"
   | "pass2"
   | "locale_resolved"
-  | "chat_retrieval";
+  | "chat_retrieval"
+  | "search";
 
 export type MetricValue = number | boolean | string;
 

@@ -22,7 +22,7 @@
  *     index.
  */
 
-import { embedMany } from "ai";
+import { embed, embedMany } from "ai";
 import { mistral } from "@ai-sdk/mistral";
 import type { AnalyzedClause, ClauseEmbedding } from "@/types";
 import { MISTRAL_EMBED_DIM } from "@/types";
@@ -95,6 +95,55 @@ export async function embedClauses(
   } catch (err) {
     logPass("pass2", {
       event: "embeddings_failed",
+      reason: err instanceof Error ? err.message : "unknown",
+      ms: Math.round(performance.now() - started),
+    });
+    return null;
+  }
+}
+
+/**
+ * SP-10 Arc 3 — embed a single user query for cross-analysis semantic
+ * search.
+ *
+ * Separate from :func:`embedClauses` because the caller is a tiny
+ * Next.js API route that only needs one round-trip per search —
+ * ``embedMany`` would still work but ``embed`` keeps the intent
+ * obvious and avoids allocating a single-element array in a hot path.
+ *
+ * Dimension check mirrors :func:`embedClauses`: any drift from
+ * :data:`MISTRAL_EMBED_DIM` collapses to ``null`` so the route can
+ * return 502 without shipping a corrupted vector at the backend index.
+ */
+export async function embedQuery(query: string): Promise<number[] | null> {
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+
+  const started = performance.now();
+  try {
+    const result = await embed({
+      model: mistral.embedding(EMBEDDING_MODEL_ID),
+      value: trimmed,
+    });
+
+    const vec = result.embedding;
+    if (!Array.isArray(vec) || vec.length !== MISTRAL_EMBED_DIM) {
+      logPass("search", {
+        event: "query_embedding_bad_dimension",
+        got: Array.isArray(vec) ? vec.length : -1,
+      });
+      return null;
+    }
+
+    logPass("search", {
+      event: "query_embedding_ok",
+      chars: trimmed.length,
+      ms: Math.round(performance.now() - started),
+    });
+    return vec;
+  } catch (err) {
+    logPass("search", {
+      event: "query_embedding_failed",
       reason: err instanceof Error ? err.message : "unknown",
       ms: Math.round(performance.now() - started),
     });

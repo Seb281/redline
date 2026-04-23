@@ -1,6 +1,15 @@
 /** Backend API client for Redline. */
 
-import type { AnalyzeResponse, UploadResponse, AnalysisMode, AuthUser, AnalysisListItem, SaveAnalysisPayload, SavedAnalysis } from "@/types";
+import type {
+  AnalyzeResponse,
+  UploadResponse,
+  AnalysisMode,
+  AuthUser,
+  AnalysisListItem,
+  SaveAnalysisPayload,
+  SavedAnalysis,
+  SemanticSearchResponse,
+} from "@/types";
 
 /**
  * Normalize the configured backend URL so trailing slashes and missing
@@ -326,6 +335,57 @@ export async function extendAnalysis(id: string): Promise<RetentionState> {
 
   if (!res.ok) {
     throw new Error(await extractErrorMessage(res, "Extend failed"));
+  }
+
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Semantic search (SP-10 Arc 3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Embed a free-text query to a 1024-float Mistral vector.
+ *
+ * Calls the Next.js `/api/search/embed-query` route so the Mistral API
+ * key stays server-side. Caller handles the float array directly —
+ * it's the payload the backend semantic-search endpoint expects.
+ */
+export async function embedSearchQuery(query: string): Promise<number[]> {
+  const res = await fetch("/api/search/embed-query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Search embed failed"));
+  }
+
+  const body = (await res.json()) as { embedding: number[] };
+  return body.embedding;
+}
+
+/**
+ * Run a cross-analysis semantic search for the authenticated user.
+ *
+ * Sends the pre-embedded query vector to the backend so
+ * `MISTRAL_API_KEY` never touches the backend host. Returns the top-k
+ * ranked hits; empty result set is a normal outcome (e.g. the user has
+ * no saved analyses yet).
+ */
+export async function semanticSearch(
+  queryEmbedding: number[],
+  topK: number = 20,
+): Promise<SemanticSearchResponse> {
+  const res = await backendFetch("/api/search/semantic", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query_embedding: queryEmbedding, top_k: topK }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Search failed"));
   }
 
   return res.json();

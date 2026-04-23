@@ -597,6 +597,21 @@
     "compareClear": "Effacer",
     "compareGo": "Comparer les éléments sélectionnés"
   },
+  "SemanticSearch": {
+    "label": "Rechercher dans vos analyses",
+    "placeholder": "ex. tacite reconduction, plafonds de responsabilité inhabituels, traitement des données…",
+    "submit": "Rechercher",
+    "submitAria": "Rechercher dans les analyses enregistrées",
+    "clearAria": "Effacer la recherche",
+    "searching": "Recherche en cours…",
+    "noResults": "Aucune correspondance. Essayez une autre formulation.",
+    "error": "Échec de la recherche. Réessayez.",
+    "minLength": "Saisissez au moins 3 caractères.",
+    "resultCount": "{count, plural, one {# correspondance} other {# correspondances}}",
+    "openAnalysis": "Ouvrir l'analyse",
+    "similarity": "{percent} % de correspondance",
+    "showingTopK": "Affichage des {count} meilleures correspondances par pertinence."
+  },
   "HistoryDetail": {
     "notFound": "Analyse introuvable",
     "deletedFallback": "Cette analyse a peut-être été supprimée.",

@@ -597,6 +597,21 @@
     "compareClear": "Cancella",
     "compareGo": "Confronta gli articoli selezionati"
   },
+  "SemanticSearch": {
+    "label": "Cerca nelle tue analisi",
+    "placeholder": "es. rinnovo automatico, limiti di responsabilità inusuali, trattamento dei dati…",
+    "submit": "Cerca",
+    "submitAria": "Cerca nelle analisi salvate",
+    "clearAria": "Cancella ricerca",
+    "searching": "Ricerca in corso…",
+    "noResults": "Nessuna corrispondenza. Prova con parole diverse.",
+    "error": "Ricerca non riuscita. Riprova.",
+    "minLength": "Inserisci almeno 3 caratteri.",
+    "resultCount": "{count, plural, one {# risultato} other {# risultati}}",
+    "openAnalysis": "Apri analisi",
+    "similarity": "{percent}% di corrispondenza",
+    "showingTopK": "Vengono mostrati i {count} risultati più rilevanti."
+  },
   "HistoryDetail": {
     "notFound": "Analisi non trovata",
     "deletedFallback": "È possibile che questa analisi sia stata cancellata.",

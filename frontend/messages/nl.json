@@ -597,6 +597,21 @@
     "compareClear": "Wissen",
     "compareGo": "Vergelijk geselecteerde"
   },
+  "SemanticSearch": {
+    "label": "Zoeken in uw analyses",
+    "placeholder": "bijv. stilzwijgende verlenging, ongebruikelijke aansprakelijkheidsbeperkingen, gegevensverwerking…",
+    "submit": "Zoeken",
+    "submitAria": "Opgeslagen analyses doorzoeken",
+    "clearAria": "Zoekopdracht wissen",
+    "searching": "Bezig met zoeken…",
+    "noResults": "Geen resultaten. Probeer andere bewoordingen.",
+    "error": "Zoeken mislukt. Probeer het opnieuw.",
+    "minLength": "Voer minimaal 3 tekens in.",
+    "resultCount": "{count, plural, one {# resultaat} other {# resultaten}}",
+    "openAnalysis": "Analyse openen",
+    "similarity": "{percent}% overeenkomst",
+    "showingTopK": "De {count} meest relevante resultaten worden getoond."
+  },
   "HistoryDetail": {
     "notFound": "Analyse niet gevonden",
     "deletedFallback": "Deze analyse is mogelijk verwijderd.",

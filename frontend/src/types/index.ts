@@ -223,6 +223,19 @@ export interface AnalyzedClause {
    * analyses and on chat responses.
    */
   reasoning?: string;
+  /**
+   * SP-10 Arc 2 Task 2.2 — outbound cross-references this clause makes
+   * to other parts of the same contract. Strings as they appear in the
+   * source text ("Section 4.2", "Schedule B", "Art. 12", "the
+   * Confidentiality Clause"). Populated by a hybrid tagger: the LLM
+   * emits prose + structural references during Pass 1 extraction, a
+   * regex post-process supplements missed structural patterns. Empty
+   * array when the clause stands alone. Optional because pre-SP-10
+   * saved analyses do not carry the field; loader coerces missing
+   * values to `[]` so downstream retrieval code can treat it as
+   * always-present.
+   */
+  cross_refs?: string[];
 }
 
 /** Count of clauses by risk level. */

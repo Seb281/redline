@@ -1,25 +1,36 @@
 /**
- * SP-10 Arc 1 Phase 4b — retrievers-under-test for the eval harness.
+ * SP-10 Arc 1/2 — retrievers-under-test for the eval harness.
  *
- * Two retrievers ship here, both wrapping the production `hybridRetrieve`
- * from `@/lib/retrieval/hybrid` so the eval always exercises the same
- * code the chat route runs. Differences are isolated to what gets fed
- * in — embeddings or not.
+ * Three retrievers ship here, all wrapping the production
+ * `hybridRetrieve` from `@/lib/retrieval/hybrid` so the eval always
+ * exercises the same code the chat route runs. Differences are
+ * isolated to which composition knobs get flipped:
  *
- *   - `bm25Retriever`: passes `queryEmbedding: null` and strips clause
- *     embeddings. Forces the hybrid pipeline into BM25-only mode.
- *     Deterministic, zero external deps, safe to run in CI.
- *   - `hybridRetriever`: passes both query and clause embeddings
- *     through to the full RRF fusion path. Requires a cached map of
- *     `{questionId → queryEmbedding}` so CI can run without a live
- *     Mistral key. Degrades cleanly to BM25 for any question the cache
- *     is missing — matches the production degradation policy.
+ *   - `bm25Retriever` (Arc 1): BM25-only. `queryEmbedding: null`,
+ *     `metadataBoost: false`.
+ *   - `makeHybridRetriever` (Arc 1): BM25 + cosine via RRF, metadata
+ *     boost disabled. Measures the pure-fusion floor.
+ *   - `makeHybridMetadataRetriever` (Arc 2): fusion + metadata boost.
+ *     Ablation against the `hybrid` row in `baseline.json` shows Task
+ *     2.1's isolated lift.
+ *   - `makeHybridGraphRetriever` (Arc 2 Task 2.2b): fusion + metadata
+ *     boost + cross-ref graph + definitions widening. Ablation against
+ *     `hybrid_metadata` isolates the Task 2.2 contribution.
+ *   - `makeHybridRerankRetriever` (Arc 2 Task 2.3): full stack + Jina
+ *     cross-encoder rerank on the top-20 fused head. The reranker is
+ *     fed a per-question `RerankFn` built from the frozen
+ *     `golden-rerank-scores.json` so CI stays deterministic + offline.
  */
 
 import type { AnalyzeResponse } from "@/types";
 import { buildHybridCandidates, hybridRetrieve } from "@/lib/retrieval/hybrid";
+import type { RerankFn } from "@/lib/retrieval/rerank";
 import type { GoldenQuestion } from "./golden-questions";
 import type { RetrieverFn } from "./harness";
+import {
+  buildCachedReranker,
+  type GoldenRerankCache,
+} from "./golden-rerank-scores";
 
 /**
  * How many top entries the retriever surfaces. Set above the largest
@@ -40,6 +51,7 @@ export const bm25Retriever: RetrieverFn = async (q, fixture) => {
     queryEmbedding: null,
     candidates,
     topN: HARNESS_TOP_N,
+    metadataBoost: false,
   });
   return { indices: ranking.map((r) => r.id) };
 };
@@ -64,6 +76,102 @@ export function makeHybridRetriever(
       queryEmbedding,
       candidates,
       topN: HARNESS_TOP_N,
+      metadataBoost: false,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 retriever — hybrid + metadata boost. Same cache contract as
+ * {@link makeHybridRetriever} (deterministic in CI, degrades to BM25
+ * when a question has no cached query embedding). Ablation vs `hybrid`
+ * isolates the Task 2.1 contribution; ablation vs `bm25` gives the
+ * cumulative lift of everything Arc 1 + 2 added on top of keyword.
+ */
+export function makeHybridMetadataRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 Task 2.2b retriever — hybrid + metadata boost + cross-ref
+ * graph + definitions widening. Matches the production chat context
+ * builder's full feature set. Ablation vs `hybrid_metadata` isolates
+ * the Task 2.2 contribution; ablation vs `bm25` gives the cumulative
+ * lift of everything Arc 1 + all Arc 2 layers added so far.
+ */
+export function makeHybridGraphRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
+      clauses: fixture.clauses,
+      graphWidening: true,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 Task 2.3 retriever — full production stack: hybrid fusion +
+ * metadata boost + graph widening + Jina cross-encoder rerank. The
+ * reranker is materialised per-question from the frozen
+ * `golden-rerank-scores.json` cache so the harness runs deterministic
+ * + offline (no live Jina call in CI).
+ *
+ * Ablation vs `hybrid_graph` isolates the single-layer rerank lift,
+ * which Task 2.3 of the SP-10 plan calls out as the biggest expected
+ * delta (cross-encoder sees full clause text, not tokens or vectors).
+ */
+export function makeHybridRerankRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+  rerankCache: GoldenRerankCache,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const rerank: RerankFn = buildCachedReranker(rerankCache, q.id);
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
+      clauses: fixture.clauses,
+      graphWidening: true,
+      rerank,
     });
     return { indices: ranking.map((r) => r.id) };
   };

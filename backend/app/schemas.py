@@ -227,6 +227,12 @@ class AnalyzedClause(BaseModel):
     # and on pre-SP-11 saved rows. Rendered as a collapsible "thinking"
     # block in the report UI for AI Act auditability.
     reasoning: str | None = None
+    # SP-10 Arc 2 Task 2.2: outbound cross-references this clause makes
+    # to other parts of the same contract. Populated by a hybrid tagger
+    # (LLM during Pass 1 extraction + deterministic regex post-process).
+    # Defaults to an empty list so pre-SP-10 saved rows round-trip
+    # through the schema cleanly without a migration.
+    cross_refs: list[str] = []
 
 
 class RiskBreakdown(BaseModel):

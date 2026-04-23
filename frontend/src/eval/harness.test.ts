@@ -18,11 +18,21 @@
 import { describe, it, expect } from "vitest";
 import baseline from "./baseline.json";
 import { runHarness, formatReportMarkdown, baselineShapeFromReport } from "./harness";
-import { bm25Retriever, makeHybridRetriever } from "./retrievers";
+import {
+  bm25Retriever,
+  makeHybridRetriever,
+  makeHybridMetadataRetriever,
+  makeHybridGraphRetriever,
+  makeHybridRerankRetriever,
+} from "./retrievers";
 import {
   goldenQueryCacheExists,
   goldenQueryEmbeddingMap,
 } from "./golden-queries";
+import {
+  goldenRerankCacheExists,
+  loadGoldenRerankCache,
+} from "./golden-rerank-scores";
 import type { HarnessMetrics, HarnessReport } from "./harness";
 
 const PRINT_REPORT = process.env.EVAL_PRINT === "1";
@@ -81,3 +91,92 @@ describeIfHybridFloor("eval harness — hybrid regression gate", () => {
     assertReportBeatsFloor(report, hybridFloor);
   });
 });
+
+const hybridMetadataFloor = (baseline as unknown as {
+  hybrid_metadata?: typeof baseline.bm25;
+}).hybrid_metadata;
+const describeIfHybridMetadataFloor = hybridMetadataFloor
+  ? describeIfHybridCache
+  : describe.skip;
+
+describeIfHybridMetadataFloor(
+  "eval harness — hybrid + metadata boost regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const retriever = makeHybridMetadataRetriever(goldenQueryEmbeddingMap());
+      const report = await runHarness("hybrid_metadata", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_METADATA",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridMetadataFloor)
+        throw new Error("hybrid_metadata floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridMetadataFloor);
+    });
+  },
+);
+
+const hybridGraphFloor = (baseline as unknown as {
+  hybrid_graph?: typeof baseline.bm25;
+}).hybrid_graph;
+const describeIfHybridGraphFloor = hybridGraphFloor
+  ? describeIfHybridCache
+  : describe.skip;
+
+describeIfHybridGraphFloor(
+  "eval harness — hybrid + metadata + graph widening regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const retriever = makeHybridGraphRetriever(goldenQueryEmbeddingMap());
+      const report = await runHarness("hybrid_graph", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_GRAPH",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridGraphFloor)
+        throw new Error("hybrid_graph floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridGraphFloor);
+    });
+  },
+);
+
+const hybridRerankFloor = (baseline as unknown as {
+  hybrid_rerank?: typeof baseline.bm25;
+}).hybrid_rerank;
+const describeIfHybridRerankCache =
+  goldenQueryCacheExists() && goldenRerankCacheExists() ? describe : describe.skip;
+const describeIfHybridRerankFloor = hybridRerankFloor
+  ? describeIfHybridRerankCache
+  : describe.skip;
+
+describeIfHybridRerankFloor(
+  "eval harness — hybrid + metadata + graph + Jina rerank regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const rerankCache = loadGoldenRerankCache();
+      if (!rerankCache)
+        throw new Error("rerank cache missing despite existence check");
+      const retriever = makeHybridRerankRetriever(
+        goldenQueryEmbeddingMap(),
+        rerankCache,
+      );
+      const report = await runHarness("hybrid_rerank", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_RERANK",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridRerankFloor)
+        throw new Error("hybrid_rerank floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridRerankFloor);
+    });
+  },
+);

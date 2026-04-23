@@ -132,4 +132,21 @@ export const DATA_FLOWS: DataFlow[] = [
     notes:
       "Only used when the backend RESEND_API_KEY env var is set. Email addresses are sent to Resend solely to deliver the sign-in link and not used for marketing.",
   },
+  {
+    translationKey: "jina",
+    provider: "Jina AI",
+    purpose:
+      "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+    dataCategories: [
+      "User chat question (one per reranker call)",
+      "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever",
+    ],
+    region: "EU — Berlin, Germany",
+    legalBasis: "GDPR Art. 6(1)(b) — performance of a contract",
+    group: "optional",
+    privacyPolicyUrl: "https://jina.ai/legal/#privacy-policy",
+    dpaUrl: "https://jina.ai/legal/#data-processing-agreement",
+    notes:
+      "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina.",
+  },
 ];

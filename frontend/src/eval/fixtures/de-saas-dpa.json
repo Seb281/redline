@@ -149,7 +149,8 @@
       "is_unusual": false,
       "unusual_explanation": null,
       "applicable_law": null,
-      "citations": []
+      "citations": [],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) Der Vertrag beginnt am 1. Juni 2026 und hat eine Mindestlaufzeit von sechsunddreißig (36) Monaten.\n\n(2) Der Vertrag verlängert sich automatisch um jeweils weitere zwölf (12) Monate, sofern er nicht mit einer Frist von neun (9) Monaten zum jeweiligen Vertragsende schriftlich gekündigt wird.\n\n(3) Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt.",
@@ -167,7 +168,8 @@
           "id": 1,
           "quoted_text": "Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt."
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) Der Kunde zahlt eine monatliche Pauschale in Höhe von achttausendvierhundert Euro (8.400 €) zuzüglich der gesetzlichen Umsatzsteuer.\n\n(2) Die Vergütung ist jeweils zum 15. eines Monats im Voraus für den laufenden Monat fällig. Bei Zahlungsverzug werden Verzugszinsen in Höhe von neun (9) Prozentpunkten über dem Basiszinssatz gemäß § 247 BGB berechnet.",
@@ -185,6 +187,9 @@
           "id": 1,
           "quoted_text": "neun (9) Prozentpunkten über dem Basiszinssatz gemäß § 247 BGB"
         }
+      ],
+      "cross_refs": [
+        "§ 247"
       ]
     },
     {
@@ -207,7 +212,8 @@
           "id": 2,
           "quoted_text": "Weitergehende Schadensersatzansprüche wegen Nichteinhaltung der Verfügbarkeit sind ausgeschlossen"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) Der Anbieter haftet unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit sowie für Schäden, die auf einer vorsätzlichen oder grob fahrlässigen Pflichtverletzung des Anbieters, seiner gesetzlichen Vertreter oder Erfüllungsgehilfen beruhen.\n\n(2) Im Übrigen ist die Haftung des Anbieters für Schäden, gleich aus welchem Rechtsgrund, auf einen Betrag in Höhe der vom Kunden in den letzten zwölf (12) Monaten vor dem schadensbegründenden Ereignis gezahlten Vergütung begrenzt.\n\n(3) Die Haftung für entgangenen Gewinn, mittelbare Schäden und Folgeschäden ist ausgeschlossen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt.",
@@ -237,7 +243,8 @@
           "id": 2,
           "quoted_text": "Die Haftung für entgangenen Gewinn, mittelbare Schäden und Folgeschäden ist ausgeschlossen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) Im Rahmen der Vertragsanbahnung liefert der Anbieter dem Kunden zwei (2) Hardware-Security-Module (HSM) sowie einen Satz gedruckter Admin-Handbücher zur Erstinstallation (\"Onboarding-Pack\").\n\n(2) Der Kunde hat das Onboarding-Pack unverzüglich nach Erhalt zu untersuchen und offen erkennbare Mängel innerhalb von achtundvierzig (48) Stunden schriftlich gegenüber dem Anbieter anzuzeigen. Unterbleibt die rechtzeitige Anzeige, gilt die Ware als genehmigt und der Kunde verliert sämtliche Gewährleistungsrechte.",
@@ -263,7 +270,8 @@
           "id": 1,
           "quoted_text": "offen erkennbare Mängel innerhalb von achtundvierzig (48) Stunden schriftlich gegenüber dem Anbieter anzuzeigen. Unterbleibt die rechtzeitige Anzeige, gilt die Ware als genehmigt und der Kunde verliert sämtliche Gewährleistungsrechte"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Beide Parteien verpflichten sich, alle im Rahmen dieses Vertrages bekannt gewordenen vertraulichen Informationen der jeweils anderen Partei geheim zu halten und nur für Zwecke dieses Vertrages zu verwenden. Diese Pflicht besteht für die Dauer von fünf (5) Jahren über das Vertragsende hinaus fort.",
@@ -281,7 +289,8 @@
           "id": 1,
           "quoted_text": "für die Dauer von fünf (5) Jahren über das Vertragsende hinaus fort"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "(1) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts (CISG).\n\n(2) Ausschließlicher Gerichtsstand für alle Streitigkeiten aus oder im Zusammenhang mit diesem Vertrag ist Berlin, sofern der Kunde Kaufmann im Sinne des HGB ist.",
@@ -299,7 +308,8 @@
           "id": 1,
           "quoted_text": "sofern der Kunde Kaufmann im Sinne des HGB ist"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Der Anbieter verarbeitet im Auftrag des Kunden personenbezogene Daten ausschließlich zur Erbringung der vertragsgegenständlichen SaaS-Leistungen. Art und Umfang der Verarbeitung ergeben sich aus Anlage 1 und der vom Kunden im System hinterlegten Konfiguration.",
@@ -325,7 +335,8 @@
           "id": 1,
           "quoted_text": "Art und Umfang der Verarbeitung ergeben sich aus Anlage 1 und der vom Kunden im System hinterlegten Konfiguration"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Verarbeitet werden Stamm- und Kontaktdaten von Mitarbeitern des Kunden, von Endkunden des Kunden sowie deren Nutzungs- und Transaktionsdaten innerhalb der Plattform.",
@@ -343,7 +354,8 @@
           "id": 1,
           "quoted_text": "Stamm- und Kontaktdaten von Mitarbeitern des Kunden, von Endkunden des Kunden sowie deren Nutzungs- und Transaktionsdaten innerhalb der Plattform"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Der Anbieter verarbeitet personenbezogene Daten ausschließlich auf dokumentierte Weisung des Kunden. Sollte der Anbieter der Auffassung sein, dass eine Weisung gegen geltendes Datenschutzrecht verstößt, wird er den Kunden unverzüglich darauf hinweisen.",
@@ -369,7 +381,8 @@
           "id": 1,
           "quoted_text": "wird er den Kunden unverzüglich darauf hinweisen"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Der Anbieter trifft die in Anlage 3 zu dieser AVV beschriebenen technischen und organisatorischen Maßnahmen gemäß Art. 32 DSGVO. Hierzu gehören insbesondere Verschlüsselung der Daten bei Übertragung (TLS 1.2 oder höher) und Speicherung (AES-256), Zugriffskontrollen, regelmäßige Pen-Tests und ein dokumentiertes Notfallmanagement.",
@@ -395,6 +408,9 @@
           "id": 1,
           "quoted_text": "Verschlüsselung der Daten bei Übertragung (TLS 1.2 oder höher) und Speicherung (AES-256), Zugriffskontrollen, regelmäßige Pen-Tests und ein dokumentiertes Notfallmanagement"
         }
+      ],
+      "cross_refs": [
+        "Article 32"
       ]
     },
     {
@@ -421,7 +437,8 @@
           "id": 1,
           "quoted_text": "Der Anbieter informiert den Kunden mindestens dreißig (30) Tage vor Hinzuziehung eines neuen Unterauftragsverarbeiters per E-Mail an dpo@heinrichs-koll.de"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Soweit personenbezogene Daten in Drittländer außerhalb des EWR übermittelt werden (insbesondere USA), erfolgt dies ausschließlich auf Grundlage der EU-Standardvertragsklauseln (Standard Contractual Clauses, SCCs, Durchführungsbeschluss (EU) 2021/914), ergänzt um geeignete zusätzliche Maßnahmen gemäß den Empfehlungen 01/2020 des EDSA.",
@@ -447,7 +464,8 @@
           "id": 1,
           "quoted_text": "ausschließlich auf Grundlage der EU-Standardvertragsklauseln (Standard Contractual Clauses, SCCs, Durchführungsbeschluss (EU) 2021/914), ergänzt um geeignete zusätzliche Maßnahmen gemäß den Empfehlungen 01/2020 des EDSA"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Der Anbieter unterstützt den Kunden bei der Erfüllung der Rechte betroffener Personen (Art. 12-23 DSGVO) durch geeignete technische und organisatorische Maßnahmen, soweit möglich.",
@@ -473,6 +491,9 @@
           "id": 1,
           "quoted_text": "durch geeignete technische und organisatorische Maßnahmen, soweit möglich"
         }
+      ],
+      "cross_refs": [
+        "Article 12"
       ]
     },
     {
@@ -499,6 +520,9 @@
           "id": 1,
           "quoted_text": "innerhalb von vierundzwanzig (24) Stunden"
         }
+      ],
+      "cross_refs": [
+        "Article 4"
       ]
     },
     {
@@ -517,7 +541,8 @@
           "id": 1,
           "quoted_text": "Anstelle einer Vor-Ort-Prüfung akzeptiert der Kunde aktuelle Zertifizierungen (ISO 27001, SOC 2 Type II) sowie ein aktuelles Audit-Bericht eines unabhängigen Dritten"
         }
-      ]
+      ],
+      "cross_refs": []
     },
     {
       "clause_text": "Nach Beendigung des Hauptvertrages löscht der Anbieter alle personenbezogenen Daten des Kunden binnen sechzig (60) Tagen, sofern keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Auf Wunsch des Kunden werden die Daten zuvor in einem strukturierten, gängigen und maschinenlesbaren Format zurückgegeben.",
@@ -547,7 +572,8 @@
           "id": 2,
           "quoted_text": "in einem strukturierten, gängigen und maschinenlesbaren Format zurückgegeben"
         }
-      ]
+      ],
+      "cross_refs": []
     }
   ],
   "provenance": {

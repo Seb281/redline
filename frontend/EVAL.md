@@ -127,6 +127,53 @@ or future regressions hide under an inflated ceiling.
   enough English vocabulary present in the `plain_english` summary
   for BM25 to hit cleanly even though the clause text is Polish.
 
+## 4a. Arc 2 ablation roll-up
+
+Consolidated view of every retrieval layer shipped through Arc 2.
+Each row is the committed floor in `src/eval/baseline.json`; the CI
+gate fails if a layer regresses below these numbers without a
+re-pin. Per-fixture breakdowns are in the per-layer sections below.
+
+### Overall + per-tier
+
+| layer                               | overall R@1 | overall R@5 | overall MRR | medium R@1 | medium R@5 | hard R@1 | hard R@5 |
+| ----------------------------------- | ----------- | ----------- | ----------- | ---------- | ---------- | -------- | -------- |
+| **`bm25`** (Arc 1 baseline)         | 0.688       | 0.875       | 0.783       | 0.444      | 0.833      | 0.750    | 0.750    |
+| **`hybrid`** (+ cosine/RRF)         | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_metadata`** (+ boost)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_graph`** (+ widening)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
+| **`hybrid_rerank`** (+ Jina)        | _pending_   | _pending_   | _pending_   | _pending_  | _pending_  | _pending_ | _pending_ |
+
+### Arc 2 targets vs current
+
+| tier   | target (plan spec) | current (`hybrid_graph`) | status |
+| ------ | ------------------ | ------------------------ | ------ |
+| medium | recall@5 ≥ 0.80    | **0.944**                |  met   |
+| hard   | recall@5 ≥ 0.65    | **1.000**                |  met   |
+
+### Layer-by-layer honest reporting
+
+- **Hybrid (§5)** — the only layer that moves the numbers. Cumulative
+  lift over BM25: overall recall@1 +0.145, medium recall@1 +0.333,
+  hard recall@5 +0.250. `de-saas-dpa` (the dense-German
+  near-duplicate-titles fixture) sees the biggest lift: recall@1
+  0.25 → 0.50. This is the semantic-vocabulary bridge.
+- **Metadata boost (§6)** — zero delta on this eval. Aliases fire on
+  ~0 of 48 questions because the golden set uses natural-language
+  phrasing, not statute-literate citations. Infrastructure retained
+  for Arc 3 cross-contract search. Category boost regressed and was
+  disabled.
+- **Graph widening (§7)** — zero delta on this eval. Additive-only
+  (tail-append below rank 20); can't lift a recall@5 that was
+  already a hit. Shipped because production chat context benefits
+  on every multi-clause question the eval can't score (context
+  completeness vs relevance ranking). Multiplicative-boost variant
+  regressed and was disabled.
+- **Jina rerank (§8)** — numbers pending the first live freeze
+  against `JINA_API_KEY`. Cross-encoder over full clause text is
+  the only remaining lever with plausible lift on medium tier; the
+  plan earmarks it as the biggest expected single-layer delta.
+
 ## 5. Hybrid retrieval (BM25 ⊕ cosine via RRF)
 
 The hybrid retriever (`src/lib/retrieval/hybrid.ts`) fuses BM25 with
@@ -197,7 +244,188 @@ match the numbers above exactly — any improvement has to re-pin in
 the same PR so future regressions don't hide under an inflated
 ceiling.
 
-## 6. Reproducing these numbers
+## 6. Metadata boost — Arc 2 Task 2.1 (shipped, no lift on this eval)
+
+The `hybrid_metadata` retriever adds an additive, content-aware layer
+between RRF fusion and the top-N slice:
+
+- `query-analysis.ts` extracts category synonyms ("termination",
+  "GDPR", "force majeure", …) and statute aliases ("BGB", "Codice
+  Civile", "Rome I", …) from the user query. Deterministic, zero
+  network, co-located with the catalog so aliases cannot drift.
+- `metadata-boost.ts` applies additive boosts to the fused RRF
+  scores: `+CATEGORY_BOOST` when the candidate's category is hinted at;
+  `+STATUTE_BOOST` (once max, regardless of how many codes match) when
+  any cited statute code is hinted at. Magnitudes sit deliberately
+  below RRF@rank-1 (~0.0164) so metadata can promote near-misses but
+  cannot override strong agreement across both retrievers.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_metadata` row in `baseline.json` equals `hybrid` exactly
+on the current golden set.** Two findings drive this:
+
+1. **Category boost at 0.006 regressed recall@1 by 0.062 overall** and
+   recall@1 by 0.25 on the hard tier. Within a single contract, 3–5
+   clauses typically share a category, and boosting all of them
+   uniformly adds noise without discriminating the expected answer from
+   its siblings. Disabled — `CATEGORY_BOOST = 0` as shipped.
+2. **Statute boost at 0.010 fires on ~0 of 48 golden questions.** The
+   golden set is written in a legally-naive user voice ("can I
+   terminate early?", "what's the liability cap?") — it deliberately
+   does *not* contain phrases like "BGB §307" or "GDPR Article 6". The
+   alias detector is functioning (unit-tested in
+   `query-analysis.test.ts`) but the eval does not exercise it.
+
+Net: the boost layer is currently a no-op *on this golden set*, pinned
+at the same numbers as `hybrid`. The regression gate remains useful as
+a tripwire — any future change to the alias map, synonym list, or
+magnitudes that *does* move the numbers will be caught.
+
+### Why ship it anyway
+
+1. The mechanism is the primary discriminator for **Arc 3 cross-
+   contract search**, where you're retrieving across hundreds of
+   clauses from different contracts and a `"GDPR"` query really should
+   float every GDPR-citing clause to the top regardless of which
+   contract they're from. Arc 2 Task 2.1 puts the plumbing in place so
+   Arc 3 inherits a tested boost function rather than bolting one on.
+2. A realistic legally-literate chat query ("is this BGB §307
+   enforceable?") will exercise the statute branch even on the single-
+   contract path. The eval just doesn't have that query shape.
+3. Negative results are signal. Ship + document beats silently deleting
+   the layer because the golden set didn't move.
+
+### What would actually lift medium/hard on this golden set
+
+- **Reranking (Task 2.3, Jina cross-encoder).** Cross-encoder over the
+  actual clause text, not metadata tags. Expected to be the biggest
+  single-layer delta per the plan.
+- **Cross-reference graph (Task 2.2).** Hard tier is multi-clause by
+  definition; surfacing referenced clauses alongside the retrieved set
+  should specifically move the hard recall@3.
+
+## 7. Cross-ref graph + definitions widening — Arc 2 Task 2.2b (shipped, no lift on this eval)
+
+The `hybrid_graph` retriever adds a final widening stage between
+metadata boost and the top-N slice:
+
+- `cross-refs.ts` builds a clause→clause directed graph from each
+  clause's `cross_refs` array (populated by the Pass 2 LLM + the
+  deterministic regex extractor from Task 2.2a). Edge resolution is
+  conservative: a ref's canonical form must appear in the title or
+  first line of exactly one target clause; ambiguous or unresolved
+  refs are dropped silently.
+- `definitions.ts` builds a defined-terms map via two canonical
+  patterns (`"Term" means …`, `(the "Term")`). First-definition-wins
+  so informal redefinitions deeper in the contract don't displace the
+  authoritative definitions clause.
+- `hybrid.ts#applyGraphWidening` takes the top-5 seeds from the fused
+  +boosted rank, unions their depth-1 neighbours with their
+  referenced definitions, and **tail-appends** any widening ids that
+  were outside the fused top-20. It never reorders existing ranks.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_graph` row in `baseline.json` equals `hybrid_metadata`
+exactly on the current golden set.** Every gold clause was already
+inside the fused top-20 via BM25+cosine+metadata; tail-appending
+widenings below rank 20 can't lift a recall@5 that was already a hit.
+
+Design choice behind the zero delta: an earlier multiplicative-boost
+variant (1.5× score on widening ids) **did** move the numbers — in the
+wrong direction. Overall recall@1 fell 0.083; `nl-freelance` recall@1
+crashed 0.875 → 0.375 because every clause mentioning `"Services"`
+kept promoting the definitions clause past the true answer. Graph
+widening's job is context completeness, not relevance re-ranking — the
+boost layer is where relevance judgments live. The additive-only shape
+preserves metadata-boost ordering and guarantees widenings appear in
+the chat context when they weren't already there.
+
+### Why ship it anyway
+
+1. Production chat context (`buildChatContext`) benefits on every
+   multi-clause question even when the eval doesn't score it: a user
+   asking "what happens if we breach the Confidentiality Clause?"
+   retrieves the breach clause via BM25, and widening pulls the
+   definitions clause along for free. The eval can't see this because
+   the golden set grades recall, not answer completeness.
+2. The graph is a prerequisite for Arc 3 cross-contract search where
+   cross-refs often span documents (master agreement → schedule) and
+   the widening needs to be the primary discriminator. Shipping in
+   Arc 2 on the single-contract path keeps the integration surface
+   small.
+3. Negative results are signal. Ship + document beats silently
+   deleting the layer because the golden set didn't move.
+
+### What would actually lift medium/hard on this golden set
+
+- **Reranking (Task 2.3, Jina cross-encoder).** Cross-encoder over the
+  actual clause text, not metadata tags. Expected to be the biggest
+  single-layer delta per the plan — the only remaining lever.
+
+## 8. Jina Rerank — Arc 2 Task 2.3 (client shipped; eval deferred to freeze)
+
+The final retrieval stage is a cross-encoder rerank of the top-20
+fused+widened candidates via Jina's `/v1/rerank` endpoint
+(`jina-reranker-v2-base-multilingual`, Berlin/EU). Cross-encoder sees
+the full clause text — not tokens, not vectors — so it can
+disambiguate near-identical BM25/cosine candidates, which the plan
+calls out as the biggest expected single-layer delta.
+
+### Pipeline position
+
+BM25 ⊕ cosine (RRF) → metadata boost → graph widening →
+**rerank (top-20 head, tail-preserved)**.
+
+The head depth is pinned at `RERANK_INPUT_DEPTH = 20` in
+`src/lib/retrieval/hybrid.ts`: 4× the harness recall-k cap, so no
+gold clause that reached the top-20 can be silently dropped by a
+rerank failure. Tail ids below rank 20 are spliced back untouched —
+the reranker only reorders its head.
+
+### Fail-soft contract
+
+The client (`src/lib/retrieval/rerank.ts`) absorbs every failure mode
+so chat answers never wedge on a best-effort ranker:
+
+- No `JINA_API_KEY` → lazy singleton in `chat-context.ts` returns
+  `undefined`, `hybridRetrieve` skips the rerank branch entirely.
+  Zero-config dev setups get no 401s.
+- Empty candidates / empty key → identity ranking, no fetch.
+- 429 + 5xx → retry with capped exponential backoff
+  (`250ms → 500 → 1000 → 2000` cap, up to 3 attempts).
+- 4xx (other than 429), malformed JSON, out-of-range index, duplicate
+  index, network error → identity ranking. The whole response is
+  distrusted; no partial results compose.
+
+### Eval gate
+
+Gated on BOTH `golden-query-embeddings.json` AND
+`golden-rerank-scores.json` existing on disk. A fresh checkout with
+neither cache skips the `hybrid_rerank` block cleanly so BM25 still
+runs green. The baseline row will be pinned to `baseline.json` once
+the freeze runs against a live `JINA_API_KEY`.
+
+Freeze command:
+
+```bash
+FREEZE_GOLDEN_RERANK_SCORES=1 JINA_API_KEY=... \
+  pnpm vitest run src/eval/golden-rerank-scores.freeze.test.ts
+```
+
+The cache shape is `{ questionId: { clauseId: relevance_score } }`.
+Re-freeze whenever the golden set or any fixture's clause ordering
+changes — indices are positional, so a shifted clause silently
+invalidates every cached score for that fixture.
+
+### Numbers
+
+Pending the initial freeze. Ablation vs `hybrid_graph` will isolate
+Task 2.3's single-layer contribution and be re-pinned in the same PR
+as the first cached baseline row.
+
+## 9. Reproducing these numbers
 
 ```bash
 cd frontend
@@ -218,7 +446,7 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
 ```
 
-## 7. Change policy
+## 10. Change policy
 
 - **BM25 baseline numbers in this doc and `baseline.json`** — update
   together in the same commit whenever the harness, retriever

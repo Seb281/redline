@@ -561,6 +561,14 @@
           "Link per l'accesso una tantum"
         ],
         "notes": "Viene utilizzato solo se è impostata la variabile d'ambiente RESEND_API_KEY sul backend. Gli indirizzi e-mail vengono inviati a Resend esclusivamente per fornire il link di accesso e non vengono utilizzati a fini di marketing."
+      },
+      "jina": {
+        "purpose": "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+        "dataCategories": [
+          "User chat question (one per reranker call)",
+          "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever"
+        ],
+        "notes": "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina."
       }
     },
     "transparencyNote": "Per informazioni sulla mappatura delle posizioni relative alla legge UE sull'IA, sulle misure di revoca a disposizione degli operatori e sulla ricevuta di trasparenza in formato leggibile da computer, consultare la <link>pagina dedicata alla trasparenza</link>."

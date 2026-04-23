@@ -561,6 +561,14 @@
           "Enlace de inicio de sesión único"
         ],
         "notes": "Solo se utiliza cuando la variable de entorno RESEND_API_KEY del backend está configurada. Las direcciones de correo electrónico se envían a Resend únicamente para enviar el enlace de inicio de sesión y no se utilizan con fines de marketing."
+      },
+      "jina": {
+        "purpose": "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+        "dataCategories": [
+          "User chat question (one per reranker call)",
+          "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever"
+        ],
+        "notes": "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina."
       }
     },
     "transparencyNote": "Para obtener información sobre el mapeo de posiciones respecto a la Ley de IA de la UE, las medidas de retroceso de los operadores y el recibo de transparencia legible por máquina, consulte la <link>página de transparencia</link>."

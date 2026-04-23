@@ -561,6 +561,14 @@
           "Link für die einmalige Anmeldung"
         ],
         "notes": "Dies wird nur verwendet, wenn die Backend-Umgebungsvariable `RESEND_API_KEY` gesetzt ist. E-Mail-Adressen werden ausschließlich zur Zustellung des Anmeldelinks an Resend übermittelt und nicht für Marketingzwecke verwendet."
+      },
+      "jina": {
+        "purpose": "Cross-encoder reranker — reorders the top-20 chat-context candidates by semantic relevance to the user's question.",
+        "dataCategories": [
+          "User chat question (one per reranker call)",
+          "Pattern-redacted clause text for the top-20 candidates from the hybrid retriever"
+        ],
+        "notes": "Only used when the frontend JINA_API_KEY env var is set. In the zero-config default Redline skips reranking entirely and the chat context is served from the BM25 + cosine hybrid retriever alone. Redaction runs before the rerank call — no unredacted PII is sent to Jina."
       }
     },
     "transparencyNote": "Informationen zur Bestandsaufnahme im Rahmen des EU-KI-Gesetzes, zu den Rücknahmeoptionen für Betreiber und zur maschinenlesbaren Transparenzbescheinigung finden Sie auf der <link>Seite „Transparenz</link>“."

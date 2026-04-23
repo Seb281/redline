@@ -27,10 +27,34 @@ import type {
 } from "@/types";
 import { MISTRAL_EMBED_DIM } from "@/types";
 import { buildHybridCandidates, hybridRetrieve } from "@/lib/retrieval/hybrid";
+import { createJinaReranker, type RerankFn } from "@/lib/retrieval/rerank";
 import { logPass } from "@/lib/llm/debug-log";
 
 const MAX_CLAUSES = 5;
 const EMBEDDING_MODEL_ID = "mistral-embed";
+
+/**
+ * Lazy singleton — the Jina reranker is only instantiated when
+ * `JINA_API_KEY` is on the env. An unset key means rerank is skipped
+ * entirely (undefined returned), not called with a bogus key. Keeps
+ * zero-config developer setups free of 401s in the logs.
+ */
+let jinaReranker: RerankFn | null | undefined;
+
+function getRerankFn(): RerankFn | undefined {
+  if (jinaReranker !== undefined) return jinaReranker ?? undefined;
+  const apiKey = process.env.JINA_API_KEY;
+  if (!apiKey) {
+    jinaReranker = null;
+    logPass("chat_retrieval", {
+      event: "rerank_disabled",
+      reason: "no_jina_api_key",
+    });
+    return undefined;
+  }
+  jinaReranker = createJinaReranker({ apiKey });
+  return jinaReranker;
+}
 
 export interface ChatContext {
   overview: ContractOverview;
@@ -102,6 +126,9 @@ export async function buildChatContext(
     queryEmbedding,
     candidates,
     topN: MAX_CLAUSES,
+    clauses: analysis.clauses,
+    graphWidening: true,
+    rerank: getRerankFn(),
   });
 
   // Map fused ids back to clauses. Ids are positional indices into the

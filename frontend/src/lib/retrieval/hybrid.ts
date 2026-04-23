@@ -22,26 +22,55 @@
  * one branch dragging down precision in the fused list.
  */
 
-import type { AnalyzedClause, ClauseEmbedding } from "@/types";
+import type { AnalyzedClause, ClauseEmbedding, ClauseCategory } from "@/types";
+import type { StatuteCode } from "@/lib/applicable-law";
 import { bm25Rank } from "./bm25";
 import { vectorRank } from "./vector";
 import { reciprocalRankFusion } from "./fusion";
+import { extractQueryHints } from "./query-analysis";
+import { applyMetadataBoost, type CandidateMetadata } from "./metadata-boost";
+import { buildCrossRefGraph, depthOneNeighbours } from "./cross-refs";
+import { expandWithDefinitions } from "./definitions";
+import type { RerankFn } from "./rerank";
 import { logPass } from "@/lib/llm/debug-log";
 
 const DEFAULT_TOP_N = 5;
 const PER_BRANCH_TOP_K = 20;
 
 /**
+ * SP-10 Arc 2 Task 2.2b — top-K of the fused+boosted rank that seeds
+ * graph widening. Mirrors the chat context's final display cap so the
+ * widening round only pulls neighbours of clauses the user is actually
+ * going to see. Wider seed-depths drag in tangential context that
+ * hasn't earned its place in the answer.
+ */
+const GRAPH_WIDENING_SEED_DEPTH = 5;
+
+/**
+ * SP-10 Arc 2 Task 2.3 — how many of the fused+boosted+widened
+ * candidates are handed to the reranker. Matches `PER_BRANCH_TOP_K` —
+ * reranking the pre-slice top-20 gives the cross-encoder enough room
+ * to discover a rank-15 gold clause while keeping the per-call token
+ * budget + latency bounded.
+ */
+const RERANK_INPUT_DEPTH = 20;
+
+/**
  * One candidate doc for the hybrid retriever.
  *
  * `embedding` is optional so callers can mix indexed and non-indexed
  * docs in one corpus (legacy rows, freshly-added clauses whose embed
- * job is still pending, etc.).
+ * job is still pending, etc.). `category` and `statuteCodes` are the
+ * per-clause metadata consumed by the Arc 2 metadata-boost layer —
+ * both optional so a candidate missing its Pass 2 metadata contributes
+ * zero boost instead of crashing the retrieval.
  */
 export interface HybridCandidate {
   id: number;
   text: string;
   embedding?: number[];
+  category?: ClauseCategory;
+  statuteCodes?: readonly StatuteCode[];
 }
 
 /** Input shape for {@link hybridRetrieve}. */
@@ -52,6 +81,35 @@ export interface HybridRetrieveInput {
   candidates: HybridCandidate[];
   /** Max fused results to return. Defaults to 5. */
   topN?: number;
+  /**
+   * SP-10 Arc 2 — toggle the metadata-boost layer. Default `true` in
+   * production; the eval harness passes `false` when measuring the
+   * pre-boost hybrid floor so ablation deltas stay clean.
+   */
+  metadataBoost?: boolean;
+  /**
+   * SP-10 Arc 2 Task 2.2b — clauses backing the candidates. Needed for
+   * graph widening to build the cross-ref graph + definitions map. Same
+   * positional alignment as `candidates` (id = index). Optional because
+   * the non-widening path does not need the full clause bodies.
+   */
+  clauses?: readonly AnalyzedClause[];
+  /**
+   * SP-10 Arc 2 Task 2.2b — toggle cross-ref + definitions widening.
+   * Default `false` to preserve legacy behaviour everywhere the caller
+   * has not explicitly opted in; the production chat context builder and
+   * the Arc 2 eval retriever flip it `true`.
+   */
+  graphWidening?: boolean;
+  /**
+   * SP-10 Arc 2 Task 2.3 — optional reranker run as the final stage.
+   * When provided, the top {@link RERANK_INPUT_DEPTH} results are
+   * reranked via the supplied function (the Jina client in production,
+   * a frozen cache in the eval). Fail-soft by caller contract — the
+   * returned `RerankFn` must never reject, so wiring it in is a no-op
+   * when the underlying client errors.
+   */
+  rerank?: RerankFn;
 }
 
 /** A fused ranked entry — clause id plus the raw RRF score for debugging. */
@@ -71,7 +129,16 @@ export interface HybridResult {
 export async function hybridRetrieve(
   input: HybridRetrieveInput,
 ): Promise<HybridResult[]> {
-  const { query, queryEmbedding, candidates, topN = DEFAULT_TOP_N } = input;
+  const {
+    query,
+    queryEmbedding,
+    candidates,
+    topN = DEFAULT_TOP_N,
+    metadataBoost = true,
+    clauses,
+    graphWidening = false,
+    rerank,
+  } = input;
 
   if (candidates.length === 0) return [];
 
@@ -114,14 +181,119 @@ export async function hybridRetrieve(
     vectorOrder.length > 0 ? [bm25Order, vectorOrder] : [bm25Order],
   );
 
+  let ranked = fused;
+  if (metadataBoost) {
+    const hints = extractQueryHints(query);
+    if (hints.categories.size > 0 || hints.statuteCodes.size > 0) {
+      const metadata = new Map<number, CandidateMetadata>();
+      for (const c of candidates) {
+        if (c.category !== undefined) {
+          metadata.set(c.id, {
+            category: c.category,
+            statuteCodes: c.statuteCodes ?? [],
+          });
+        }
+      }
+      if (metadata.size > 0) {
+        ranked = applyMetadataBoost(fused, metadata, hints);
+      }
+    }
+  }
+
+  let widened = 0;
+  if (graphWidening && clauses && clauses.length > 0 && ranked.length > 0) {
+    const result = applyGraphWidening(ranked, clauses);
+    ranked = result.ranked;
+    widened = result.widened;
+  }
+
+  let reranked = false;
+  if (rerank && ranked.length > 0) {
+    const textById = new Map(candidates.map((c) => [c.id, c.text]));
+    const head = ranked.slice(0, RERANK_INPUT_DEPTH);
+    const tail = ranked.slice(RERANK_INPUT_DEPTH);
+    const rerankCandidates = head
+      .map((r) => ({ id: r.id, text: textById.get(r.id) ?? "" }))
+      .filter((c) => c.text.length > 0);
+    if (rerankCandidates.length > 0) {
+      const scored = await rerank({
+        query,
+        candidates: rerankCandidates,
+      });
+      // Guard against a mis-wired RerankFn that somehow returned zero
+      // entries — identity-on-failure is the contract, but an impl
+      // bug shouldn't black-hole retrieval. Keep the pre-rerank order
+      // in that case.
+      if (scored.length > 0) {
+        ranked = [...scored, ...tail];
+        reranked = true;
+      }
+    }
+  }
+
   logPass("chat_retrieval", {
     event: "hybrid_ok",
     bm25_hits: bm25Order.length,
     vector_hits: vectorOrder.length,
-    fused: fused.length,
+    fused: ranked.length,
+    metadata_boost: metadataBoost,
+    graph_widening: graphWidening,
+    widened,
+    reranked,
   });
 
-  return fused.slice(0, topN);
+  return ranked.slice(0, topN);
+}
+
+/**
+ * Widen the ranked list with depth-1 cross-ref neighbours and defined
+ * -term clauses of the top {@link GRAPH_WIDENING_SEED_DEPTH} seeds.
+ *
+ * Strategy: strictly additive. Widenings that are already present in
+ * the fused+boosted rank keep their existing position; widenings that
+ * were missing (below PER_BRANCH_TOP_K on both branches) get appended
+ * at a synthetic floor score. Never reorders existing ranks.
+ *
+ * The additive-only shape is deliberate. An earlier boosted variant
+ * (1.5× score on widening ids) regressed top-1 recall on
+ * definition-heavy fixtures — every clause mentioning a common defined
+ * term like "Services" promoted the definitions clause past the true
+ * answer. Graph widening's job is context completeness, not relevance
+ * re-ranking; the boost layer is where relevance judgments live.
+ *
+ * Returns both the new rank list and the widening-set size for debug
+ * logging.
+ */
+function applyGraphWidening(
+  ranked: readonly HybridResult[],
+  clauses: readonly AnalyzedClause[],
+): { ranked: HybridResult[]; widened: number } {
+  const seeds = new Set(
+    ranked.slice(0, GRAPH_WIDENING_SEED_DEPTH).map((r) => r.id),
+  );
+  const graph = buildCrossRefGraph(clauses);
+  const neighbours = depthOneNeighbours(seeds, graph);
+  const defs = expandWithDefinitions(seeds, clauses);
+  const widening = new Set<number>([...neighbours, ...defs]);
+  if (widening.size === 0) {
+    return { ranked: [...ranked], widened: 0 };
+  }
+
+  const rankedIds = new Set(ranked.map((r) => r.id));
+  const missing = [...widening].filter((id) => !rankedIds.has(id));
+  if (missing.length === 0) {
+    return { ranked: [...ranked], widened: 0 };
+  }
+
+  const out: HybridResult[] = [...ranked];
+  const floor = out.length > 0 ? out[out.length - 1].score : 1;
+  const base = floor > 0 ? floor * 0.9 : 1e-6;
+  // Space injections by a negligible delta so stable sort order is
+  // deterministic across platforms even for ties at the floor.
+  for (let i = 0; i < missing.length; i++) {
+    out.push({ id: missing[i], score: base - i * 1e-9 });
+  }
+  return { ranked: out, widened: missing.length };
 }
 
 /**
@@ -154,6 +326,14 @@ export function buildHybridCandidates(
       .filter((s) => typeof s === "string" && s.trim().length > 0)
       .join("\n\n");
     const emb = byIndex.get(i);
-    return emb ? { id: i, text, embedding: emb } : { id: i, text };
+    const statuteCodes =
+      c.applicable_law?.citations?.map((cit) => cit.code) ?? [];
+    const base: HybridCandidate = {
+      id: i,
+      text,
+      category: c.category,
+      statuteCodes,
+    };
+    return emb ? { ...base, embedding: emb } : base;
   });
 }

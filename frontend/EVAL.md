@@ -127,7 +127,7 @@ or future regressions hide under an inflated ceiling.
   enough English vocabulary present in the `plain_english` summary
   for BM25 to hit cleanly even though the clause text is Polish.
 
-## 5. Hybrid retrieval (not yet pinned in CI)
+## 5. Hybrid retrieval (BM25 ⊕ cosine via RRF)
 
 The hybrid retriever (`src/lib/retrieval/hybrid.ts`) fuses BM25 with
 cosine similarity on `mistral-embed` vectors via reciprocal rank
@@ -135,28 +135,67 @@ fusion. The eval harness wraps it through `makeHybridRetriever` in
 `src/eval/retrievers.ts` and feeds in a per-question `queryEmbedding`
 map.
 
-Hybrid numbers are **not** yet part of the regression gate because
-query embeddings for the golden set are not checked in — doing so
-would require committing ~200 KB of 1024-dim vectors and re-freezing
-them every time a question is edited. Two options are open and
-pending a decision:
+Query embeddings for the golden set are **frozen** and committed at
+`src/eval/golden-query-embeddings.json` (48 × 1024-dim vectors, ~1.3 MB)
+so the hybrid CI gate is deterministic and runs with zero network on
+a fresh checkout. Re-freeze with:
 
-1. Commit `golden-query-embeddings.json` alongside the fixtures,
-   re-freeze via a dedicated test, and add hybrid to the CI floor.
-2. Add a live `harness.live.test.ts` gated on `MISTRAL_API_KEY`, run
-   on demand (same contract as `freeze.test.ts`).
+```bash
+FREEZE_GOLDEN_QUERY_EMBEDDINGS=1 MISTRAL_API_KEY=... \
+  pnpm vitest run src/eval/golden-query-embeddings.freeze.test.ts
+```
 
-Once decided, the hybrid row lands in the baseline table alongside
-BM25 with the same per-tier + per-fixture cuts, and the **key deltas
-to watch** are:
+A structural tripwire (`src/eval/golden-queries.test.ts`) fails fast
+if the cache is missing a golden question, carries a stray entry, or
+drifts off the pinned dim. The hybrid block in `harness.test.ts`
+skips cleanly (not fails) when the cache is absent, so fresh
+checkouts without a key still run the BM25 gate green.
 
-- `tier: medium` recall@5 — BM25 baseline is 0.833; hybrid target is
-  a visible lift (≥ +0.05) without regressing easy.
-- `fixture: de-saas-dpa` overall — the worst BM25 case is the
-  clearest signal for vector's contribution on cross-language.
-- `tier: hard` — expected to stay roughly flat under plain hybrid;
-  the real lift for multi-clause questions lands in Arc 2 (metadata
-  boost + cross-refs).
+### Hybrid — overall + per-tier
+
+| slice          | n  | recall@1 | recall@3 | recall@5 | MRR    |
+| -------------- | -- | -------- | -------- | -------- | ------ |
+| overall        | 48 | 0.833    | 0.938    | 0.979    | 0.898  |
+| tier: easy     | 18 | 0.944    | 1.000    | 1.000    | 0.972  |
+| tier: medium   | 18 | 0.778    | 0.889    | 0.944    | 0.854  |
+| tier: hard     | 12 | 0.750    | 0.917    | 1.000    | 0.854  |
+
+### Hybrid — per fixture
+
+| fixture              | n | recall@1 | recall@3 | recall@5 | MRR    |
+| -------------------- | - | -------- | -------- | -------- | ------ |
+| `nl-freelance`       | 8 | 0.875    | 0.875    | 1.000    | 0.906  |
+| `fr-employment`      | 8 | 0.750    | 1.000    | 1.000    | 0.875  |
+| `de-saas-dpa`        | 8 | 0.500    | 0.875    | 0.875    | 0.703  |
+| `es-saas-services`   | 8 | 0.875    | 0.875    | 1.000    | 0.906  |
+| `it-employment`      | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
+| `pl-distribution`    | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
+
+### Deltas vs BM25 (pre-human-review)
+
+- **Medium tier is where the lift lands, as predicted.** recall@1
+  jumps **0.444 → 0.778 (+0.333)** and recall@5 **0.833 → 0.944
+  (+0.111)** — cosine closes the cross-language vocabulary gap that
+  BM25 structurally can't.
+- **`de-saas-dpa` doubles at the top.** recall@1 **0.250 → 0.500
+  (+0.250)**, recall@3 **0.625 → 0.875 (+0.250)**. Still the worst
+  fixture, so this is where Arc 2 (metadata boost) should be
+  benchmarked next.
+- **Hard tier gains on @3/@5, not @1.** recall@1 stays flat at 0.750
+  (matches the prediction: fusion can't synthesise a multi-clause
+  answer that isn't in either retriever's top-1), but recall@3
+  **0.750 → 0.917** and recall@5 **0.750 → 1.000** — the second and
+  third expected clauses get pulled into the top-k window.
+- **Easy tier nudges up without regressing.** recall@1 **0.889 →
+  0.944**, perfect @3/@5 preserved. The guardrail held.
+- **Overall MRR lifts +0.115** (0.783 → 0.898) — the first-hit rank
+  is sharper across the board, not just on the reshaped tails.
+
+Hybrid is now part of the regression gate in
+`src/eval/baseline.json` under the `hybrid` slot. The gate floors
+match the numbers above exactly — any improvement has to re-pin in
+the same PR so future regressions don't hide under an inflated
+ceiling.
 
 ## 6. Reproducing these numbers
 

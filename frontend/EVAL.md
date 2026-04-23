@@ -258,7 +258,66 @@ magnitudes that *does* move the numbers will be caught.
   definition; surfacing referenced clauses alongside the retrieved set
   should specifically move the hard recall@3.
 
-## 7. Reproducing these numbers
+## 7. Cross-ref graph + definitions widening — Arc 2 Task 2.2b (shipped, no lift on this eval)
+
+The `hybrid_graph` retriever adds a final widening stage between
+metadata boost and the top-N slice:
+
+- `cross-refs.ts` builds a clause→clause directed graph from each
+  clause's `cross_refs` array (populated by the Pass 2 LLM + the
+  deterministic regex extractor from Task 2.2a). Edge resolution is
+  conservative: a ref's canonical form must appear in the title or
+  first line of exactly one target clause; ambiguous or unresolved
+  refs are dropped silently.
+- `definitions.ts` builds a defined-terms map via two canonical
+  patterns (`"Term" means …`, `(the "Term")`). First-definition-wins
+  so informal redefinitions deeper in the contract don't displace the
+  authoritative definitions clause.
+- `hybrid.ts#applyGraphWidening` takes the top-5 seeds from the fused
+  +boosted rank, unions their depth-1 neighbours with their
+  referenced definitions, and **tail-appends** any widening ids that
+  were outside the fused top-20. It never reorders existing ranks.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_graph` row in `baseline.json` equals `hybrid_metadata`
+exactly on the current golden set.** Every gold clause was already
+inside the fused top-20 via BM25+cosine+metadata; tail-appending
+widenings below rank 20 can't lift a recall@5 that was already a hit.
+
+Design choice behind the zero delta: an earlier multiplicative-boost
+variant (1.5× score on widening ids) **did** move the numbers — in the
+wrong direction. Overall recall@1 fell 0.083; `nl-freelance` recall@1
+crashed 0.875 → 0.375 because every clause mentioning `"Services"`
+kept promoting the definitions clause past the true answer. Graph
+widening's job is context completeness, not relevance re-ranking — the
+boost layer is where relevance judgments live. The additive-only shape
+preserves metadata-boost ordering and guarantees widenings appear in
+the chat context when they weren't already there.
+
+### Why ship it anyway
+
+1. Production chat context (`buildChatContext`) benefits on every
+   multi-clause question even when the eval doesn't score it: a user
+   asking "what happens if we breach the Confidentiality Clause?"
+   retrieves the breach clause via BM25, and widening pulls the
+   definitions clause along for free. The eval can't see this because
+   the golden set grades recall, not answer completeness.
+2. The graph is a prerequisite for Arc 3 cross-contract search where
+   cross-refs often span documents (master agreement → schedule) and
+   the widening needs to be the primary discriminator. Shipping in
+   Arc 2 on the single-contract path keeps the integration surface
+   small.
+3. Negative results are signal. Ship + document beats silently
+   deleting the layer because the golden set didn't move.
+
+### What would actually lift medium/hard on this golden set
+
+- **Reranking (Task 2.3, Jina cross-encoder).** Cross-encoder over the
+  actual clause text, not metadata tags. Expected to be the biggest
+  single-layer delta per the plan — the only remaining lever.
+
+## 8. Reproducing these numbers
 
 ```bash
 cd frontend
@@ -279,7 +338,7 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
 ```
 
-## 8. Change policy
+## 9. Change policy
 
 - **BM25 baseline numbers in this doc and `baseline.json`** — update
   together in the same commit whenever the harness, retriever

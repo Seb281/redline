@@ -22,6 +22,7 @@ import {
   bm25Retriever,
   makeHybridRetriever,
   makeHybridMetadataRetriever,
+  makeHybridGraphRetriever,
 } from "./retrievers";
 import {
   goldenQueryCacheExists,
@@ -109,6 +110,33 @@ describeIfHybridMetadataFloor(
       if (!hybridMetadataFloor)
         throw new Error("hybrid_metadata floor missing from baseline.json");
       assertReportBeatsFloor(report, hybridMetadataFloor);
+    });
+  },
+);
+
+const hybridGraphFloor = (baseline as unknown as {
+  hybrid_graph?: typeof baseline.bm25;
+}).hybrid_graph;
+const describeIfHybridGraphFloor = hybridGraphFloor
+  ? describeIfHybridCache
+  : describe.skip;
+
+describeIfHybridGraphFloor(
+  "eval harness — hybrid + metadata + graph widening regression gate",
+  () => {
+    it("meets or beats committed floor overall, per-tier, and per-fixture", async () => {
+      const retriever = makeHybridGraphRetriever(goldenQueryEmbeddingMap());
+      const report = await runHarness("hybrid_graph", retriever);
+      if (PRINT_REPORT) {
+        console.log(formatReportMarkdown(report));
+        console.log(
+          "BASELINE_JSON_HYBRID_GRAPH",
+          JSON.stringify(baselineShapeFromReport(report)),
+        );
+      }
+      if (!hybridGraphFloor)
+        throw new Error("hybrid_graph floor missing from baseline.json");
+      assertReportBeatsFloor(report, hybridGraphFloor);
     });
   },
 );

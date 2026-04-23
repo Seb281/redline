@@ -102,6 +102,8 @@ export async function buildChatContext(
     queryEmbedding,
     candidates,
     topN: MAX_CLAUSES,
+    clauses: analysis.clauses,
+    graphWidening: true,
   });
 
   // Map fused ids back to clauses. Ids are positional indices into the

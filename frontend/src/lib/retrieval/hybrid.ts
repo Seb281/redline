@@ -29,10 +29,21 @@ import { vectorRank } from "./vector";
 import { reciprocalRankFusion } from "./fusion";
 import { extractQueryHints } from "./query-analysis";
 import { applyMetadataBoost, type CandidateMetadata } from "./metadata-boost";
+import { buildCrossRefGraph, depthOneNeighbours } from "./cross-refs";
+import { expandWithDefinitions } from "./definitions";
 import { logPass } from "@/lib/llm/debug-log";
 
 const DEFAULT_TOP_N = 5;
 const PER_BRANCH_TOP_K = 20;
+
+/**
+ * SP-10 Arc 2 Task 2.2b — top-K of the fused+boosted rank that seeds
+ * graph widening. Mirrors the chat context's final display cap so the
+ * widening round only pulls neighbours of clauses the user is actually
+ * going to see. Wider seed-depths drag in tangential context that
+ * hasn't earned its place in the answer.
+ */
+const GRAPH_WIDENING_SEED_DEPTH = 5;
 
 /**
  * One candidate doc for the hybrid retriever.
@@ -66,6 +77,20 @@ export interface HybridRetrieveInput {
    * pre-boost hybrid floor so ablation deltas stay clean.
    */
   metadataBoost?: boolean;
+  /**
+   * SP-10 Arc 2 Task 2.2b — clauses backing the candidates. Needed for
+   * graph widening to build the cross-ref graph + definitions map. Same
+   * positional alignment as `candidates` (id = index). Optional because
+   * the non-widening path does not need the full clause bodies.
+   */
+  clauses?: readonly AnalyzedClause[];
+  /**
+   * SP-10 Arc 2 Task 2.2b — toggle cross-ref + definitions widening.
+   * Default `false` to preserve legacy behaviour everywhere the caller
+   * has not explicitly opted in; the production chat context builder and
+   * the Arc 2 eval retriever flip it `true`.
+   */
+  graphWidening?: boolean;
 }
 
 /** A fused ranked entry — clause id plus the raw RRF score for debugging. */
@@ -91,6 +116,8 @@ export async function hybridRetrieve(
     candidates,
     topN = DEFAULT_TOP_N,
     metadataBoost = true,
+    clauses,
+    graphWidening = false,
   } = input;
 
   if (candidates.length === 0) return [];
@@ -153,15 +180,75 @@ export async function hybridRetrieve(
     }
   }
 
+  let widened = 0;
+  if (graphWidening && clauses && clauses.length > 0 && ranked.length > 0) {
+    const result = applyGraphWidening(ranked, clauses);
+    ranked = result.ranked;
+    widened = result.widened;
+  }
+
   logPass("chat_retrieval", {
     event: "hybrid_ok",
     bm25_hits: bm25Order.length,
     vector_hits: vectorOrder.length,
     fused: ranked.length,
     metadata_boost: metadataBoost,
+    graph_widening: graphWidening,
+    widened,
   });
 
   return ranked.slice(0, topN);
+}
+
+/**
+ * Widen the ranked list with depth-1 cross-ref neighbours and defined
+ * -term clauses of the top {@link GRAPH_WIDENING_SEED_DEPTH} seeds.
+ *
+ * Strategy: strictly additive. Widenings that are already present in
+ * the fused+boosted rank keep their existing position; widenings that
+ * were missing (below PER_BRANCH_TOP_K on both branches) get appended
+ * at a synthetic floor score. Never reorders existing ranks.
+ *
+ * The additive-only shape is deliberate. An earlier boosted variant
+ * (1.5× score on widening ids) regressed top-1 recall on
+ * definition-heavy fixtures — every clause mentioning a common defined
+ * term like "Services" promoted the definitions clause past the true
+ * answer. Graph widening's job is context completeness, not relevance
+ * re-ranking; the boost layer is where relevance judgments live.
+ *
+ * Returns both the new rank list and the widening-set size for debug
+ * logging.
+ */
+function applyGraphWidening(
+  ranked: readonly HybridResult[],
+  clauses: readonly AnalyzedClause[],
+): { ranked: HybridResult[]; widened: number } {
+  const seeds = new Set(
+    ranked.slice(0, GRAPH_WIDENING_SEED_DEPTH).map((r) => r.id),
+  );
+  const graph = buildCrossRefGraph(clauses);
+  const neighbours = depthOneNeighbours(seeds, graph);
+  const defs = expandWithDefinitions(seeds, clauses);
+  const widening = new Set<number>([...neighbours, ...defs]);
+  if (widening.size === 0) {
+    return { ranked: [...ranked], widened: 0 };
+  }
+
+  const rankedIds = new Set(ranked.map((r) => r.id));
+  const missing = [...widening].filter((id) => !rankedIds.has(id));
+  if (missing.length === 0) {
+    return { ranked: [...ranked], widened: 0 };
+  }
+
+  const out: HybridResult[] = [...ranked];
+  const floor = out.length > 0 ? out[out.length - 1].score : 1;
+  const base = floor > 0 ? floor * 0.9 : 1e-6;
+  // Space injections by a negligible delta so stable sort order is
+  // deterministic across platforms even for ties at the floor.
+  for (let i = 0; i < missing.length; i++) {
+    out.push({ id: missing[i], score: base - i * 1e-9 });
+  }
+  return { ranked: out, widened: missing.length };
 }
 
 /**

@@ -10,9 +10,12 @@
  *     `metadataBoost: false`.
  *   - `makeHybridRetriever` (Arc 1): BM25 + cosine via RRF, metadata
  *     boost disabled. Measures the pure-fusion floor.
- *   - `makeHybridMetadataRetriever` (Arc 2): full production path —
- *     fusion + metadata boost. Ablation against the `hybrid` row in
- *     `baseline.json` shows Task 2.1's isolated lift.
+ *   - `makeHybridMetadataRetriever` (Arc 2): fusion + metadata boost.
+ *     Ablation against the `hybrid` row in `baseline.json` shows Task
+ *     2.1's isolated lift.
+ *   - `makeHybridGraphRetriever` (Arc 2 Task 2.2b): fusion + metadata
+ *     boost + cross-ref graph + definitions widening. Ablation against
+ *     `hybrid_metadata` isolates the Task 2.2 contribution.
  */
 
 import type { AnalyzeResponse } from "@/types";
@@ -93,6 +96,36 @@ export function makeHybridMetadataRetriever(
       candidates,
       topN: HARNESS_TOP_N,
       metadataBoost: true,
+    });
+    return { indices: ranking.map((r) => r.id) };
+  };
+}
+
+/**
+ * Arc 2 Task 2.2b retriever — hybrid + metadata boost + cross-ref
+ * graph + definitions widening. Matches the production chat context
+ * builder's full feature set. Ablation vs `hybrid_metadata` isolates
+ * the Task 2.2 contribution; ablation vs `bm25` gives the cumulative
+ * lift of everything Arc 1 + all Arc 2 layers added so far.
+ */
+export function makeHybridGraphRetriever(
+  queryEmbeddings: ReadonlyMap<string, readonly number[]>,
+): RetrieverFn {
+  return async (q: GoldenQuestion, fixture: AnalyzeResponse) => {
+    const candidates = buildHybridCandidates(
+      fixture.clauses,
+      fixture.clause_embeddings,
+    );
+    const cached = queryEmbeddings.get(q.id);
+    const queryEmbedding = cached ? Array.from(cached) : null;
+    const ranking = await hybridRetrieve({
+      query: q.question,
+      queryEmbedding,
+      candidates,
+      topN: HARNESS_TOP_N,
+      metadataBoost: true,
+      clauses: fixture.clauses,
+      graphWidening: true,
     });
     return { indices: ranking.map((r) => r.id) };
   };

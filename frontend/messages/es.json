@@ -133,7 +133,8 @@
     "unusual": "Insólito:",
     "originalText": "Texto original de la cláusula",
     "reasoning": "Razonamiento del modelo (rastro de auditoría del Reglamento de IA)",
-    "askAbout": "Pregunta sobre esta cláusula →"
+    "askAbout": "Pregunta sobre esta cláusula →",
+    "findSimilar": "Buscar cláusulas similares →"
   },
   "ClauseCategory": {
     "non_compete": "Cláusula de no competencia",
@@ -611,6 +612,16 @@
     "openAnalysis": "Abrir análisis",
     "similarity": "{percent}% de coincidencia",
     "showingTopK": "Mostrando los {count} resultados más relevantes."
+  },
+  "SimilarClauses": {
+    "heading": "Cláusulas similares en tu biblioteca",
+    "close": "Cerrar",
+    "loading": "Buscando cláusulas similares…",
+    "empty": "No se han encontrado cláusulas similares en tus otros contratos guardados.",
+    "error": "No se han podido cargar las cláusulas similares.",
+    "retry": "Volver a intentar",
+    "similarity": "{percent}% de coincidencia",
+    "openAria": "Abrir esta cláusula"
   },
   "SimilarContracts": {
     "title": "Contratos similares en tu biblioteca",

@@ -19,10 +19,17 @@ const BORDER_COLORS = {
 interface ClauseCardProps {
   clause: AnalyzedClause;
   onAskAbout?: (clause: AnalyzedClause) => void;
+  /**
+   * SP-10 Arc 3 Task 3.4 — open the similar-clauses drawer for this
+   * clause. Optional so the live-analysis view (which has no saved id
+   * yet and therefore no meaningful self-filter) can simply omit it
+   * without rendering a broken affordance.
+   */
+  onFindSimilar?: (clause: AnalyzedClause) => void;
 }
 
 /** Renders a single clause with risk badge, category, and expandable details. */
-export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
+export function ClauseCard({ clause, onAskAbout, onFindSimilar }: ClauseCardProps) {
   const t = useTranslations("ClauseCard");
   const tCat = useTranslations("ClauseCategory");
   const [expanded, setExpanded] = useState(false);
@@ -119,14 +126,28 @@ export function ClauseCard({ clause, onAskAbout }: ClauseCardProps) {
               </p>
             </details>
           )}
-          {onAskAbout && (
-            <button
-              type="button"
-              onClick={() => onAskAbout(clause)}
-              className="mt-3 text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
-            >
-              {t("askAbout")}
-            </button>
+          {(onAskAbout || onFindSimilar) && (
+            <div className="mt-3 flex flex-wrap gap-4">
+              {onAskAbout && (
+                <button
+                  type="button"
+                  onClick={() => onAskAbout(clause)}
+                  className="text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+                >
+                  {t("askAbout")}
+                </button>
+              )}
+              {onFindSimilar && (
+                <button
+                  type="button"
+                  onClick={() => onFindSimilar(clause)}
+                  className="text-[13px] text-[var(--accent)] font-[var(--font-body)] hover:underline"
+                  data-testid="clause-find-similar"
+                >
+                  {t("findSimilar")}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

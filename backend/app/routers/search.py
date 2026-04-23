@@ -56,6 +56,7 @@ async def semantic_search_endpoint(
         user_id=user["id"],
         query_embedding=body.query_embedding,
         top_k=body.top_k,
+        exclude_analysis_id=body.exclude_analysis_id,
     )
 
     return SemanticSearchResponse(results=hits)

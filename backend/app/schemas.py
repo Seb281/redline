@@ -520,9 +520,14 @@ class SemanticSearchRequest(BaseModel):
     pipeline). The dim matches :data:`MISTRAL_EMBED_DIM` — a mis-shaped
     embedding would silently corrupt the cosine query so we reject it
     at the API boundary.
+
+    SP-10 Arc 3 Task 3.4 — ``exclude_analysis_id`` is honored by the
+    similar-clauses drawer so a clause searching against its own
+    analysis does not flood the top of the list with its own siblings.
     """
 
     query_embedding: list[float]
+    exclude_analysis_id: str | None = None
     top_k: int = Field(default=20, ge=1, le=SEMANTIC_SEARCH_MAX_TOP_K)
 
     @field_validator("query_embedding")

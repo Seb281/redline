@@ -133,7 +133,8 @@
     "unusual": "Insolite :",
     "originalText": "Texte original de la clause",
     "reasoning": "Raisonnement du modèle (trace d'audit AI Act)",
-    "askAbout": "Renseignez-vous sur cette clause →"
+    "askAbout": "Renseignez-vous sur cette clause →",
+    "findSimilar": "Trouver des clauses similaires →"
   },
   "ClauseCategory": {
     "non_compete": "Clause de non-concurrence",
@@ -611,6 +612,16 @@
     "openAnalysis": "Ouvrir l'analyse",
     "similarity": "{percent} % de correspondance",
     "showingTopK": "Affichage des {count} meilleures correspondances par pertinence."
+  },
+  "SimilarClauses": {
+    "heading": "Clauses similaires dans votre bibliothèque",
+    "close": "Fermer",
+    "loading": "Recherche de clauses similaires…",
+    "empty": "Aucune clause similaire dans vos autres contrats enregistrés.",
+    "error": "Impossible de charger les clauses similaires.",
+    "retry": "Réessayer",
+    "similarity": "{percent} % de correspondance",
+    "openAria": "Ouvrir cette clause"
   },
   "SimilarContracts": {
     "title": "Contrats similaires dans votre bibliothèque",

@@ -64,6 +64,7 @@ async def semantic_search(
     user_id: str,
     query_embedding: list[float],
     top_k: int,
+    exclude_analysis_id: str | None = None,
 ) -> list[SemanticSearchHit]:
     """Return the top-``top_k`` clauses most similar to ``query_embedding``.
 
@@ -71,11 +72,26 @@ async def semantic_search(
     vector is first). ``similarity`` is ``1 - cosine_distance``, bounded
     to ``[0, 2]`` by pgvector — in practice normalized Mistral-embed
     vectors land in ``[0, 1]``.
+
+    SP-10 Arc 3 Task 3.4 — ``exclude_analysis_id`` filters out clauses
+    from the caller's current contract. Used by the per-clause drawer
+    so a clause's own siblings don't dominate the result list.
     """
 
     now = datetime.now(timezone.utc)
+    params: dict[str, Any] = {
+        "query_embedding": _format_vector(query_embedding),
+        "user_id": user_id,
+        "now": now,
+        "top_k": top_k,
+    }
+    exclude_clause = ""
+    if exclude_analysis_id is not None:
+        exclude_clause = "AND a.id != :exclude_id"
+        params["exclude_id"] = exclude_analysis_id
+
     rows = await db.fetch_all(
-        """
+        f"""
         SELECT
             ce.analysis_id AS analysis_id,
             ce.clause_index AS clause_index,
@@ -88,15 +104,11 @@ async def semantic_search(
         JOIN analyses a ON a.id = ce.analysis_id
         WHERE a.user_id = :user_id
           AND (a.pinned = TRUE OR a.expires_at IS NULL OR a.expires_at > :now)
+          {exclude_clause}
         ORDER BY ce.embedding <=> :query_embedding ASC
         LIMIT :top_k
         """,
-        {
-            "query_embedding": _format_vector(query_embedding),
-            "user_id": user_id,
-            "now": now,
-            "top_k": top_k,
-        },
+        params,
     )
 
     hits: list[SemanticSearchHit] = []

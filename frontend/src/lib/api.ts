@@ -378,11 +378,16 @@ export async function embedSearchQuery(query: string): Promise<number[]> {
 export async function semanticSearch(
   queryEmbedding: number[],
   topK: number = 20,
+  excludeAnalysisId: string | null = null,
 ): Promise<SemanticSearchResponse> {
   const res = await backendFetch("/api/search/semantic", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query_embedding: queryEmbedding, top_k: topK }),
+    body: JSON.stringify({
+      query_embedding: queryEmbedding,
+      top_k: topK,
+      exclude_analysis_id: excludeAnalysisId,
+    }),
   });
 
   if (!res.ok) {

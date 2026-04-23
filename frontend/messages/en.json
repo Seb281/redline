@@ -133,7 +133,8 @@
     "unusual": "Unusual:",
     "originalText": "Original clause text",
     "reasoning": "Model reasoning (AI Act audit trace)",
-    "askAbout": "Ask about this clause →"
+    "askAbout": "Ask about this clause →",
+    "findSimilar": "Find similar clauses →"
   },
   "ClauseCategory": {
     "non_compete": "Non-Compete",
@@ -686,6 +687,16 @@
     "openAnalysis": "Open analysis",
     "similarity": "{percent}% match",
     "showingTopK": "Showing top {count} matches by relevance."
+  },
+  "SimilarClauses": {
+    "heading": "Similar clauses in your library",
+    "close": "Close",
+    "loading": "Finding similar clauses…",
+    "empty": "No similar clauses found in your other saved contracts.",
+    "error": "Could not load similar clauses.",
+    "retry": "Try again",
+    "similarity": "{percent}% match",
+    "openAria": "Open this clause"
   },
   "SimilarContracts": {
     "title": "Similar contracts in your library",

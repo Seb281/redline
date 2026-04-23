@@ -133,7 +133,8 @@
     "unusual": "Ungewöhnlich:",
     "originalText": "Ursprünglicher Wortlaut der Klausel",
     "reasoning": "Modell-Begründung (KI-VO-Audit-Spur)",
-    "askAbout": "Fragen Sie nach dieser Klausel →"
+    "askAbout": "Fragen Sie nach dieser Klausel →",
+    "findSimilar": "Ähnliche Klauseln finden →"
   },
   "ClauseCategory": {
     "non_compete": "Wettbewerbsverbot",
@@ -611,6 +612,16 @@
     "openAnalysis": "Analyse öffnen",
     "similarity": "{percent} % Übereinstimmung",
     "showingTopK": "Die {count} relevantesten Treffer werden angezeigt."
+  },
+  "SimilarClauses": {
+    "heading": "Ähnliche Klauseln in Ihrer Bibliothek",
+    "close": "Schließen",
+    "loading": "Suche nach ähnlichen Klauseln…",
+    "empty": "Keine ähnlichen Klauseln in Ihren anderen gespeicherten Verträgen gefunden.",
+    "error": "Ähnliche Klauseln konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "similarity": "{percent} % Übereinstimmung",
+    "openAria": "Diese Klausel öffnen"
   },
   "SimilarContracts": {
     "title": "Ähnliche Verträge in Ihrer Bibliothek",

@@ -232,6 +232,60 @@ def test_semantic_search_isolates_per_user():
     assert params["query_embedding"].endswith("]")
 
 
+def test_semantic_search_forwards_exclude_analysis_id_to_sql():
+    """SP-10 Arc 3 Task 3.4 — drawer self-filter reaches the SQL params."""
+    db = AsyncMock()
+    db.fetch_all.return_value = []
+
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=db),
+    ):
+        resp = client.post(
+            "/api/search/semantic",
+            json={
+                "query_embedding": VALID_EMBEDDING,
+                "top_k": 5,
+                "exclude_analysis_id": "current",
+            },
+        )
+
+    assert resp.status_code == 200
+    sql = db.fetch_all.await_args.args[0]
+    params = db.fetch_all.await_args.args[1]
+    assert ":exclude_id" in sql
+    assert params["exclude_id"] == "current"
+
+
+def test_semantic_search_omits_exclude_clause_when_absent():
+    """No ``exclude_analysis_id`` ⇒ no exclude predicate in the SQL."""
+    db = AsyncMock()
+    db.fetch_all.return_value = []
+
+    with (
+        patch(
+            "app.routers.search.get_current_user",
+            new_callable=AsyncMock,
+            return_value=MOCK_USER,
+        ),
+        patch("app.routers.search.get_db", return_value=db),
+    ):
+        resp = client.post(
+            "/api/search/semantic",
+            json={"query_embedding": VALID_EMBEDDING, "top_k": 5},
+        )
+
+    assert resp.status_code == 200
+    sql = db.fetch_all.await_args.args[0]
+    params = db.fetch_all.await_args.args[1]
+    assert ":exclude_id" not in sql
+    assert "exclude_id" not in params
+
+
 def test_semantic_search_handles_out_of_bounds_clause_index():
     """A clause_index pointing past the stored clauses list is skipped
     rather than crashing — defensive against row/index drift between

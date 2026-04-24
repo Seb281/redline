@@ -40,12 +40,10 @@ deliberately chosen as a different model family from the in-pipeline
 Mistral so the questions don't leak authorship bias into retrieval
 numbers. Methodology is in [`src/eval/generate-golden-set.md`](src/eval/generate-golden-set.md).
 
-**Review status.** The set currently carries
-`reviewed_by: "claude-opus-4-7"` on every entry — generator-model
-self-check only. Baseline numbers in this document are labelled
-`pre-human-review` until the project owner's review pass lands.
-After human review, both `reviewed_by` and the baseline numbers in
-`src/eval/baseline.json` will be refreshed in the same PR.
+**Review status.** Hand-reviewed by the project owner on 2026-04-24.
+Every entry carries `reviewed_by: "SG"` and every `baseline.json` row
+sourced from this set carries `golden_set_review_status:
+"human-reviewed:SG:2026-04-24"`.
 
 **Cross-model sanity check (deferred).** 10/48 questions are
 scheduled to be re-posed to a third model or human reviewer to catch
@@ -106,7 +104,7 @@ or future regressions hide under an inflated ceiling.
 | `it-employment`      | 8 | 0.875    | 0.875    | 1.000    | 0.906  |
 | `pl-distribution`    | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 
-### Observations (pre-human-review)
+### Observations
 
 - **Easy is essentially solved by keyword** (recall@3 = 1.00). That's
   the tier definition doing its job.
@@ -218,7 +216,7 @@ checkouts without a key still run the BM25 gate green.
 | `it-employment`      | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 | `pl-distribution`    | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 
-### Deltas vs BM25 (pre-human-review)
+### Deltas vs BM25
 
 - **Medium tier is where the lift lands, as predicted.** recall@1
   jumps **0.444 → 0.778 (+0.333)** and recall@5 **0.833 → 0.944
@@ -458,9 +456,10 @@ surface is deliberately single-stage.
   recall / MRR ≥ the `cross_doc` floor pinned in `baseline.json`.
   Fresh checkouts without the cache skip cleanly rather than fail.
 
-Review status: `pre-human-review` (generator-model self-check only) —
-same discipline as the intra-doc numbers. `reviewed_by` and the
-numbers both refresh together after the owner's review pass.
+Review status: human-reviewed by the project owner on 2026-04-24 —
+same discipline as the intra-doc numbers. Every entry carries
+`reviewed_by: "SG"`; the `cross_doc` baseline row carries
+`golden_set_review_status: "human-reviewed:SG:2026-04-24"`.
 
 ### Numbers
 
@@ -471,7 +470,7 @@ numbers both refresh together after the owner's review pass.
 | tier: medium | 10 | 0.900 | 1.000 | 1.000 | 0.950 |
 | tier: hard | 6 | 0.667 | 1.000 | 1.000 | 0.833 |
 
-### Observations (pre-human-review)
+### Observations
 
 - **Recall@5 = 1.000 across every tier.** Every question's expected
   clause set has at least one member in the top 5 results — cosine

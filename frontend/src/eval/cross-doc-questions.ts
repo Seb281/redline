@@ -23,9 +23,8 @@
  * Authorship. Claude Opus 4.7 (``claude-opus-4-7``), same generator as
  * the intra-doc set — different model family from the in-pipeline
  * Mistral so questions don't leak authorship bias into the numbers.
- * ``reviewed_by`` flips to the owner's initials after their review
- * pass; until then, any baseline row sourcing numbers from this set is
- * tagged ``pre-human-review`` in ``baseline.json`` and EVAL.md.
+ * Hand-reviewed by the project owner on 2026-04-24 before baseline
+ * numbers were promoted off ``pre-human-review``.
  *
  * DO NOT re-order entries without reviewing impact on EVAL.md — ``id``
  * is the stable handle the harness keys on and the baseline artifact
@@ -52,8 +51,12 @@ export interface CrossDocQuestion {
   reviewed_at: string;
 }
 
-const GENERATOR = "claude-opus-4-7";
-const REVIEWED_AT = "2026-04-23";
+// Human-reviewed by project owner on 2026-04-24; the set was
+// originally drafted by claude-opus-4-7 and hand-reviewed entry-by-
+// entry before the `cross_doc` baseline row was promoted off
+// `pre-human-review`. Single-entry re-reviews can override inline.
+const REVIEWED_BY = "SG";
+const REVIEWED_AT = "2026-04-24";
 
 /**
  * 24 cross-contract questions, frozen. Re-order or edit only when the
@@ -72,7 +75,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "it-employment", clause_index: 9 }],
     tier: "easy",
     rationale: "Only it-employment has a five-year duration on non-compete — direct lexical + semantic match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -81,7 +84,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "pl-distribution", clause_index: 0 }],
     tier: "easy",
     rationale: "Distribution agreement is the only one that mentions exclusive distribution; unique lexical anchor.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -90,7 +93,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "nl-freelance", clause_index: 9 }],
     tier: "easy",
     rationale: "Only nl-freelance specifies binding arbitration; the others go to jurisdiction/dispute resolution differently.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -99,7 +102,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "nl-freelance", clause_index: 11 }],
     tier: "easy",
     rationale: "Only nl-freelance has an explicit force majeure clause in the frozen corpus.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -108,7 +111,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "de-saas-dpa", clause_index: 12 }],
     tier: "easy",
     rationale: "Subprocessor authorization is DPA-specific; unique to de-saas-dpa in the corpus.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -117,7 +120,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "pl-distribution", clause_index: 7 }],
     tier: "easy",
     rationale: "Sales reporting is distribution-specific; unique to pl-distribution.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -126,7 +129,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "de-saas-dpa", clause_index: 13 }],
     tier: "easy",
     rationale: "Third-country data transfer safeguards live in the DPA; unique lexical anchor on 'third countries'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -135,7 +138,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "pl-distribution", clause_index: 2 }],
     tier: "easy",
     rationale: "Annual purchase minimum is distribution-specific; unique to pl-distribution.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -150,7 +153,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "es-saas-services", clause_index: 3 }],
     tier: "medium",
     rationale: "Multiple contracts discuss payment terms; only es-saas-services has the one-sided fee adjustment.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -163,7 +166,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Three contracts have explicit IP assignment clauses; any one in top-5 counts as a hit.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -175,7 +178,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Contractual penalty clauses live in civil-law jurisdictions (PL + IT); any in top-5 counts.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -188,7 +191,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Three contracts have explicit confidentiality clauses; broad lexical match, retriever must surface at least one.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -197,7 +200,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "pl-distribution", clause_index: 12 }],
     tier: "medium",
     rationale: "Governing-law clauses are lexically similar across fixtures; retriever must pick PL.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -209,7 +212,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Audit rights appear in two fixtures; any in top-5 counts.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -218,7 +221,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "de-saas-dpa", clause_index: 15 }],
     tier: "medium",
     rationale: "Breach notification is DPA-unique but the phrase 'breach' also hits general penalty/liability clauses; retriever must stay topical.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -227,7 +230,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "fr-employment", clause_index: 10 }],
     tier: "medium",
     rationale: "FR employment uniquely mentions severance; IT employment's termination clause is adjacent but distinct.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -239,7 +242,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Both employment contracts have probation; either in top-5 counts.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -251,7 +254,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "medium",
     rationale: "Two SaaS contracts cover SLA mechanics; retriever should prefer these over generic liability clauses.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -270,7 +273,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "hard",
     rationale: "Aggregation query — requires reasoning about non-compete scope + duration; lexically distant.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -279,7 +282,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "nl-freelance", clause_index: 6 }],
     tier: "hard",
     rationale: "Target clause's title includes 'one-sided' but most retrievers latch on 'indemnification' which is fixture-rare; good semantic test.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -291,7 +294,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "hard",
     rationale: "Two pl-distribution clauses combine — no-compensation + waiver. Lexically lean; easy to be fooled by generic termination clauses.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -303,7 +306,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "hard",
     rationale: "Comparative query; target clauses don't use the word 'aggressive' — retriever must generalise from 'limitation of liability'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -312,7 +315,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     expected: [{ fixture: "de-saas-dpa", clause_index: 10 }],
     tier: "hard",
     rationale: "Term-of-art phrasing; the target uses 'instructions' + 'binding' in legal-register German/English that doesn't lexically match the casual phrasing.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -324,7 +327,7 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     ],
     tier: "hard",
     rationale: "Aggregation query; the 'exclusive remedy' (ES) and 'waiver of rights' (PL) both match semantically but use different lexical anchors.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 ];

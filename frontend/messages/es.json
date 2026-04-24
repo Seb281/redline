@@ -434,8 +434,8 @@
     "deepDesc": "Análisis exhaustivo cláusula por cláusula — Mistral Small (UE)",
     "demoIntro": "o prueba una demostración con un modelo de contrato de la UE",
     "demoNl": "NL · Autónomo",
-    "demoFr": "FR · Empleo",
-    "demoDe": "DE · SaaS + DPA",
+    "demoFr": "FR · Arrendamiento comercial",
+    "demoDe": "DE · Empleo",
     "demoEs": "ES · Servicios SaaS",
     "demoIt": "TI · Empleo",
     "demoPl": "PL · Distribución",
@@ -725,8 +725,8 @@
     "noMatchingFilter": "No hay filas que coincidan con este filtro.",
     "samples": {
       "nl_freelance": "NL — Contrato de colaborador autónomo",
-      "fr_employment": "FR — Contrato de trabajo",
-      "de_saas_dpa": "DE — SaaS + DPA",
+      "fr_commercial_lease": "FR — Arrendamiento comercial",
+      "de_employment": "DE — Contrato de trabajo",
       "es_saas_services": "ES — Contrato de SaaS / servicios",
       "it_employment": "TI — Contrato de trabajo",
       "pl_distribution": "PL — Acuerdo de distribución"

@@ -44,8 +44,11 @@ export interface GoldenQuestion {
 // Human-reviewed by project owner on 2026-04-24; the set was
 // originally drafted by claude-opus-4-7 and hand-reviewed clause-by-
 // clause before any baseline numbers were promoted off
-// `pre-human-review`. Kept as a constant so single-entry re-reviews
-// can override inline without stale-stamping untouched rows.
+// `pre-human-review`. The 16 entries covering `fr-commercial-lease`
+// and `de-employment` were re-authored by claude-opus-4-7 against
+// the freshly frozen fixtures on the same day and hand-reviewed in
+// the same sweep. Kept as a constant so single-entry re-reviews can
+// override inline without stale-stamping untouched rows.
 const REVIEWED_BY = "SG";
 const REVIEWED_AT = "2026-04-24";
 
@@ -142,185 +145,192 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
   },
 
   // ---------------------------------------------------------------
-  // FR employment (13 clauses)
+  // FR commercial lease (15 clauses) — re-authored 2026-04-24
+  // after fixture swap and hand-reviewed in the same sweep.
   // ---------------------------------------------------------------
   {
-    id: "fr-employment-q1",
-    fixture: "fr-employment",
-    question: "What is the probation period duration?",
-    expected_clause_indices: [2],
-    tier: "easy",
-    rationale: "Clause title 'Probationary period' — direct keyword overlap.",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "fr-employment-q2",
-    fixture: "fr-employment",
-    question: "What is the annual gross salary?",
-    expected_clause_indices: [4],
+    id: "fr-commercial-lease-q1",
+    fixture: "fr-commercial-lease",
+    question: "How long is the lease agreement?",
+    expected_clause_indices: [1],
     tier: "easy",
     rationale:
-      "plain_english explicitly uses 'annual gross salary'; strong BM25 hit.",
+      "Clause 1 titled 'Durée et résiliation triennale' with plain_english '9 ans' — direct keyword overlap on 'lease'/'durée'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "fr-employment-q3",
-    fixture: "fr-employment",
-    question: "Where will the employee work?",
-    expected_clause_indices: [5],
-    tier: "easy",
-    rationale: "Clause titled 'Work location' — direct keyword match.",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "fr-employment-q4",
-    fixture: "fr-employment",
-    question: "Will I be compensated for extra hours worked beyond my regular schedule?",
+    id: "fr-commercial-lease-q2",
+    fixture: "fr-commercial-lease",
+    question: "What is the annual rent?",
     expected_clause_indices: [3],
-    tier: "medium",
+    tier: "easy",
     rationale:
-      "Clause text is French ('heures supplémentaires'); query uses 'extra hours'/'regular schedule' paraphrase.",
+      "Clause 3 'Loyer et indexation' — plain_english explicitly says '48 000 €'; strong keyword hit on rent/loyer.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "fr-employment-q5",
-    fixture: "fr-employment",
-    question: "Am I allowed to join a rival company after my contract ends?",
+    id: "fr-commercial-lease-q3",
+    fixture: "fr-commercial-lease",
+    question: "How big is the leased property and where is it located?",
+    expected_clause_indices: [0],
+    tier: "easy",
+    rationale:
+      "Clause 0 'Description des locaux loués' — direct semantic match on size + location.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "fr-commercial-lease-q4",
+    fixture: "fr-commercial-lease",
+    question: "Am I allowed to sublet the premises to another business?",
     expected_clause_indices: [6],
     tier: "medium",
     rationale:
-      "Non-compete clause uses 'activité professionnelle ... concurrente'; query phrases it as 'rival company'.",
+      "Clause 6 'Cession et sous-location' — French clause text uses 'sous-location'; English query phrases as 'sublet'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "fr-employment-q6",
-    fixture: "fr-employment",
-    question: "Who owns the inventions I create at work?",
-    expected_clause_indices: [7],
+    id: "fr-commercial-lease-q5",
+    fixture: "fr-commercial-lease",
+    question:
+      "When the lease ends, can I keep or be paid for the improvements I made to the premises?",
+    expected_clause_indices: [10],
     tier: "medium",
     rationale:
-      "IP clause is in French ('invention ... appartiendra ... employeur'); 'owns'/'at work' paraphrase.",
+      "Clause 10 'Restitution des locaux' — French clause says 'améliorations ... deviennent la propriété du Bailleur sans indemnité'. Query paraphrases as 'improvements I made' / 'keep or be paid for'; medium-tier because the answer (no, without compensation) requires reading the clause carefully rather than latching on a single keyword.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "fr-employment-q7",
-    fixture: "fr-employment",
-    question:
-      "If I resign 18 months after starting, what must I repay, and how much notice must I give?",
-    expected_clause_indices: [10, 11],
-    tier: "hard",
+    id: "fr-commercial-lease-q6",
+    fixture: "fr-commercial-lease",
+    question: "Who is responsible for major building repairs?",
+    expected_clause_indices: [5],
+    tier: "medium",
     rationale:
-      "Joint read of termination-notice clause (3-month notice) and training-retention clause (repay training cost +30% if leaving within 3 years).",
+      "Clause 5 'Charges et réparations' transfers grosses réparations (including art. 606) to the Preneur; 'major building repairs' is a paraphrase.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "fr-employment-q8",
-    fixture: "fr-employment",
+    id: "fr-commercial-lease-q7",
+    fixture: "fr-commercial-lease",
     question:
-      "My employer wants to transfer me to an office 150 km from Paris — am I obligated to accept, and what if I refuse and am fired?",
-    expected_clause_indices: [5, 10],
+      "What happens if I miss a rent payment — what can the landlord do and what do I owe?",
+    expected_clause_indices: [7, 8],
     tier: "hard",
     rationale:
-      "Needs work-location clause (Île-de-France relocation without consent, outside requires agreement) + termination clause (severance if fired without cause).",
+      "Joint read: clause 7 'Résiliation pour non-paiement' triggers the lease termination via clause résolutoire, and clause 8 'Intérêts de retard et clause pénale' fixes the 15% penalty plus interest. Answer requires both. Any in top-5 counts.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "fr-commercial-lease-q8",
+    fixture: "fr-commercial-lease",
+    question:
+      "If the landlord evicts me after a breach notice, am I entitled to eviction compensation for the lost business goodwill?",
+    expected_clause_indices: [9],
+    tier: "hard",
+    rationale:
+      "Clause 9 'Résiliation pour manquement' explicitly excludes indemnité d'éviction under L.145-14 — a term of art the retriever must bridge from the query's 'eviction compensation for lost goodwill'. Single-index hard: the implicit legal reasoning (L.145-14 waiver) is the difficulty.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
   // ---------------------------------------------------------------
-  // DE SaaS + DPA (18 clauses)
+  // DE employment (16 clauses) — re-authored 2026-04-24 after
+  // fixture swap and hand-reviewed in the same sweep.
   // ---------------------------------------------------------------
   {
-    id: "de-saas-dpa-q1",
-    fixture: "de-saas-dpa",
-    question: "What is the monthly fee?",
-    expected_clause_indices: [2],
+    id: "de-employment-q1",
+    fixture: "de-employment",
+    question: "What is the annual gross salary?",
+    expected_clause_indices: [3],
     tier: "easy",
-    rationale: "Clause titled 'Payment Terms and Late Fees' — direct match.",
+    rationale:
+      "Clause 3 'Salary and Payment Terms' — plain_english explicitly uses 'annual gross salary of 85,000 euros'. Strong keyword hit.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "de-saas-dpa-q2",
-    fixture: "de-saas-dpa",
-    question: "What is the minimum contract term?",
+    id: "de-employment-q2",
+    fixture: "de-employment",
+    question: "How long is the probation period?",
     expected_clause_indices: [1],
     tier: "easy",
     rationale:
-      "Clause title + plain_english 'minimum term of 36 months' — direct overlap.",
+      "Clause 1 'Probation Period Terms' — direct keyword match; plain_english says 'six months'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "de-saas-dpa-q3",
-    fixture: "de-saas-dpa",
-    question: "Which country's law governs this contract?",
-    expected_clause_indices: [7],
+    id: "de-employment-q3",
+    fixture: "de-employment",
+    question: "How many vacation days am I entitled to each year?",
+    expected_clause_indices: [4],
     tier: "easy",
-    rationale: "Clause titled 'Governing Law and Jurisdiction' — direct match.",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "de-saas-dpa-q4",
-    fixture: "de-saas-dpa",
-    question: "What uptime does the provider guarantee?",
-    expected_clause_indices: [3],
-    tier: "medium",
     rationale:
-      "Clause text is German ('Verfügbarkeit'); plain_english does say 'availability' — 'uptime' is a true synonym not present anywhere.",
+      "Clause 4 'Annual Leave Entitlement' — plain_english '25 days'. Lexical match on 'vacation'/'leave'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
-    id: "de-saas-dpa-q5",
-    fixture: "de-saas-dpa",
-    question: "How quickly am I informed of a security incident affecting my data?",
-    expected_clause_indices: [15],
-    tier: "medium",
-    rationale:
-      "Target clause is 'Data Breach Notification' (24h); 'security incident' is a paraphrase.",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "de-saas-dpa-q6",
-    fixture: "de-saas-dpa",
-    question: "Can third-party vendors process my data on the provider's behalf?",
-    expected_clause_indices: [12],
-    tier: "medium",
-    rationale:
-      "Subprocessor clause — 'third-party vendors'/'process on behalf' is a paraphrase of 'Unterauftragsverarbeiter'.",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "de-saas-dpa-q7",
-    fixture: "de-saas-dpa",
-    question:
-      "If my data ends up on US-based servers, what legal safeguards are in place?",
-    expected_clause_indices: [13, 11],
-    tier: "hard",
-    rationale:
-      "Answer needs the third-country-transfer clause (SCCs + additional measures) together with the TOM clause (encryption details that form the 'additional measures').",
-    reviewed_by: REVIEWED_BY,
-    reviewed_at: REVIEWED_AT,
-  },
-  {
-    id: "de-saas-dpa-q8",
-    fixture: "de-saas-dpa",
-    question:
-      "I received the hardware onboarding pack on Monday. If I find a defect on Friday, can I still claim under warranty?",
+    id: "de-employment-q4",
+    fixture: "de-employment",
+    question: "Will I be paid extra if I work beyond my normal hours?",
     expected_clause_indices: [5],
+    tier: "medium",
+    rationale:
+      "Clause 5 'Overtime Compensation Exclusion' — German clause text uses 'Überstunden/Mehrarbeit ... abgegolten'. Query phrases it as 'paid extra'/'beyond normal hours'; the retriever has to bridge.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "de-employment-q5",
+    fixture: "de-employment",
+    question: "Can I take on a second job while working here?",
+    expected_clause_indices: [7],
+    tier: "medium",
+    rationale:
+      "Clause 7 'Side Employment Restrictions' — German 'Nebentätigkeiten' mapped to 'second job'. Paraphrase, not a direct keyword match.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "de-employment-q6",
+    fixture: "de-employment",
+    question: "Who owns a side project I build at home on my own time?",
+    expected_clause_indices: [11],
+    tier: "medium",
+    rationale:
+      "Clause 11 'Intellectual Property Assignment' — clause text says 'in der Freizeit entstehen ... vollständig ... auf die Arbeitgeberin' and query uses 'side project at home'. Retriever must connect free-time inventions to IP clause.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "de-employment-q7",
+    fixture: "de-employment",
+    question:
+      "If I leave the company and accept a role at a competitor in Spain three months later, what must I not do and what will I receive in return?",
+    expected_clause_indices: [10],
     tier: "hard",
     rationale:
-      "Requires temporal reasoning against the 48-hour inspection deadline — Friday is past the window, so warranty rights are forfeited.",
+      "Requires joint reasoning over clause 10 'Post-Employment Non-Compete' — 12-month EU-wide ban + 25% Karenzentschädigung as the quid pro quo. The query's 'what will I receive in return' anchors on the compensation half.",
+    reviewed_by: REVIEWED_BY,
+    reviewed_at: REVIEWED_AT,
+  },
+  {
+    id: "de-employment-q8",
+    fixture: "de-employment",
+    question:
+      "If I accidentally share a confidential document with a friend after leaving the company, what amount am I contractually liable to pay?",
+    expected_clause_indices: [8, 12],
+    tier: "hard",
+    rationale:
+      "Joint read: clause 8 'Confidentiality Obligations' extends the duty five years post-termination; clause 12 'Penalty for Breach' fixes the liquidated damages at three months' gross salary. Any in top-5 counts.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },

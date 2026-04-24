@@ -889,10 +889,15 @@ export function buildProvenance(
   provider: LLMProvider,
   analysisLocale: string = "en",
   reasoningEmitted: boolean = false,
+  mode?: AnalysisMode,
 ): AnalysisProvenance {
   // Top-level `model` / `snapshot` track the overview pass for
   // backward compat with pre-SP-11 consumers. `model_per_pass` is the
   // authoritative per-pass record for auditors.
+  //
+  // `mode` is threaded only onto the `risk` pass: Fast mode demotes
+  // the risk call to Mistral Small, and the audit log must reflect
+  // the model that actually ran. Every other pass is mode-agnostic.
   return {
     provider: provider.name,
     model: provider.modelIdFor("overview"),
@@ -907,7 +912,7 @@ export function buildProvenance(
     model_per_pass: {
       overview: provider.modelIdFor("overview"),
       extraction: provider.modelIdFor("extraction"),
-      risk: provider.modelIdFor("risk"),
+      risk: provider.modelIdFor("risk", mode),
       think_hard: provider.modelIdFor("think_hard"),
     },
     // True only when the pipeline actually captured at least one
@@ -1171,14 +1176,13 @@ export async function analyzeContract(
     returned: extraction.clauses.length,
   });
 
-  // Pass 2 — risk analysis (Magistral Medium via SP-11). Magistral emits
-  // reasoning by default — no `reasoning_effort` header needed (the API
-  // rejects it). `emitsReasoning` guards the post-call attach so we
-  // don't spuriously write the field on calls that didn't run on a
-  // reasoning model (e.g. if PASS_MODEL_MAP is flipped back during an
-  // incident).
+  // Pass 2 — risk analysis. Deep mode routes to Magistral Medium (SP-11)
+  // so the model emits a per-clause reasoning trace; Fast mode demotes
+  // to Mistral Small for lower end-to-end latency. `emitsReasoning`
+  // mirrors the routing decision and guards the post-call attach so we
+  // don't speculatively read a trace that was never emitted.
   const passEffort: ReasoningEffort = "high";
-  const pass2EmitsReasoning = provider.emitsReasoning("risk");
+  const pass2EmitsReasoning = provider.emitsReasoning("risk", mode);
   const pass2Start = Date.now();
   let analyzedClauses: (z.infer<typeof analyzedClauseSchema> & {
     reasoning?: string;
@@ -1197,7 +1201,7 @@ export async function analyzeContract(
       DEEP_MODE_MAX_CONCURRENCY,
       async (clause) => {
         const { object, reasoning } = await generateObject({
-          model: provider.model({ effort: passEffort, pass: "risk" }),
+          model: provider.model({ effort: passEffort, pass: "risk", mode }),
           schema: analyzedClauseSchema,
           system: analysisSystemPrompt,
           prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -1302,7 +1306,7 @@ export async function analyzeContract(
     overview,
     summary,
     clauses: analyzedClauses,
-    provenance: buildProvenance(provider, locale, reasoningEmitted),
+    provenance: buildProvenance(provider, locale, reasoningEmitted, mode),
     ...(clauseEmbeddings !== null ? { clause_embeddings: clauseEmbeddings } : {}),
   };
 }

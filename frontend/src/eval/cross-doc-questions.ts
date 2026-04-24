@@ -54,7 +54,14 @@ export interface CrossDocQuestion {
 // Human-reviewed by project owner on 2026-04-24; the set was
 // originally drafted by claude-opus-4-7 and hand-reviewed entry-by-
 // entry before the `cross_doc` baseline row was promoted off
-// `pre-human-review`. Single-entry re-reviews can override inline.
+// `pre-human-review`. On the same day, 10 entries were re-targeted
+// or re-authored by claude-opus-4-7 after the `fr-employment` →
+// `fr-commercial-lease` and `de-saas-dpa` → `de-employment` fixture
+// swap destroyed their old clause_index anchors (subprocessors, SLA
+// credits, severance, data-breach notification, etc. — repurposed
+// to unique anchors in the new corpus), and the re-authored entries
+// were hand-reviewed in the same sweep before the baseline row was
+// re-pinned. Single-entry re-reviews can override inline.
 const REVIEWED_BY = "SG";
 const REVIEWED_AT = "2026-04-24";
 
@@ -107,10 +114,11 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
   },
   {
     id: "xd-e5",
-    question: "Which contract regulates subprocessors for data processing?",
-    expected: [{ fixture: "de-saas-dpa", clause_index: 12 }],
+    question: "Which contract rolls all overtime pay into the base salary?",
+    expected: [{ fixture: "de-employment", clause_index: 5 }],
     tier: "easy",
-    rationale: "Subprocessor authorization is DPA-specific; unique to de-saas-dpa in the corpus.",
+    rationale:
+      "Re-authored 2026-04-24 after fixture swap. Overtime flat-rate is unique to de-employment §6 — strong lexical anchor on 'overtime'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -125,10 +133,11 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
   },
   {
     id: "xd-e7",
-    question: "Where in my library is cross-border data transfer addressed?",
-    expected: [{ fixture: "de-saas-dpa", clause_index: 13 }],
+    question: "Which of my contracts covers a restaurant premises lease?",
+    expected: [{ fixture: "fr-commercial-lease", clause_index: 0 }],
     tier: "easy",
-    rationale: "Third-country data transfer safeguards live in the DPA; unique lexical anchor on 'third countries'.",
+    rationale:
+      "Re-authored 2026-04-24 after fixture swap. Restaurant activity + lease designation are unique to fr-commercial-lease §1 (Description des locaux).",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -161,11 +170,12 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     question: "Compare how my contracts handle intellectual property assignment.",
     expected: [
       { fixture: "nl-freelance", clause_index: 3 },
-      { fixture: "fr-employment", clause_index: 7 },
+      { fixture: "de-employment", clause_index: 11 },
       { fixture: "it-employment", clause_index: 6 },
     ],
     tier: "medium",
-    rationale: "Three contracts have explicit IP assignment clauses; any one in top-5 counts as a hit.",
+    rationale:
+      "Re-targeted 2026-04-24 — fr-commercial-lease has no IP clause; de-employment §12 assigns all inventions (incl. free-time) to the employer. Three fixtures still host explicit IP assignment clauses; any in top-5 counts.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -186,11 +196,11 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     question: "Where is confidentiality addressed across my library?",
     expected: [
       { fixture: "nl-freelance", clause_index: 4 },
-      { fixture: "fr-employment", clause_index: 8 },
-      { fixture: "de-saas-dpa", clause_index: 6 },
+      { fixture: "de-employment", clause_index: 8 },
     ],
     tier: "medium",
-    rationale: "Three contracts have explicit confidentiality clauses; broad lexical match, retriever must surface at least one.",
+    rationale:
+      "Re-targeted 2026-04-24 — fr-commercial-lease has no confidentiality clause (it-employment also does not surface one in its frozen clause set). Two fixtures host confidentiality clauses; any in top-5 counts.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -206,30 +216,30 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
   {
     id: "xd-m6",
     question: "Which contracts grant a right to audit the other party?",
-    expected: [
-      { fixture: "es-saas-services", clause_index: 7 },
-      { fixture: "de-saas-dpa", clause_index: 16 },
-    ],
+    expected: [{ fixture: "es-saas-services", clause_index: 7 }],
     tier: "medium",
-    rationale: "Audit rights appear in two fixtures; any in top-5 counts.",
+    rationale:
+      "Re-targeted 2026-04-24 — the new de-employment fixture has no audit rights; es-saas-services remains the only audit-rights anchor in the corpus.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
     id: "xd-m7",
-    question: "Where do my contracts address data breach notification?",
-    expected: [{ fixture: "de-saas-dpa", clause_index: 15 }],
+    question: "Which contract charges a flat percentage penalty on overdue payments?",
+    expected: [{ fixture: "fr-commercial-lease", clause_index: 8 }],
     tier: "medium",
-    rationale: "Breach notification is DPA-unique but the phrase 'breach' also hits general penalty/liability clauses; retriever must stay topical.",
+    rationale:
+      "Re-authored 2026-04-24 after fixture swap (the old DE SaaS+DPA breach-notification clause is gone). fr-commercial-lease §9 fixes a 15% clause pénale on arrears; retriever must distinguish from general payment-terms clauses in other fixtures.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
     id: "xd-m8",
-    question: "Find provisions about severance pay.",
-    expected: [{ fixture: "fr-employment", clause_index: 10 }],
+    question: "Which contract transfers major building repairs to the non-owner party?",
+    expected: [{ fixture: "fr-commercial-lease", clause_index: 5 }],
     tier: "medium",
-    rationale: "FR employment uniquely mentions severance; IT employment's termination clause is adjacent but distinct.",
+    rationale:
+      "Re-authored 2026-04-24 after fixture swap (severance is no longer in the corpus). fr-commercial-lease §6 transfers gros entretien (art. 606 Code civil) onto the Preneur — query phrases it as 'major building repairs'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -237,23 +247,22 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
     id: "xd-m9",
     question: "Which contracts have a probationary period?",
     expected: [
-      { fixture: "fr-employment", clause_index: 2 },
+      { fixture: "de-employment", clause_index: 1 },
       { fixture: "it-employment", clause_index: 1 },
     ],
     tier: "medium",
-    rationale: "Both employment contracts have probation; either in top-5 counts.",
+    rationale:
+      "Re-targeted 2026-04-24 — fr-commercial-lease has no probation; the two employment contracts (DE + IT) both carry one. Any in top-5 counts.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
     id: "xd-m10",
     question: "Where are service credits or SLA remedies discussed?",
-    expected: [
-      { fixture: "de-saas-dpa", clause_index: 3 },
-      { fixture: "es-saas-services", clause_index: 4 },
-    ],
+    expected: [{ fixture: "es-saas-services", clause_index: 4 }],
     tier: "medium",
-    rationale: "Two SaaS contracts cover SLA mechanics; retriever should prefer these over generic liability clauses.",
+    rationale:
+      "Re-targeted 2026-04-24 — the old de-saas-dpa SLA clause is gone; es-saas-services remains the only fixture covering service credits / SLA remedies.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
@@ -311,10 +320,12 @@ export const CROSS_DOC_QUESTIONS: readonly CrossDocQuestion[] = [
   },
   {
     id: "xd-h5",
-    question: "Which clause makes data processing instructions binding on the processor?",
-    expected: [{ fixture: "de-saas-dpa", clause_index: 10 }],
+    question:
+      "Which clause makes the employer the owner of work an employee creates outside working hours?",
+    expected: [{ fixture: "de-employment", clause_index: 11 }],
     tier: "hard",
-    rationale: "Term-of-art phrasing; the target uses 'instructions' + 'binding' in legal-register German/English that doesn't lexically match the casual phrasing.",
+    rationale:
+      "Re-authored 2026-04-24 after fixture swap. de-employment §12 sweeps both Diensterfindungen and freie Erfindungen to the employer; the query's 'outside working hours' is the semantic hook and lexically distant from the clause's 'Freizeit'.",
     reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },

@@ -184,13 +184,15 @@ export function streamExtractAndAnalyze(
 
         // Pass 2 — analyze clauses. Input is already scrubbed; the
         // client rehydrates complete clause objects when they arrive.
-        // SP-11 Phase 2: `risk` routes to Magistral Medium. Magistral
-        // emits reasoning by default, and Mistral La Plateforme rejects
-        // `reasoning_effort` as an unsupported parameter, so we do NOT
-        // thread `providerOptions`. `emitsReasoning` guards the
-        // per-clause attach so the trace is only written when the call
-        // actually ran on a reasoning model.
-        const pass2EmitsReasoning = provider.emitsReasoning("risk");
+        // Deep mode routes `risk` to Magistral Medium (SP-11) so the
+        // model emits a per-clause reasoning trace. Fast mode demotes
+        // to Mistral Small for lower end-to-end latency — the batch
+        // path does not attribute reasoning per clause anyway, so the
+        // capability is not forfeited, only the non-attributable trace.
+        // `emitsReasoning` mirrors the routing decision and guards the
+        // per-clause attach so we never speculatively read a trace
+        // that was never emitted.
+        const pass2EmitsReasoning = provider.emitsReasoning("risk", mode);
         const pass2Start = Date.now();
         let allClauses: AnalyzedClause[];
         let pass2Retried = false;
@@ -207,7 +209,7 @@ export function streamExtractAndAnalyze(
             DEEP_MODE_MAX_CONCURRENCY,
             async (clause) => {
               const { object, reasoning } = await generateObject({
-                model: provider.model({ effort: "high", pass: "risk" }),
+                model: provider.model({ effort: "high", pass: "risk", mode }),
                 schema: analyzedClauseSchema,
                 system: analysisSystemPrompt,
                 prompt: `Analyze this contract clause:\n\n${JSON.stringify(clause, null, 2)}`,
@@ -259,7 +261,7 @@ export function streamExtractAndAnalyze(
           const runStreamAttempt = async (): Promise<"ok" | "schema-error"> => {
             try {
               const result = streamText({
-                model: provider.model({ effort: "high", pass: "risk" }),
+                model: provider.model({ effort: "high", pass: "risk", mode }),
                 output: Output.array({ element: analyzedClauseSchema }),
                 system: analysisSystemPrompt,
                 prompt: batchPrompt,
@@ -373,7 +375,7 @@ export function streamExtractAndAnalyze(
             type: "complete",
             data: {
               ...summary,
-              provenance: buildProvenance(provider, locale, reasoningEmitted),
+              provenance: buildProvenance(provider, locale, reasoningEmitted, mode),
               ...(clauseEmbeddings !== null
                 ? { clause_embeddings: clauseEmbeddings }
                 : {}),

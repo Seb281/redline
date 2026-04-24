@@ -11,9 +11,9 @@ import { FileUpload } from "@/components/FileUpload";
 import { ReportView } from "@/components/ReportView";
 import { StreamingReportView } from "@/components/StreamingReportView";
 import { useAnalysisLocale } from "@/contexts/AnalysisLocaleContext";
-import { DE_SAAS_DPA_TEXT, DE_SAAS_DPA_UPLOAD } from "@/data/sample-contracts/de-saas-dpa";
+import { DE_EMPLOYMENT_TEXT, DE_EMPLOYMENT_UPLOAD } from "@/data/sample-contracts/de-employment";
 import { ES_SAAS_SERVICES_TEXT, ES_SAAS_SERVICES_UPLOAD } from "@/data/sample-contracts/es-saas-services";
-import { FR_EMPLOYMENT_TEXT, FR_EMPLOYMENT_UPLOAD } from "@/data/sample-contracts/fr-employment";
+import { FR_COMMERCIAL_LEASE_TEXT, FR_COMMERCIAL_LEASE_UPLOAD } from "@/data/sample-contracts/fr-commercial-lease";
 import { IT_EMPLOYMENT_TEXT, IT_EMPLOYMENT_UPLOAD } from "@/data/sample-contracts/it-employment";
 import { SAMPLE_CONTRACT_TEXT, SAMPLE_UPLOAD_RESPONSE } from "@/data/sample-contracts/nl-freelance";
 import { PL_DISTRIBUTION_TEXT, PL_DISTRIBUTION_UPLOAD } from "@/data/sample-contracts/pl-distribution";
@@ -154,8 +154,8 @@ export default function Home() {
       setError(null);
       const presets = {
         nl: { upload: SAMPLE_UPLOAD_RESPONSE, text: SAMPLE_CONTRACT_TEXT },
-        fr: { upload: FR_EMPLOYMENT_UPLOAD, text: FR_EMPLOYMENT_TEXT },
-        de: { upload: DE_SAAS_DPA_UPLOAD, text: DE_SAAS_DPA_TEXT },
+        fr: { upload: FR_COMMERCIAL_LEASE_UPLOAD, text: FR_COMMERCIAL_LEASE_TEXT },
+        de: { upload: DE_EMPLOYMENT_UPLOAD, text: DE_EMPLOYMENT_TEXT },
         es: { upload: ES_SAAS_SERVICES_UPLOAD, text: ES_SAAS_SERVICES_TEXT },
         it: { upload: IT_EMPLOYMENT_UPLOAD, text: IT_EMPLOYMENT_TEXT },
         pl: { upload: PL_DISTRIBUTION_UPLOAD, text: PL_DISTRIBUTION_TEXT },

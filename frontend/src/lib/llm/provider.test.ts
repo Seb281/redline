@@ -60,6 +60,25 @@ describe("getProvider", () => {
     }
   });
 
+  it("demotes Fast-mode risk to Mistral Small for latency", () => {
+    const p = getProvider();
+    // Fast mode deliberately forgoes the Magistral reasoning trace on
+    // the risk pass so the user-facing analysis returns faster. Deep
+    // mode still routes to Magistral so the per-clause trace survives.
+    expect(p.modelIdFor("risk", "fast")).toBe("mistral-small-latest");
+    expect(p.snapshotFor("risk", "fast")).toBe("mistral-small-2603");
+    expect(p.modelIdFor("risk", "deep")).toBe("magistral-medium-latest");
+    expect(p.snapshotFor("risk", "deep")).toBe("magistral-medium-2509");
+  });
+
+  it("keeps think_hard on Magistral regardless of analysis mode", () => {
+    const p = getProvider();
+    // think_hard is an explicit escalation path and must not be tied
+    // to the surrounding Fast/Deep choice the user made at upload.
+    expect(p.modelIdFor("think_hard", "fast")).toBe("magistral-medium-latest");
+    expect(p.modelIdFor("think_hard", "deep")).toBe("magistral-medium-latest");
+  });
+
   it("never threads providerOptions — Magistral rejects reasoning_effort", () => {
     const p = getProvider();
     // Magistral models on Mistral La Plateforme run reasoning by default
@@ -88,5 +107,18 @@ describe("getProvider", () => {
     const p = getProvider();
     expect(p.emitsReasoning("risk")).toBe(true);
     expect(p.emitsReasoning("think_hard")).toBe(true);
+  });
+
+  it("flips risk to non-reasoning under Fast mode (demoted to Mistral Small)", () => {
+    const p = getProvider();
+    // Downstream call sites use this to decide whether to speculatively
+    // attach `reasoning` to the streamed clause. Fast mode must report
+    // `false` or the UI will claim a trace was captured when the call
+    // actually ran on a non-reasoning model.
+    expect(p.emitsReasoning("risk", "fast")).toBe(false);
+    expect(p.emitsReasoning("risk", "deep")).toBe(true);
+    // think_hard is mode-insensitive.
+    expect(p.emitsReasoning("think_hard", "fast")).toBe(true);
+    expect(p.emitsReasoning("think_hard", "deep")).toBe(true);
   });
 });

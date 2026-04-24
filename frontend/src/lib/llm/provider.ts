@@ -7,13 +7,16 @@
  * keep a stable surface for provenance (snapshot + region) and for a
  * possible future EU-only redundancy provider.
  *
- * Pass-aware routing (SP-11): `model()` takes a `{ effort, pass }`
+ * Pass-aware routing (SP-11): `model()` takes a `{ effort, pass, mode }`
  * descriptor so different pipeline passes resolve to different model
  * IDs. Metadata passes (overview, extraction, chat) stay on Mistral
- * Small for strict structured-output compliance; risk passes (risk,
- * think_hard) route to Magistral Medium for native reasoning, and
- * the emitted chain-of-thought is surfaced as a collapsible UI
- * affordance for AI Act auditability.
+ * Small for strict structured-output compliance; `think_hard` always
+ * routes to Magistral Medium for native reasoning. The `risk` pass is
+ * mode-sensitive: Deep mode routes to Magistral so the emitted
+ * chain-of-thought is captured per clause for AI Act auditability,
+ * Fast mode demotes to Mistral Small for lower end-to-end latency
+ * (batch mode produces a single non-attributable reasoning blob
+ * anyway, so no per-clause trace is forfeited).
  *
  * Reasoning-effort caveat: Magistral models on Mistral La Plateforme
  * run reasoning by default — the API rejects `reasoning_effort` as an
@@ -26,6 +29,7 @@
 
 import { mistral } from "@ai-sdk/mistral";
 import type { LanguageModel } from "ai";
+import type { AnalysisMode } from "@/types";
 
 /**
  * Reasoning effort levels used across the pipeline. Currently advisory
@@ -82,7 +86,10 @@ const MAGISTRAL_MEDIUM: ModelDescriptor = {
  *
  * Risk passes (risk, think_hard) route to Magistral Medium so the
  * model emits a `reasoningText` blob the pipeline can persist and
- * surface as a collapsible "thinking" block on the report.
+ * surface as a collapsible "thinking" block on the report. In Fast
+ * mode the `risk` pass is demoted to Mistral Small — see `resolve()`
+ * below. Think-hard is a deliberate escalation path and always stays
+ * on Magistral regardless of the surrounding analysis mode.
  */
 const PASS_MODEL_MAP: Record<PipelinePass, ModelDescriptor> = {
   overview: MISTRAL_SMALL,
@@ -93,11 +100,31 @@ const PASS_MODEL_MAP: Record<PipelinePass, ModelDescriptor> = {
 };
 
 /**
+ * Resolve the model descriptor for a pass, honoring the analysis-mode
+ * override for the risk pass.
+ *
+ * Fast mode demotes `risk` to Mistral Small: Magistral's reasoning
+ * latency dominates end-to-end analysis time for users who explicitly
+ * opted into the lower-latency path. Deep mode keeps Magistral so the
+ * per-clause reasoning trace is still captured for AI Act auditability.
+ * Every other pass is mode-agnostic.
+ */
+function resolve(pass: PipelinePass, mode?: AnalysisMode): ModelDescriptor {
+  if (pass === "risk" && mode === "fast") return MISTRAL_SMALL;
+  return PASS_MODEL_MAP[pass];
+}
+
+/**
  * Passes that emit a native reasoning trace. Call sites consult this
  * to know whether to expect a non-empty `reasoning` field on the
  * `generateObject` result. Magistral models always emit reasoning, so
  * no request-time opt-in is needed. Keeping this centralised avoids
  * each call site hard-coding "risk" / "think_hard".
+ *
+ * Fast-mode `risk` resolves to Mistral Small, which does not emit
+ * reasoning — `emitsReasoning()` accepts the mode and returns `false`
+ * for that combination so batch-mode call sites do not speculatively
+ * read a non-existent trace.
  */
 const REASONING_PASSES: ReadonlySet<PipelinePass> = new Set([
   "risk",
@@ -117,20 +144,44 @@ export type ReasoningProviderOptions = {
 /** Uniform provider surface consumed by the analysis pipeline. */
 export interface LLMProvider {
   name: "mistral";
-  /** Returns a model instance for the given pass + effort label. */
-  model: (opts: { effort: ReasoningEffort; pass: PipelinePass }) => LanguageModel;
-  /** Provenance: model ID that `pass` resolved to (AI Act audit log). */
-  modelIdFor: (pass: AnalysisPass) => string;
+  /**
+   * Returns a model instance for the given pass + effort label.
+   *
+   * `mode` is consulted for pass-level routing overrides — currently
+   * only the `risk` pass honors it (Fast → Mistral Small, Deep →
+   * Magistral Medium). Omitting `mode` uses the default map and is
+   * safe for passes that are mode-agnostic (overview, extraction,
+   * chat, think_hard).
+   */
+  model: (opts: {
+    effort: ReasoningEffort;
+    pass: PipelinePass;
+    mode?: AnalysisMode;
+  }) => LanguageModel;
+  /**
+   * Provenance: model ID that `pass` resolved to (AI Act audit log).
+   * Accepts `mode` so `model_per_pass.risk` records the Fast-mode
+   * demotion honestly instead of a hard-coded Magistral ID.
+   */
+  modelIdFor: (pass: AnalysisPass, mode?: AnalysisMode) => string;
   /** Provenance: pinned snapshot tag for the model that `pass` resolved to. */
-  snapshotFor: (pass: AnalysisPass) => string;
+  snapshotFor: (pass: AnalysisPass, mode?: AnalysisMode) => string;
   /**
    * `providerOptions` payload for a pass that targets a reasoning
    * model (Magistral family). Returns `undefined` for passes on a
    * metadata model so call sites can spread-or-omit without a branch.
    */
-  reasoningOptionsFor: (pass: PipelinePass) => ReasoningProviderOptions | undefined;
-  /** Whether the given pass targets a reasoning-capable model. */
-  emitsReasoning: (pass: PipelinePass) => boolean;
+  reasoningOptionsFor: (
+    pass: PipelinePass,
+    mode?: AnalysisMode,
+  ) => ReasoningProviderOptions | undefined;
+  /**
+   * Whether the given pass targets a reasoning-capable model. The
+   * Fast-mode `risk` demotion (Magistral → Mistral Small) flips this
+   * to `false`, so batch call sites do not try to read a reasoning
+   * trace that was never emitted.
+   */
+  emitsReasoning: (pass: PipelinePass, mode?: AnalysisMode) => boolean;
   /** Provenance: hosting region label. */
   region: string;
 }
@@ -142,12 +193,13 @@ export interface LLMProvider {
 // the SDK exposes today) and `"low"` → `"none"`.
 const mistralProvider: LLMProvider = {
   name: "mistral",
-  model: ({ pass }) =>
-    mistral(PASS_MODEL_MAP[pass].id) as unknown as LanguageModel,
-  modelIdFor: (pass) => PASS_MODEL_MAP[pass].id,
-  snapshotFor: (pass) => PASS_MODEL_MAP[pass].snapshot,
+  model: ({ pass, mode }) =>
+    mistral(resolve(pass, mode).id) as unknown as LanguageModel,
+  modelIdFor: (pass, mode) => resolve(pass, mode).id,
+  snapshotFor: (pass, mode) => resolve(pass, mode).snapshot,
   reasoningOptionsFor: () => undefined,
-  emitsReasoning: (pass) => REASONING_PASSES.has(pass),
+  emitsReasoning: (pass, mode) =>
+    REASONING_PASSES.has(pass) && !(pass === "risk" && mode === "fast"),
   region: "eu-west-paris",
 };
 

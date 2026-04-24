@@ -2,11 +2,10 @@
  * SP-10 Arc 1 Phase 4b — frozen golden question set.
  *
  * 48 questions across 6 frozen fixtures (8 per fixture, mix of
- * 3 easy / 3 medium / 2 hard). Authored by Claude Opus 4.7 per the
- * methodology in ./generate-golden-set.md and pending hand-review by
- * the project owner. Any EVAL.md number sourced from this set before
- * `reviewed_by` moves off the generator-model tag is marked
- * `pre-human-review` in the baseline artifact.
+ * 3 easy / 3 medium / 2 hard). Drafted by Claude Opus 4.7 per the
+ * methodology in ./generate-golden-set.md and hand-reviewed by the
+ * project owner on 2026-04-24 before baseline numbers were promoted
+ * off `pre-human-review`.
  *
  * `expected_clause_indices` are positional within the matching
  * fixture's `clauses` array, which is frozen on disk (see
@@ -42,8 +41,13 @@ export interface GoldenQuestion {
   reviewed_at: string;
 }
 
-const GENERATOR = "claude-opus-4-7";
-const REVIEWED_AT = "2026-04-22";
+// Human-reviewed by project owner on 2026-04-24; the set was
+// originally drafted by claude-opus-4-7 and hand-reviewed clause-by-
+// clause before any baseline numbers were promoted off
+// `pre-human-review`. Kept as a constant so single-entry re-reviews
+// can override inline without stale-stamping untouched rows.
+const REVIEWED_BY = "SG";
+const REVIEWED_AT = "2026-04-24";
 
 export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
   // ---------------------------------------------------------------
@@ -57,7 +61,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Keyword overlap on 'payment'/'invoices' with clause title and plain_english.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -67,7 +71,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [4],
     tier: "easy",
     rationale: "Direct keyword match on 'confidentiality' + 'termination'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -77,7 +81,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [10],
     tier: "easy",
     rationale: "Clause titled 'Choice of law' — strong keyword match on 'law/governs'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -88,7 +92,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Clause uses 'Work Product' + 'assigns all right, title and interest'; query uses 'owns' + 'code' — semantic mapping required.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -99,7 +103,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Target clause uses 'non-compete'/'competes with'; query uses 'restricted'/'rival firm' — paraphrase required.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -110,7 +114,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Force majeure clause lists 'acts of God, natural disasters, war'; 'earthquake'/'liable' paraphrases force the semantic branch.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -121,7 +125,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Three independent clauses survive termination (IP assignment perpetual, confidentiality 7 yrs post-term, non-compete 18 mo post-term).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -133,7 +137,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Requires joining the one-sided indemnification (clause 6) with the asymmetric liability cap (clause 7) that only protects Company, not Contractor.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -147,7 +151,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [2],
     tier: "easy",
     rationale: "Clause title 'Probationary period' — direct keyword overlap.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -158,7 +162,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "plain_english explicitly uses 'annual gross salary'; strong BM25 hit.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -168,7 +172,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [5],
     tier: "easy",
     rationale: "Clause titled 'Work location' — direct keyword match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -179,7 +183,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Clause text is French ('heures supplémentaires'); query uses 'extra hours'/'regular schedule' paraphrase.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -190,7 +194,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Non-compete clause uses 'activité professionnelle ... concurrente'; query phrases it as 'rival company'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -201,7 +205,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "IP clause is in French ('invention ... appartiendra ... employeur'); 'owns'/'at work' paraphrase.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -213,7 +217,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Joint read of termination-notice clause (3-month notice) and training-retention clause (repay training cost +30% if leaving within 3 years).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -225,7 +229,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Needs work-location clause (Île-de-France relocation without consent, outside requires agreement) + termination clause (severance if fired without cause).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -239,7 +243,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [2],
     tier: "easy",
     rationale: "Clause titled 'Payment Terms and Late Fees' — direct match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -250,7 +254,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Clause title + plain_english 'minimum term of 36 months' — direct overlap.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -260,7 +264,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [7],
     tier: "easy",
     rationale: "Clause titled 'Governing Law and Jurisdiction' — direct match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -271,7 +275,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Clause text is German ('Verfügbarkeit'); plain_english does say 'availability' — 'uptime' is a true synonym not present anywhere.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -282,7 +286,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Target clause is 'Data Breach Notification' (24h); 'security incident' is a paraphrase.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -293,7 +297,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Subprocessor clause — 'third-party vendors'/'process on behalf' is a paraphrase of 'Unterauftragsverarbeiter'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -305,7 +309,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Answer needs the third-country-transfer clause (SCCs + additional measures) together with the TOM clause (encryption details that form the 'additional measures').",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -317,7 +321,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Requires temporal reasoning against the 48-hour inspection deadline — Friday is past the window, so warranty rights are forfeited.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -331,7 +335,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [1],
     tier: "easy",
     rationale: "Clause title 'Contract Duration and Termination' — direct match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -341,7 +345,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [2],
     tier: "easy",
     rationale: "Clause title 'Monthly Payment Terms' — strong keyword overlap.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -352,7 +356,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Clause titled 'Governing Law and Jurisdiction' — 'courts'/'jurisdiction' keywords match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -363,7 +367,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "'Unilateral Fee Adjustment' clause; query paraphrases 'raise the price' + 'without my approval' — neither phrase appears verbatim.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -374,7 +378,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "SLA clause uses 'disponibilidad mensual 99%'; 'availability'/'each month' paraphrases Spanish text.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -385,7 +389,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "'Audit Rights' clause uses 'auditar el uso'; 'inspect' + 'my staff' is paraphrase.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -397,7 +401,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Joint read of SLA clause + exclusive-remedy clause (credits only, contract-termination waiver).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -409,7 +413,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Combines liability cap (3 months fees) with the exclusive-remedy waiver — straight liability cap alone would underspecify.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -423,7 +427,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [1],
     tier: "easy",
     rationale: "Clause title 'Six-Month Probation Period' — direct keyword match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -434,7 +438,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Clause title 'Weekly Work Hours' + plain_english '40 hours per week' — strong overlap.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -444,7 +448,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [3],
     tier: "easy",
     rationale: "Clause title 'Annual Salary' — direct match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -455,7 +459,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Clause text is Italian ('senza diritto ad alcuna maggiorazione'); 'paid extra'/'beyond the standard week' paraphrases.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -466,7 +470,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "'Job Duties and Transfer' clause is in Italian; 'reassign'/'different role or city' paraphrases 'modificare mansioni' + 'trasferimento'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -477,7 +481,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Non-compete clause uses Italian 'non svolgere ... attività'; 'restricted'/'my field' paraphrase.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -489,7 +493,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Requires joining probation clause (either party can terminate without notice during probation) with dispute/penalty clause (3-month salary penalty applies post-probation).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -501,7 +505,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Liability clause assigns employee full responsibility even for gross negligence or willful misconduct — implicit read of unfair risk shifting.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 
@@ -516,7 +520,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Clause title 'Five-year term with renewal' — direct keyword overlap on 'term'/'years'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -527,7 +531,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "easy",
     rationale:
       "Clause title 'Annual purchase minimum' — direct match on every noun.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -537,7 +541,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     expected_clause_indices: [12],
     tier: "easy",
     rationale: "Clause titled 'Polish law and jurisdiction' — direct match.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -548,7 +552,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Pricing clause is in Polish ('jednostronnej zmiany cennika'); 'raise prices'/'without consent' paraphrases.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -559,7 +563,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Clause text in Polish uses 'odszkodowanie/rekompensata'; 'owed compensation' paraphrases.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -570,7 +574,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "medium",
     rationale:
       "Non-compete portion of the distribution-obligations clause; 'rival brand' paraphrases 'konkurencyjnych produktów'.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -582,7 +586,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Combines contractual-penalty clause (€50k per territorial breach) with the waiver-of-rights clause (distributor waived right to ask a court to reduce penalties).",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
   {
@@ -594,7 +598,7 @@ export const GOLDEN_QUESTIONS: readonly GoldenQuestion[] = [
     tier: "hard",
     rationale:
       "Supplier's-termination-rights clause treats ownership changes as immediate-termination trigger — requires reading the enumerated list, not just the clause title.",
-    reviewed_by: GENERATOR,
+    reviewed_by: REVIEWED_BY,
     reviewed_at: REVIEWED_AT,
   },
 ];

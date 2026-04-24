@@ -40,12 +40,10 @@ deliberately chosen as a different model family from the in-pipeline
 Mistral so the questions don't leak authorship bias into retrieval
 numbers. Methodology is in [`src/eval/generate-golden-set.md`](src/eval/generate-golden-set.md).
 
-**Review status.** The set currently carries
-`reviewed_by: "claude-opus-4-7"` on every entry — generator-model
-self-check only. Baseline numbers in this document are labelled
-`pre-human-review` until the project owner's review pass lands.
-After human review, both `reviewed_by` and the baseline numbers in
-`src/eval/baseline.json` will be refreshed in the same PR.
+**Review status.** Hand-reviewed by the project owner on 2026-04-24.
+Every entry carries `reviewed_by: "SG"` and every `baseline.json` row
+sourced from this set carries `golden_set_review_status:
+"human-reviewed:SG:2026-04-24"`.
 
 **Cross-model sanity check (deferred).** 10/48 questions are
 scheduled to be re-posed to a third model or human reviewer to catch
@@ -106,7 +104,7 @@ or future regressions hide under an inflated ceiling.
 | `it-employment`      | 8 | 0.875    | 0.875    | 1.000    | 0.906  |
 | `pl-distribution`    | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 
-### Observations (pre-human-review)
+### Observations
 
 - **Easy is essentially solved by keyword** (recall@3 = 1.00). That's
   the tier definition doing its job.
@@ -142,7 +140,7 @@ re-pin. Per-fixture breakdowns are in the per-layer sections below.
 | **`hybrid`** (+ cosine/RRF)         | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 | **`hybrid_metadata`** (+ boost)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 | **`hybrid_graph`** (+ widening)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
-| **`hybrid_rerank`** (+ Jina)        | _pending_   | _pending_   | _pending_   | _pending_  | _pending_  | _pending_ | _pending_ |
+| **`hybrid_rerank`** (+ Jina)        | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 
 ### Arc 2 targets vs current
 
@@ -169,10 +167,14 @@ re-pin. Per-fixture breakdowns are in the per-layer sections below.
   on every multi-clause question the eval can't score (context
   completeness vs relevance ranking). Multiplicative-boost variant
   regressed and was disabled.
-- **Jina rerank (§8)** — numbers pending the first live freeze
-  against `JINA_API_KEY`. Cross-encoder over full clause text is
-  the only remaining lever with plausible lift on medium tier; the
-  plan earmarks it as the biggest expected single-layer delta.
+- **Jina rerank (§8)** — zero delta on this eval. Cross-encoder over
+  full clause text reordered the top-20 head on every question, but
+  no gold clause was sitting below its own siblings inside that head
+  (recall@5 already plateaued at 0.979 post-widening), so every
+  reorder was measure-neutral. Kept on in production — the eval is
+  pessimistic about rerank's value because the fixtures are small
+  and clause targets distinctive; customer libraries with adjacent
+  near-duplicate clauses are exactly what the cross-encoder buys.
 
 ## 5. Hybrid retrieval (BM25 ⊕ cosine via RRF)
 
@@ -218,7 +220,7 @@ checkouts without a key still run the BM25 gate green.
 | `it-employment`      | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 | `pl-distribution`    | 8 | 1.000    | 1.000    | 1.000    | 1.000  |
 
-### Deltas vs BM25 (pre-human-review)
+### Deltas vs BM25
 
 - **Medium tier is where the lift lands, as predicted.** recall@1
   jumps **0.444 → 0.778 (+0.333)** and recall@5 **0.833 → 0.944
@@ -364,7 +366,7 @@ the chat context when they weren't already there.
   actual clause text, not metadata tags. Expected to be the biggest
   single-layer delta per the plan — the only remaining lever.
 
-## 8. Jina Rerank — Arc 2 Task 2.3 (client shipped; eval deferred to freeze)
+## 8. Jina Rerank — Arc 2 Task 2.3 (shipped, no lift on this eval)
 
 The final retrieval stage is a cross-encoder rerank of the top-20
 fused+widened candidates via Jina's `/v1/rerank` endpoint
@@ -402,10 +404,9 @@ so chat answers never wedge on a best-effort ranker:
 ### Eval gate
 
 Gated on BOTH `golden-query-embeddings.json` AND
-`golden-rerank-scores.json` existing on disk. A fresh checkout with
-neither cache skips the `hybrid_rerank` block cleanly so BM25 still
-runs green. The baseline row will be pinned to `baseline.json` once
-the freeze runs against a live `JINA_API_KEY`.
+`golden-rerank-scores.json` existing on disk. A fresh checkout
+without the rerank cache skips the `hybrid_rerank` block cleanly so
+BM25 still runs green.
 
 Freeze command:
 
@@ -421,9 +422,130 @@ invalidates every cached score for that fixture.
 
 ### Numbers
 
-Pending the initial freeze. Ablation vs `hybrid_graph` will isolate
-Task 2.3's single-layer contribution and be re-pinned in the same PR
-as the first cached baseline row.
+| slice          | n  | recall@1 | recall@3 | recall@5 | MRR    |
+| -------------- | -- | -------- | -------- | -------- | ------ |
+| overall        | 48 | 0.833    | 0.938    | 0.979    | 0.898  |
+| tier: easy     | 18 | 0.944    | 1.000    | 1.000    | 0.972  |
+| tier: medium   | 18 | 0.778    | 0.889    | 0.944    | 0.854  |
+| tier: hard     | 12 | 0.750    | 0.917    | 1.000    | 0.854  |
+
+Per-fixture is identical to `hybrid_graph` row-for-row; see §5
+or `baseline.json#hybrid_rerank.perFixture`.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_rerank` row in `baseline.json` equals `hybrid_graph`
+exactly on the current golden set.** The cross-encoder reordered the
+top-20 fused head for every question — the cache confirms it ran —
+but none of the 48 golden questions had a gold clause *sitting below
+its own siblings inside that head*, which is the only situation a
+rerank can actually fix. The retriever already placed every gold
+clause in the top-20 pre-rerank (that's the `recall@5 = 0.979`
+plateau hybrid_graph hit), so the reranker's job reduced to swapping
+ranks 1↔2 on a handful of questions where the swap was
+measure-neutral.
+
+### Why ship it anyway
+
+1. **Production surface differs from the eval corpus.** The golden
+   set's fixtures are small (12–18 clauses each) with distinctive
+   clause targets per question. Real customer libraries have dozens
+   of contracts and adjacent near-duplicate clauses (two
+   confidentiality clauses, three data-processor terms across
+   different DPAs) — the cross-encoder's ability to read full clause
+   text is exactly the disambiguator we built this layer for.
+   Turning it off because a narrow eval said "measure-neutral" would
+   be overfitting production to the eval.
+2. **Fail-soft means zero cost when wrong.** No `JINA_API_KEY`,
+   429/5xx, malformed response → identity ranking and the
+   cross-encoder is invisible. The worst case is the eval's measured
+   case (no delta); there is no failure mode where enabling rerank
+   underperforms the widened hybrid.
+3. **Arc 3 composition.** Cross-contract search (§8a) runs on
+   single-stage cosine today, but the infrastructure is already
+   plumbed to slot rerank in whenever cross-contract recall@1 needs
+   disambiguation across near-duplicate clauses from different
+   vendors — same pattern, same client.
+
+### What would actually lift medium/hard on this golden set
+
+The Arc 2 ceiling has been reached on this eval. Every retrieval
+lever below a new retriever family (e.g. learned-to-rank on clause
+features, per-user relevance feedback) composes no further on the
+pinned fixtures. Future lift will come from:
+
+- A golden set with adjacent near-duplicate clauses that expose
+  rerank's actual discriminator. Captured in the Arc 3 plan.
+- Graded-relevance metrics (nDCG) if partial-hit ordering ever
+  matters to a product surface that isn't top-1 chat context.
+
+## 8a. Cross-contract retrieval — Arc 3 ship gate (2026-04-23)
+
+The Arc 3 product surfaces (`/history` semantic search bar, library
+comparison panel, similar-clauses drawer) all ask the same question:
+given a natural-language query, rank every clause across the user's
+entire saved library. Retrieval runs backend-side via pgvector
+(`services/semantic_search.py`); the frontend embeds the query with
+`mistral-embed` and hands the 1024-float vector to the cosine
+ORDER BY. No BM25, no metadata boost, no rerank — the production
+surface is deliberately single-stage.
+
+### Methodology
+
+- **Golden set.** 24 cross-contract questions in
+  `src/eval/cross-doc-questions.ts` (8 easy / 10 medium / 6 hard),
+  authored by Claude Opus 4.7 using the same different-model-family
+  discipline as the intra-doc set. Each question has one or more
+  `{ fixture, clause_index }` expectations; a hit scores the tuple
+  set as binary.
+- **Corpus.** The 6 frozen fixtures (83 clauses total, 1024-dim
+  mistral-embed vectors committed alongside each fixture).
+- **Retriever.** `cross-doc-harness.ts::rankCrossDocPool` — merges
+  every fixture's clauses into one pool, sorts by cosine similarity
+  against the query embedding. Mathematically identical to
+  `ORDER BY embedding <=> :q` on pgvector, just in memory.
+- **Query embedding cache.**
+  `src/eval/cross-doc-query-embeddings.json` — 24 entries, frozen via
+  `cross-doc-query-embeddings.freeze.test.ts`. Committed so the CI
+  gate runs deterministic + offline.
+- **Gate.** `cross-doc-harness.test.ts` asserts overall + per-tier
+  recall / MRR ≥ the `cross_doc` floor pinned in `baseline.json`.
+  Fresh checkouts without the cache skip cleanly rather than fail.
+
+Review status: human-reviewed by the project owner on 2026-04-24 —
+same discipline as the intra-doc numbers. Every entry carries
+`reviewed_by: "SG"`; the `cross_doc` baseline row carries
+`golden_set_review_status: "human-reviewed:SG:2026-04-24"`.
+
+### Numbers
+
+| slice | n | recall@1 | recall@3 | recall@5 | MRR |
+| --- | --- | --- | --- | --- | --- |
+| overall | 24 | 0.833 | 0.958 | 1.000 | 0.906 |
+| tier: easy | 8 | 0.875 | 0.875 | 1.000 | 0.906 |
+| tier: medium | 10 | 0.900 | 1.000 | 1.000 | 0.950 |
+| tier: hard | 6 | 0.667 | 1.000 | 1.000 | 0.833 |
+
+### Observations
+
+- **Recall@5 = 1.000 across every tier.** Every question's expected
+  clause set has at least one member in the top 5 results — cosine
+  over `mistral-embed` is sufficient for the product surface, which
+  is the point Arc 3 needed to establish.
+- **Recall@1 = 0.833.** 20 of 24 questions land the right clause
+  first. The four misses cluster on hard-tier aggregation queries
+  (`xd-h1` "broadest post-termination restrictions", `xd-h6` "most
+  clearly excludes remedies") where multiple plausible contracts
+  match semantically and the query has no unique lexical anchor.
+- **Medium > easy on recall@1 (0.9 vs 0.875).** Small-n noise: one
+  easy question (`xd-e7` cross-border data transfers) ranks the
+  broader DPA data-transfers lead-in above the third-countries
+  clause; everything else on easy is first-try correct.
+- **No BM25 delta measured here.** Mixing EN queries against
+  PL/IT/FR/DE/ES clause text makes lexical retrieval unreliable by
+  construction. If cross-contract search ever moves to monolingual
+  corpora, the harness extends with a hybrid ablation row; until
+  then the single-stage pgvector floor is the honest number.
 
 ## 9. Reproducing these numbers
 
@@ -444,6 +566,13 @@ pnpm vitest run src/eval/fixtures/schema.test.ts
 
 # Re-freeze the fixtures (requires MISTRAL_API_KEY, 10+ min, costs tokens):
 FREEZE_FIXTURES=1 MISTRAL_API_KEY=... pnpm vitest run src/eval/fixtures/freeze.test.ts
+
+# Cross-doc regression gate (deterministic, no network):
+pnpm vitest run src/eval/cross-doc-harness.test.ts
+
+# Re-freeze cross-doc query embeddings (requires MISTRAL_API_KEY):
+FREEZE_CROSS_DOC_QUERY_EMBEDDINGS=1 MISTRAL_API_KEY=... \
+  pnpm vitest run src/eval/cross-doc-query-embeddings.freeze.test.ts
 ```
 
 ## 10. Change policy

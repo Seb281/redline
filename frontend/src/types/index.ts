@@ -376,6 +376,56 @@ export interface AnalyzeResponse {
   clause_embeddings?: ClauseEmbedding[];
 }
 
+/**
+ * SP-10 Arc 3 — one ranked clause hit from the cross-analysis semantic
+ * search endpoint. Shape parity with
+ * ``backend/app/schemas.py:SemanticSearchHit``.
+ *
+ * ``similarity`` is a cosine-similarity score in ``[0, 1]`` for
+ * normalized Mistral-embed vectors (higher = closer). ``analysis_id``
+ * + ``clause_index`` are enough to deep-link into the saved report.
+ */
+export interface SemanticSearchHit {
+  analysis_id: string;
+  clause_index: number;
+  similarity: number;
+  clause_title: string | null;
+  clause_text: string | null;
+  risk_level: string | null;
+  filename: string;
+  contract_type: string | null;
+  created_at: string;
+}
+
+/** Top-k response shape from ``POST /api/search/semantic``. */
+export interface SemanticSearchResponse {
+  results: SemanticSearchHit[];
+}
+
+/**
+ * SP-10 Arc 3 Task 3.3 — one aggregated library-match row returned by
+ * the contract-level similarity endpoint. Shape parity with
+ * ``backend/app/schemas.py:SimilarContractHit``.
+ *
+ * The backend collapses clause-level vectors per contract and surfaces
+ * the best-matching clause (``best_clause_*``) so the panel can deep-
+ * link into the matched report at its most relevant position.
+ */
+export interface SimilarContractHit {
+  analysis_id: string;
+  filename: string;
+  contract_type: string | null;
+  similarity: number;
+  best_clause_index: number;
+  best_clause_title: string | null;
+  created_at: string;
+}
+
+/** Top-k response shape from ``POST /api/search/similar-contracts``. */
+export interface SimilarContractsResponse {
+  results: SimilarContractHit[];
+}
+
 /** User info returned by auth endpoints. */
 export interface AuthUser {
   id: string;

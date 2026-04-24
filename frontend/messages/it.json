@@ -133,7 +133,8 @@
     "unusual": "Insolito:",
     "originalText": "Testo originale della clausola",
     "reasoning": "Ragionamento del modello (traccia di audit AI Act)",
-    "askAbout": "Chiedi maggiori informazioni su questa clausola →"
+    "askAbout": "Chiedi maggiori informazioni su questa clausola →",
+    "findSimilar": "Trova clausole simili →"
   },
   "ClauseCategory": {
     "non_compete": "Clausola di non concorrenza",
@@ -596,6 +597,42 @@
     "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Cancella",
     "compareGo": "Confronta gli articoli selezionati"
+  },
+  "SemanticSearch": {
+    "label": "Cerca nelle tue analisi",
+    "placeholder": "es. rinnovo automatico, limiti di responsabilità inusuali, trattamento dei dati…",
+    "submit": "Cerca",
+    "submitAria": "Cerca nelle analisi salvate",
+    "clearAria": "Cancella ricerca",
+    "searching": "Ricerca in corso…",
+    "noResults": "Nessuna corrispondenza. Prova con parole diverse.",
+    "error": "Ricerca non riuscita. Riprova.",
+    "minLength": "Inserisci almeno 3 caratteri.",
+    "resultCount": "{count, plural, one {# risultato} other {# risultati}}",
+    "openAnalysis": "Apri analisi",
+    "similarity": "{percent}% di corrispondenza",
+    "showingTopK": "Vengono mostrati i {count} risultati più rilevanti."
+  },
+  "SimilarClauses": {
+    "heading": "Clausole simili nella tua libreria",
+    "close": "Chiudi",
+    "loading": "Ricerca di clausole simili…",
+    "empty": "Nessuna clausola simile trovata negli altri contratti salvati.",
+    "error": "Impossibile caricare le clausole simili.",
+    "retry": "Riprova",
+    "similarity": "{percent}% di corrispondenza",
+    "openAria": "Apri questa clausola"
+  },
+  "SimilarContracts": {
+    "title": "Contratti simili nella tua libreria",
+    "description": "Trova i contratti salvati le cui clausole sono semanticamente più vicine a questo.",
+    "loading": "Ricerca di contratti simili…",
+    "empty": "Nessun contratto simile nella tua libreria per ora.",
+    "error": "Impossibile caricare i contratti simili.",
+    "retry": "Riprova",
+    "similarity": "{percent}% di corrispondenza",
+    "bestClause": "più vicina su: {title}",
+    "openAria": "Apri questo contratto"
   },
   "HistoryDetail": {
     "notFound": "Analisi non trovata",

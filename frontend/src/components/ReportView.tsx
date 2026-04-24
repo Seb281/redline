@@ -32,6 +32,13 @@ interface ReportViewProps {
   onReset: () => void;
   onOpenChat?: () => void;
   onAskAboutClause?: (clause: AnalyzedClause) => void;
+  /**
+   * SP-10 Arc 3 Task 3.4 — open the similar-clauses drawer for a clause.
+   * Surfaced on each ``ClauseCard`` as a sibling affordance to "Ask
+   * about this". Optional because the live-analysis view (pre-save)
+   * has no analysis id to exclude and omits the button entirely.
+   */
+  onFindSimilarClauses?: (clause: AnalyzedClause) => void;
   /** Persist the analysis. Returns the saved analysis ID. */
   onSave?: () => Promise<string>;
   /**
@@ -76,7 +83,7 @@ function useFilteredClauses(
 }
 
 /** Full analysis report with overview, summary, filters, clause cards, and export bar. */
-export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave, filename, savedId }: ReportViewProps) {
+export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onFindSimilarClauses, onSave, filename, savedId }: ReportViewProps) {
   const t = useTranslations("ReportView");
   const tExport = useTranslations("Export");
   const tCat = useTranslations("ClauseCategory");
@@ -340,6 +347,7 @@ export function ReportView({ data, onReset, onOpenChat, onAskAboutClause, onSave
             key={`${clause.title}-${clause.risk_level}-${i}`}
             clause={clause}
             onAskAbout={onAskAboutClause}
+            onFindSimilar={onFindSimilarClauses}
           />
         ))}
         {filteredClauses.length === 0 && (

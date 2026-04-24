@@ -12,7 +12,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.db import connect_db, disconnect_db
-from app.routers import account, analyses, auth, export, upload
+from app.routers import account, analyses, auth, export, search, upload
 from app.services.ocr import healthcheck as ocr_healthcheck
 
 limiter = Limiter(key_func=get_remote_address)
@@ -61,6 +61,7 @@ app.include_router(export.router)
 app.include_router(auth.router)
 app.include_router(analyses.router)
 app.include_router(account.router)
+app.include_router(search.router)
 
 
 @app.get("/api/health")

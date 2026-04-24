@@ -9,6 +9,8 @@ import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SavedAnalysisReport } from "@/components/SavedAnalysisReport";
+import { SimilarClausesDrawer } from "@/components/SimilarClausesDrawer";
+import { SimilarContractsPanel } from "@/components/SimilarContractsPanel";
 import { extendAnalysis, getAnalysis, pinAnalysis } from "@/lib/api";
 import { hydrateSavedAnalysis } from "@/lib/saved-analysis";
 import { getRetentionStatus } from "@/lib/retention";
@@ -29,6 +31,12 @@ export default function HistoryDetailPage() {
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
   const [chatQuestion, setChatQuestion] = useState<string | null>(null);
+
+  // SP-10 Arc 3 Task 3.4 — similar-clauses drawer state.
+  const [similarClausesOpen, setSimilarClausesOpen] = useState(false);
+  const [similarClause, setSimilarClause] = useState<AnalyzedClause | null>(
+    null,
+  );
 
   /** Fetch the saved analysis from the backend. */
   useEffect(() => {
@@ -58,6 +66,12 @@ export default function HistoryDetailPage() {
     },
     [tChat],
   );
+
+  /** Open the SP-10 Arc 3 similar-clauses drawer for a specific clause. */
+  const handleFindSimilarClauses = useCallback((clause: AnalyzedClause) => {
+    setSimilarClause(clause);
+    setSimilarClausesOpen(true);
+  }, []);
 
   /** Toggle the pin flag from the retention bar. */
   const handleTogglePin = useCallback(async () => {
@@ -209,8 +223,20 @@ export default function HistoryDetailPage() {
         onReset={handleReset}
         onOpenChat={() => setChatOpen(true)}
         onAskAboutClause={handleAskAboutClause}
+        onFindSimilarClauses={handleFindSimilarClauses}
         filename={analysis.filename}
         savedId={analysis.id}
+      />
+      <SimilarContractsPanel
+        currentAnalysisId={analysis.id}
+        overview={analyzeResponse.overview}
+        clauses={analyzeResponse.clauses}
+      />
+      <SimilarClausesDrawer
+        isOpen={similarClausesOpen}
+        onClose={() => setSimilarClausesOpen(false)}
+        currentAnalysisId={analysis.id}
+        clause={similarClause}
       />
       <ChatPanel
         isOpen={chatOpen}

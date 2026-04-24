@@ -133,7 +133,8 @@
     "unusual": "Ungewöhnlich:",
     "originalText": "Ursprünglicher Wortlaut der Klausel",
     "reasoning": "Modell-Begründung (KI-VO-Audit-Spur)",
-    "askAbout": "Fragen Sie nach dieser Klausel →"
+    "askAbout": "Fragen Sie nach dieser Klausel →",
+    "findSimilar": "Ähnliche Klauseln finden →"
   },
   "ClauseCategory": {
     "non_compete": "Wettbewerbsverbot",
@@ -596,6 +597,42 @@
     "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Löschen",
     "compareGo": "Ausgewählte vergleichen"
+  },
+  "SemanticSearch": {
+    "label": "In Ihren Analysen suchen",
+    "placeholder": "z. B. automatische Verlängerung, ungewöhnliche Haftungsobergrenzen, Datenverarbeitung…",
+    "submit": "Suchen",
+    "submitAria": "Gespeicherte Analysen durchsuchen",
+    "clearAria": "Suche leeren",
+    "searching": "Sucht…",
+    "noResults": "Keine Treffer. Versuchen Sie eine andere Formulierung.",
+    "error": "Suche fehlgeschlagen. Bitte erneut versuchen.",
+    "minLength": "Geben Sie mindestens 3 Zeichen ein.",
+    "resultCount": "{count, plural, one {# Treffer} other {# Treffer}}",
+    "openAnalysis": "Analyse öffnen",
+    "similarity": "{percent} % Übereinstimmung",
+    "showingTopK": "Die {count} relevantesten Treffer werden angezeigt."
+  },
+  "SimilarClauses": {
+    "heading": "Ähnliche Klauseln in Ihrer Bibliothek",
+    "close": "Schließen",
+    "loading": "Suche nach ähnlichen Klauseln…",
+    "empty": "Keine ähnlichen Klauseln in Ihren anderen gespeicherten Verträgen gefunden.",
+    "error": "Ähnliche Klauseln konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "similarity": "{percent} % Übereinstimmung",
+    "openAria": "Diese Klausel öffnen"
+  },
+  "SimilarContracts": {
+    "title": "Ähnliche Verträge in Ihrer Bibliothek",
+    "description": "Findet gespeicherte Verträge, deren Klauseln diesem semantisch am nächsten sind.",
+    "loading": "Suche nach ähnlichen Verträgen…",
+    "empty": "Noch keine ähnlichen Verträge in Ihrer Bibliothek.",
+    "error": "Ähnliche Verträge konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "similarity": "{percent} % Übereinstimmung",
+    "bestClause": "am nächsten bei: {title}",
+    "openAria": "Diesen Vertrag öffnen"
   },
   "HistoryDetail": {
     "notFound": "Analyse nicht gefunden",

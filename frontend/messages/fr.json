@@ -133,7 +133,8 @@
     "unusual": "Insolite :",
     "originalText": "Texte original de la clause",
     "reasoning": "Raisonnement du modèle (trace d'audit AI Act)",
-    "askAbout": "Renseignez-vous sur cette clause →"
+    "askAbout": "Renseignez-vous sur cette clause →",
+    "findSimilar": "Trouver des clauses similaires →"
   },
   "ClauseCategory": {
     "non_compete": "Clause de non-concurrence",
@@ -596,6 +597,42 @@
     "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Effacer",
     "compareGo": "Comparer les éléments sélectionnés"
+  },
+  "SemanticSearch": {
+    "label": "Rechercher dans vos analyses",
+    "placeholder": "ex. tacite reconduction, plafonds de responsabilité inhabituels, traitement des données…",
+    "submit": "Rechercher",
+    "submitAria": "Rechercher dans les analyses enregistrées",
+    "clearAria": "Effacer la recherche",
+    "searching": "Recherche en cours…",
+    "noResults": "Aucune correspondance. Essayez une autre formulation.",
+    "error": "Échec de la recherche. Réessayez.",
+    "minLength": "Saisissez au moins 3 caractères.",
+    "resultCount": "{count, plural, one {# correspondance} other {# correspondances}}",
+    "openAnalysis": "Ouvrir l'analyse",
+    "similarity": "{percent} % de correspondance",
+    "showingTopK": "Affichage des {count} meilleures correspondances par pertinence."
+  },
+  "SimilarClauses": {
+    "heading": "Clauses similaires dans votre bibliothèque",
+    "close": "Fermer",
+    "loading": "Recherche de clauses similaires…",
+    "empty": "Aucune clause similaire dans vos autres contrats enregistrés.",
+    "error": "Impossible de charger les clauses similaires.",
+    "retry": "Réessayer",
+    "similarity": "{percent} % de correspondance",
+    "openAria": "Ouvrir cette clause"
+  },
+  "SimilarContracts": {
+    "title": "Contrats similaires dans votre bibliothèque",
+    "description": "Trouve les contrats enregistrés dont les clauses sont sémantiquement les plus proches de celui-ci.",
+    "loading": "Recherche de contrats similaires…",
+    "empty": "Aucun contrat similaire dans votre bibliothèque pour l'instant.",
+    "error": "Impossible de charger les contrats similaires.",
+    "retry": "Réessayer",
+    "similarity": "{percent} % de correspondance",
+    "bestClause": "plus proche sur : {title}",
+    "openAria": "Ouvrir ce contrat"
   },
   "HistoryDetail": {
     "notFound": "Analyse introuvable",

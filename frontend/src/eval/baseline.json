@@ -3,7 +3,7 @@
   "bm25": {
     "generated_at": "2026-04-22",
     "generator": "claude-opus-4-7",
-    "golden_set_review_status": "pre-human-review",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
     "overall": { "recallAt1": 0.6875, "recallAt3": 0.8333, "recallAt5": 0.875, "mrr": 0.7832, "n": 48 },
     "perTier": {
       "easy":   { "recallAt1": 0.8889, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9444, "n": 18 },
@@ -22,7 +22,7 @@
   "hybrid": {
     "generated_at": "2026-04-23",
     "generator": "claude-opus-4-7",
-    "golden_set_review_status": "pre-human-review",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
     "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
     "perTier": {
       "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
@@ -41,7 +41,7 @@
   "hybrid_metadata": {
     "generated_at": "2026-04-23",
     "generator": "claude-opus-4-7",
-    "golden_set_review_status": "pre-human-review",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
     "note": "Identical to `hybrid` on the current golden set: statute aliases in `query-analysis.ts` fire on ~0 of 48 questions (golden set uses natural-language phrasing, not legally-literate citations). Category boost was tried at 0.006 and regressed overall recall@1 by 0.062 (uniform boost across all same-category clauses adds noise without signal); disabled. Infrastructure retained for Arc 3 cross-contract search where metadata is the primary discriminator. See EVAL.md §6 for the full reasoning.",
     "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
     "perTier": {
@@ -61,7 +61,7 @@
   "hybrid_graph": {
     "generated_at": "2026-04-23",
     "generator": "claude-opus-4-7",
-    "golden_set_review_status": "pre-human-review",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
     "note": "Identical to `hybrid_metadata` on the current golden set. Widening is strictly additive (tail-append of cross-ref neighbours + definitions below the existing fused+boosted rank), so it can only lift a gold clause that was outside top-20 on BM25+cosine — none of the 48 golden questions have that profile. An earlier multiplicative-boost variant (1.5× on widening ids) regressed overall recall@1 by 0.083 on definition-heavy fixtures (nl-freelance recall@1 fell 0.875→0.375 as the definitions clause kept displacing the true answer); disabled. The additive layer stays on for production chat context — graph widening's job is context completeness, not relevance re-ranking. See EVAL.md §7 for the full reasoning.",
     "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
     "perTier": {
@@ -76,6 +76,38 @@
       "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
       "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
       "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+    }
+  },
+  "hybrid_rerank": {
+    "generated_at": "2026-04-24",
+    "generator": "claude-opus-4-7",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
+    "note": "Identical to `hybrid_graph` on the current golden set. Jina `jina-reranker-v2-base-multilingual` reordered the top-20 fused head for every question, but none of the 48 golden questions had a gold clause *sitting below its own siblings inside that head* — which is the only situation a cross-encoder rerank can actually fix. The retriever already ranks every gold clause in the top-20 pre-rerank (that's the `recall@5 = 0.979` plateau hybrid_graph hit), so the reranker's job reduces to swapping ranks 1↔2 on a handful of questions where the swap is measure-neutral. Kept on in production anyway — the harness is pessimistic about rerank's value because the fixtures are small (12-18 clauses) and the golden questions have distinctive clause targets; on real customer libraries with adjacent near-duplicate clauses, the cross-encoder's ability to read full clause text is exactly the disambiguator we built this layer for. See EVAL.md §8 for the full reasoning.",
+    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "perTier": {
+      "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
+      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
+      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+    },
+    "perFixture": {
+      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
+      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
+      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+    }
+  },
+  "cross_doc": {
+    "generated_at": "2026-04-23",
+    "generator": "claude-opus-4-7",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
+    "note": "Cross-contract retrieval — 24-question golden set (`cross-doc-questions.ts`, human-reviewed by SG on 2026-04-24), merged candidate pool (83 clauses across 6 fixtures), pure pgvector-style cosine ranking (no BM25 — mirrors `services/semantic_search.py`). Floor for Arc 3 ship gate. Recall@5 = 1.000 across every tier says cosine alone is sufficient for the product surface; the separating metric is recall@1 / MRR.",
+    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9583, "recallAt5": 1, "mrr": 0.9063, "n": 24 },
+    "perTier": {
+      "easy":   { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "medium": { "recallAt1": 0.9, "recallAt3": 1, "recallAt5": 1, "mrr": 0.95, "n": 10 },
+      "hard":   { "recallAt1": 0.6667, "recallAt3": 1, "recallAt5": 1, "mrr": 0.8333, "n": 6 }
     }
   }
 }

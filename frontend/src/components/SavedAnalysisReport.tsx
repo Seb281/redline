@@ -69,6 +69,11 @@ interface SavedAnalysisReportProps {
   onOpenChat: () => void;
   onAskAboutClause: (clause: AnalyzedClause) => void;
   /**
+   * SP-10 Arc 3 Task 3.4 — open the similar-clauses drawer for a clause.
+   * Threaded straight through to ``ReportView`` / ``ClauseCard``.
+   */
+  onFindSimilarClauses?: (clause: AnalyzedClause) => void;
+  /**
    * SP-9 — original upload filename + saved-analysis id, threaded into
    * the transparency receipt so history-view downloads pull the stable
    * server-side copy by id rather than falling back to a local build.
@@ -87,6 +92,7 @@ export function SavedAnalysisReport({
   onReset,
   onOpenChat,
   onAskAboutClause,
+  onFindSimilarClauses,
   filename,
   savedId,
 }: SavedAnalysisReportProps) {
@@ -99,6 +105,7 @@ export function SavedAnalysisReport({
       onReset={onReset}
       onOpenChat={onOpenChat}
       onAskAboutClause={onAskAboutClause}
+      onFindSimilarClauses={onFindSimilarClauses}
       filename={filename}
       savedId={savedId}
     />

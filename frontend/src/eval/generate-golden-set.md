@@ -99,3 +99,7 @@ interface GoldenQuestion {
 
 - **2026-04-22** — initial 48-question set committed, generator
   `claude-opus-4-7`, pre-human-review.
+- **2026-04-24** — human review pass by project owner (`SG`).
+  `reviewed_by` flipped on every entry; `baseline.json` rows sourced
+  from this set now carry `golden_set_review_status:
+  "human-reviewed:SG:2026-04-24"`.

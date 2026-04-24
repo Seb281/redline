@@ -133,7 +133,8 @@
     "unusual": "Unusual:",
     "originalText": "Original clause text",
     "reasoning": "Model reasoning (AI Act audit trace)",
-    "askAbout": "Ask about this clause →"
+    "askAbout": "Ask about this clause →",
+    "findSimilar": "Find similar clauses →"
   },
   "ClauseCategory": {
     "non_compete": "Non-Compete",
@@ -671,6 +672,42 @@
     "compareSelectedCount": "{count, plural, =1 {# selected — pick one more to compare} =2 {# selected — ready to compare} other {# selected — pick exactly 2}}",
     "compareClear": "Clear",
     "compareGo": "Compare selected"
+  },
+  "SemanticSearch": {
+    "label": "Search across your analyses",
+    "placeholder": "e.g. auto-renewal, unusual liability caps, data processing…",
+    "submit": "Search",
+    "submitAria": "Search saved analyses",
+    "clearAria": "Clear search",
+    "searching": "Searching…",
+    "noResults": "No matches found. Try different wording.",
+    "error": "Search failed. Try again.",
+    "minLength": "Enter at least 3 characters.",
+    "resultCount": "{count, plural, one {# match} other {# matches}}",
+    "openAnalysis": "Open analysis",
+    "similarity": "{percent}% match",
+    "showingTopK": "Showing top {count} matches by relevance."
+  },
+  "SimilarClauses": {
+    "heading": "Similar clauses in your library",
+    "close": "Close",
+    "loading": "Finding similar clauses…",
+    "empty": "No similar clauses found in your other saved contracts.",
+    "error": "Could not load similar clauses.",
+    "retry": "Try again",
+    "similarity": "{percent}% match",
+    "openAria": "Open this clause"
+  },
+  "SimilarContracts": {
+    "title": "Similar contracts in your library",
+    "description": "Finds saved contracts whose clauses are semantically closest to this one.",
+    "loading": "Looking for similar contracts…",
+    "empty": "No similar contracts in your library yet.",
+    "error": "Could not load similar contracts.",
+    "retry": "Try again",
+    "similarity": "{percent}% match",
+    "bestClause": "closest on: {title}",
+    "openAria": "Open this contract"
   },
   "HistoryDetail": {
     "notFound": "Analysis not found",

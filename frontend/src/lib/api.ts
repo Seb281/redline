@@ -1,6 +1,16 @@
 /** Backend API client for Redline. */
 
-import type { AnalyzeResponse, UploadResponse, AnalysisMode, AuthUser, AnalysisListItem, SaveAnalysisPayload, SavedAnalysis } from "@/types";
+import type {
+  AnalyzeResponse,
+  UploadResponse,
+  AnalysisMode,
+  AuthUser,
+  AnalysisListItem,
+  SaveAnalysisPayload,
+  SavedAnalysis,
+  SemanticSearchResponse,
+  SimilarContractsResponse,
+} from "@/types";
 
 /**
  * Normalize the configured backend URL so trailing slashes and missing
@@ -326,6 +336,95 @@ export async function extendAnalysis(id: string): Promise<RetentionState> {
 
   if (!res.ok) {
     throw new Error(await extractErrorMessage(res, "Extend failed"));
+  }
+
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Semantic search (SP-10 Arc 3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Embed a free-text query to a 1024-float Mistral vector.
+ *
+ * Calls the Next.js `/api/search/embed-query` route so the Mistral API
+ * key stays server-side. Caller handles the float array directly —
+ * it's the payload the backend semantic-search endpoint expects.
+ */
+export async function embedSearchQuery(query: string): Promise<number[]> {
+  const res = await fetch("/api/search/embed-query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Search embed failed"));
+  }
+
+  const body = (await res.json()) as { embedding: number[] };
+  return body.embedding;
+}
+
+/**
+ * Run a cross-analysis semantic search for the authenticated user.
+ *
+ * Sends the pre-embedded query vector to the backend so
+ * `MISTRAL_API_KEY` never touches the backend host. Returns the top-k
+ * ranked hits; empty result set is a normal outcome (e.g. the user has
+ * no saved analyses yet).
+ */
+export async function semanticSearch(
+  queryEmbedding: number[],
+  topK: number = 20,
+  excludeAnalysisId: string | null = null,
+): Promise<SemanticSearchResponse> {
+  const res = await backendFetch("/api/search/semantic", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query_embedding: queryEmbedding,
+      top_k: topK,
+      exclude_analysis_id: excludeAnalysisId,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, "Search failed"));
+  }
+
+  return res.json();
+}
+
+/**
+ * Fetch the library-level contract matches for the current saved
+ * analysis (SP-10 Arc 3 Task 3.3).
+ *
+ * The backend collapses clause vectors per analysis and returns the
+ * best match per other contract. ``excludeAnalysisId`` is the id of the
+ * report the panel is mounted on — always filtered out so a contract
+ * cannot appear as a match to itself.
+ */
+export async function findSimilarContracts(
+  queryEmbedding: number[],
+  excludeAnalysisId: string | null,
+  topK: number = 5,
+): Promise<SimilarContractsResponse> {
+  const res = await backendFetch("/api/search/similar-contracts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query_embedding: queryEmbedding,
+      exclude_analysis_id: excludeAnalysisId,
+      top_k: topK,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      await extractErrorMessage(res, "Similar-contracts search failed"),
+    );
   }
 
   return res.json();

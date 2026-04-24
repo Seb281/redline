@@ -434,8 +434,8 @@
     "deepDesc": "Gründliche Analyse jeder einzelnen Klausel — Mistral Small (EU)",
     "demoIntro": "oder probieren Sie eine Demo mit einem Mustervertrag für die EU aus",
     "demoNl": "NL · Freiberuflich",
-    "demoFr": "FR · Beschäftigung",
-    "demoDe": "DE · SaaS + DPA",
+    "demoFr": "FR · Gewerbemietvertrag",
+    "demoDe": "DE · Arbeitsvertrag",
     "demoEs": "ES · SaaS-Dienste",
     "demoIt": "IT · Beschäftigung",
     "demoPl": "PL · Vertrieb",
@@ -725,8 +725,8 @@
     "noMatchingFilter": "Es wurden keine Zeilen gefunden, die diesem Filter entsprechen.",
     "samples": {
       "nl_freelance": "NL – Freiberuflervertrag",
-      "fr_employment": "FR – Arbeitsvertrag",
-      "de_saas_dpa": "DE — SaaS + DPA",
+      "fr_commercial_lease": "FR – Gewerbemietvertrag",
+      "de_employment": "DE – Arbeitsvertrag",
       "es_saas_services": "ES – SaaS-/Dienstleistungsvertrag",
       "it_employment": "IT – Arbeitsvertrag",
       "pl_distribution": "PL – Vertriebsvereinbarung"

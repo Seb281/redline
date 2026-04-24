@@ -434,8 +434,8 @@
     "deepDesc": "Grondige analyse per clausule — Mistral Small (EU)",
     "demoIntro": "of probeer een demo met een voorbeeldcontract voor de EU",
     "demoNl": "NL · Freelancer",
-    "demoFr": "FR · Werkgelegenheid",
-    "demoDe": "DE · SaaS + DPA",
+    "demoFr": "FR · Bedrijfshuurovereenkomst",
+    "demoDe": "DE · Arbeidsovereenkomst",
     "demoEs": "ES · SaaS-diensten",
     "demoIt": "IT · Werkgelegenheid",
     "demoPl": "PL · Distributie",
@@ -725,8 +725,8 @@
     "noMatchingFilter": "Er zijn geen rijen die aan deze filtervoorwaarden voldoen.",
     "samples": {
       "nl_freelance": "NL — Freelanceovereenkomst",
-      "fr_employment": "FR — Arbeidsovereenkomst",
-      "de_saas_dpa": "DE — SaaS + DPA",
+      "fr_commercial_lease": "FR — Bedrijfshuurovereenkomst",
+      "de_employment": "DE — Arbeidsovereenkomst",
       "es_saas_services": "ES — SaaS-/dienstverleningsovereenkomst",
       "it_employment": "IT — Arbeidsovereenkomst",
       "pl_distribution": "PL — Distributieovereenkomst"

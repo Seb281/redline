@@ -16,8 +16,8 @@ import { generateOverview } from "../streaming-analyzer";
 import { getProvider } from "../llm/provider";
 import { redactPatterns } from "./index";
 import { SAMPLE_CONTRACT_TEXT as NL_TEXT } from "@/data/sample-contracts/nl-freelance";
-import { FR_EMPLOYMENT_TEXT } from "@/data/sample-contracts/fr-employment";
-import { DE_SAAS_DPA_TEXT } from "@/data/sample-contracts/de-saas-dpa";
+import { FR_COMMERCIAL_LEASE_TEXT } from "@/data/sample-contracts/fr-commercial-lease";
+import { DE_EMPLOYMENT_TEXT } from "@/data/sample-contracts/de-employment";
 
 const HAS_KEY = Boolean(process.env.MISTRAL_API_KEY);
 const describeIfKey = HAS_KEY ? describe : describe.skip;
@@ -29,13 +29,13 @@ describeIfKey("SP-1.6 Pass 0 parity — raw vs patterns-masked", () => {
   const cases = [
     { name: "NL freelance", text: NL_TEXT, juris: /netherlands|dutch|nl/ },
     {
-      name: "FR employment",
-      text: FR_EMPLOYMENT_TEXT,
+      name: "FR commercial lease",
+      text: FR_COMMERCIAL_LEASE_TEXT,
       juris: /france|french|fr/,
     },
     {
-      name: "DE SaaS+DPA",
-      text: DE_SAAS_DPA_TEXT,
+      name: "DE employment",
+      text: DE_EMPLOYMENT_TEXT,
       juris: /germany|german|de|deutschland/,
     },
   ];

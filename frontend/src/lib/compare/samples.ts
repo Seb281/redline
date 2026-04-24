@@ -13,13 +13,13 @@ import {
   SAMPLE_UPLOAD_RESPONSE as NL_UPLOAD,
 } from "@/data/sample-contracts/nl-freelance";
 import {
-  FR_EMPLOYMENT_TEXT,
-  FR_EMPLOYMENT_UPLOAD,
-} from "@/data/sample-contracts/fr-employment";
+  FR_COMMERCIAL_LEASE_TEXT,
+  FR_COMMERCIAL_LEASE_UPLOAD,
+} from "@/data/sample-contracts/fr-commercial-lease";
 import {
-  DE_SAAS_DPA_TEXT,
-  DE_SAAS_DPA_UPLOAD,
-} from "@/data/sample-contracts/de-saas-dpa";
+  DE_EMPLOYMENT_TEXT,
+  DE_EMPLOYMENT_UPLOAD,
+} from "@/data/sample-contracts/de-employment";
 import {
   ES_SAAS_SERVICES_TEXT,
   ES_SAAS_SERVICES_UPLOAD,
@@ -45,8 +45,8 @@ export interface SampleEntry {
   id: SampleId;
   labelKey:
     | "nl_freelance"
-    | "fr_employment"
-    | "de_saas_dpa"
+    | "fr_commercial_lease"
+    | "de_employment"
     | "es_saas_services"
     | "it_employment"
     | "pl_distribution";
@@ -64,15 +64,15 @@ export const SAMPLE_ENTRIES: readonly SampleEntry[] = [
   },
   {
     id: "fr",
-    labelKey: "fr_employment",
-    text: FR_EMPLOYMENT_TEXT,
-    upload: FR_EMPLOYMENT_UPLOAD,
+    labelKey: "fr_commercial_lease",
+    text: FR_COMMERCIAL_LEASE_TEXT,
+    upload: FR_COMMERCIAL_LEASE_UPLOAD,
   },
   {
     id: "de",
-    labelKey: "de_saas_dpa",
-    text: DE_SAAS_DPA_TEXT,
-    upload: DE_SAAS_DPA_UPLOAD,
+    labelKey: "de_employment",
+    text: DE_EMPLOYMENT_TEXT,
+    upload: DE_EMPLOYMENT_UPLOAD,
   },
   {
     id: "es",

@@ -21,8 +21,8 @@ import { describe, it, expect } from "vitest";
 import { analyzeContract } from "./analyzer";
 import { getProvider } from "./llm/provider";
 import { SAMPLE_CONTRACT_TEXT as NL_TEXT } from "@/data/sample-contracts/nl-freelance";
-import { FR_EMPLOYMENT_TEXT } from "@/data/sample-contracts/fr-employment";
-import { DE_SAAS_DPA_TEXT } from "@/data/sample-contracts/de-saas-dpa";
+import { FR_COMMERCIAL_LEASE_TEXT } from "@/data/sample-contracts/fr-commercial-lease";
+import { DE_EMPLOYMENT_TEXT } from "@/data/sample-contracts/de-employment";
 import { ES_SAAS_SERVICES_TEXT } from "@/data/sample-contracts/es-saas-services";
 import { IT_EMPLOYMENT_TEXT } from "@/data/sample-contracts/it-employment";
 import { PL_DISTRIBUTION_TEXT } from "@/data/sample-contracts/pl-distribution";
@@ -112,13 +112,13 @@ describeIfKey("snapshot harness — Mistral provider", () => {
   );
 
   it(
-    "FR employment: surfaces non-compete (high risk), detects France",
+    "FR commercial lease: surfaces termination + payment_terms (high risk), detects France",
     async () => {
       const result = await analyzeContract(
-        FR_EMPLOYMENT_TEXT,
+        FR_COMMERCIAL_LEASE_TEXT,
         "fast",
         true,
-        "Salarié",
+        "Preneur",
         provider,
       );
 
@@ -134,15 +134,22 @@ describeIfKey("snapshot harness — Mistral provider", () => {
 
       expect(result.clauses.length).toBeGreaterThanOrEqual(8);
 
-      const nonCompete = result.clauses.find(
-        (c) => c.category === "non_compete",
-      );
-      expect(nonCompete).toBeDefined();
-      // French non-compete missing contrepartie financière = high risk.
-      expect(nonCompete?.risk_level).toBe("high");
+      // A commercial lease leans on termination (clause résolutoire,
+      // exclusion of indemnité d'éviction) and payment_terms (loyer +
+      // clause pénale at 15%) rather than the employment-only
+      // non-compete signal carried by the previous fixture.
+      const cats = result.clauses.map((c) => c.category);
+      expect(cats).toContain("termination");
 
-      // SP-1.7 — FR non-compete without contrepartie must trigger the
-      // FR_CODE_TRAVAIL_NONCOMPETE citation.
+      // High-risk expectation: at least one of the lease's lopsided
+      // clauses — termination without indemnité d'éviction, 15%
+      // clause pénale, or the restitution-sans-indemnité provision —
+      // must surface as high risk to the Preneur.
+      expect(result.summary.risk_breakdown.high).toBeGreaterThan(0);
+
+      // SP-1.7 — commercial lease should ground at least one clause
+      // on a FR or EU statute (FR_CC_1171, FR_CC_1231_5,
+      // FR_CCOM_L442_1, or EU_GDPR on §14 Données personnelles).
       const hasStatute = result.clauses.some(
         (c) => c.applicable_law?.source_type === "statute_cited",
       );
@@ -162,13 +169,13 @@ describeIfKey("snapshot harness — Mistral provider", () => {
   );
 
   it(
-    "DE SaaS+DPA: surfaces data_protection + limitation_of_liability, detects Germany",
+    "DE employment: surfaces non_compete (high risk) + ip_assignment, detects Germany",
     async () => {
       const result = await analyzeContract(
-        DE_SAAS_DPA_TEXT,
+        DE_EMPLOYMENT_TEXT,
         "fast",
         true,
-        "Kunde",
+        "Arbeitnehmer",
         provider,
       );
 
@@ -183,15 +190,26 @@ describeIfKey("snapshot harness — Mistral provider", () => {
       expect(result.overview.jurisdiction_evidence?.country).toBe("DE");
 
       const cats = result.clauses.map((c) => c.category);
-      expect(cats).toContain("data_protection");
-      expect(
-        cats.includes("limitation_of_liability") || cats.includes("liability"),
-      ).toBe(true);
+      // German employment fixture leans on post-contractual non-compete
+      // with a Karenzentschädigung below the statutory half-salary
+      // minimum, plus a sweeping IP-assignment clause that reaches
+      // free-time inventions.
+      expect(cats).toContain("non_compete");
+
+      const nonCompete = result.clauses.find(
+        (c) => c.category === "non_compete",
+      );
+      expect(nonCompete).toBeDefined();
+      // Under-statutory Karenzentschädigung (25% vs HGB §74's half-
+      // salary minimum) must surface as high risk to the Arbeitnehmer.
+      expect(nonCompete?.risk_level).toBe("high");
 
       expect(result.summary.risk_breakdown.high).toBeGreaterThan(0);
       expect(result.provenance.provider).toBe("mistral");
 
-      // SP-1.7 — DE DPA must ground data-protection clauses on GDPR.
+      // SP-1.7 — at least one clause must ground on a DE or EU
+      // statute. Expected hits: DE_KARENZENTSCHAEDIGUNG (§11),
+      // DE_ARBNERFG (§12), DE_BGB_307 (§6/§13), or EU_GDPR (§15).
       const hasStatute = result.clauses.some(
         (c) => c.applicable_law?.source_type === "statute_cited",
       );
@@ -404,10 +422,10 @@ describeIfLocaleRun("snapshot harness — locale-injected prompts", () => {
     "DE locale: enum fields stay English, citations stay DE/EU, analysis_locale='de'",
     async () => {
       const result = await analyzeContract(
-        DE_SAAS_DPA_TEXT,
+        DE_EMPLOYMENT_TEXT,
         "fast",
         true,
-        "Kunde",
+        "Arbeitnehmer",
         provider,
         "de",
       );
@@ -428,9 +446,10 @@ describeIfLocaleRun("snapshot harness — locale-injected prompts", () => {
         }
       }
 
-      // DE DPA fixture must still ground at least one clause on GDPR
-      // (EU statute) after locale injection — catches the scenario
-      // where a German-language prompt inadvertently drops citations.
+      // DE employment fixture must ground at least one clause on a DE
+      // or EU statute (DE_KARENZENTSCHAEDIGUNG, DE_ARBNERFG,
+      // DE_BGB_307, EU_GDPR) after locale injection — catches the
+      // scenario where a German-language prompt drops citations.
       const hasStatute = result.clauses.some(
         (c) => c.applicable_law?.source_type === "statute_cited",
       );
@@ -450,10 +469,10 @@ describeIfLocaleRun("snapshot harness — locale-injected prompts", () => {
     "FR locale: enum fields stay English, citations stay FR/EU, analysis_locale='fr'",
     async () => {
       const result = await analyzeContract(
-        FR_EMPLOYMENT_TEXT,
+        FR_COMMERCIAL_LEASE_TEXT,
         "fast",
         true,
-        "Salarié",
+        "Preneur",
         provider,
         "fr",
       );
@@ -474,9 +493,9 @@ describeIfLocaleRun("snapshot harness — locale-injected prompts", () => {
         }
       }
 
-      // FR employment fixture is the non-compete-without-contrepartie
-      // case — the FR_CODE_TRAVAIL_NONCOMPETE citation must still fire
-      // under a French-language prompt.
+      // FR commercial lease must ground at least one clause on a FR
+      // or EU statute (FR_CC_1171, FR_CC_1231_5, FR_CCOM_L442_1, or
+      // EU_GDPR on §14) under a French-language prompt.
       const hasStatute = result.clauses.some(
         (c) => c.applicable_law?.source_type === "statute_cited",
       );

@@ -1,111 +1,111 @@
 {
-  "note": "Committed baseline — deliberately updated by explicit commit, never auto-pinned. See frontend/EVAL.md for methodology and harness.test.ts for how this file is consumed. Floor values are lower bounds the harness asserts >= against on every CI run.",
+  "note": "Committed baseline — deliberately updated by explicit commit, never auto-pinned. See frontend/EVAL.md for methodology and harness.test.ts for how this file is consumed. Floor values are lower bounds the harness asserts >= against on every CI run. 2026-04-24: two fixtures swapped (fr-employment→fr-commercial-lease, de-saas-dpa→de-employment), every intra-doc golden question touching those fixtures was re-authored by claude-opus-4-7 and hand-reviewed by SG in the same sweep, and the latent `c.text` bug in golden-rerank-scores.freeze.test.ts was fixed along the way (every prior hybrid_rerank freeze shipped an all-zero cache — see the hybrid_rerank row note for details).",
   "bm25": {
-    "generated_at": "2026-04-22",
+    "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
-    "overall": { "recallAt1": 0.6875, "recallAt3": 0.8333, "recallAt5": 0.875, "mrr": 0.7832, "n": 48 },
+    "overall": { "recallAt1": 0.5833, "recallAt3": 0.6667, "recallAt5": 0.7292, "mrr": 0.6443, "n": 48 },
     "perTier": {
-      "easy":   { "recallAt1": 0.8889, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9444, "n": 18 },
-      "medium": { "recallAt1": 0.4444, "recallAt3": 0.7222, "recallAt5": 0.8333, "mrr": 0.6177, "n": 18 },
-      "hard":   { "recallAt1": 0.75, "recallAt3": 0.75, "recallAt5": 0.75, "mrr": 0.7897, "n": 12 }
+      "easy":   { "recallAt1": 0.7778, "recallAt3": 0.8333, "recallAt5": 0.8333, "mrr": 0.8056, "n": 18 },
+      "medium": { "recallAt1": 0.3889, "recallAt3": 0.5, "recallAt5": 0.6111, "mrr": 0.4769, "n": 18 },
+      "hard":   { "recallAt1": 0.5833, "recallAt3": 0.6667, "recallAt5": 0.75, "mrr": 0.6536, "n": 12 }
     },
     "perFixture": {
-      "nl-freelance":      { "recallAt1": 0.75, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.8021, "n": 8 },
-      "fr-employment":     { "recallAt1": 0.625, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7708, "n": 8 },
-      "de-saas-dpa":       { "recallAt1": 0.25, "recallAt3": 0.625, "recallAt5": 0.625, "mrr": 0.4836, "n": 8 },
-      "es-saas-services":  { "recallAt1": 0.625, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.7366, "n": 8 },
-      "it-employment":     { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+      "nl-freelance":        { "recallAt1": 0.75, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.8021, "n": 8 },
+      "fr-commercial-lease": { "recallAt1": 0, "recallAt3": 0, "recallAt5": 0, "mrr": 0, "n": 8 },
+      "de-employment":       { "recallAt1": 0.25, "recallAt3": 0.5, "recallAt5": 0.625, "mrr": 0.4208, "n": 8 },
+      "es-saas-services":    { "recallAt1": 0.625, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.7366, "n": 8 },
+      "it-employment":       { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "pl-distribution":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
   "hybrid": {
-    "generated_at": "2026-04-23",
+    "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
-    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "overall": { "recallAt1": 0.8542, "recallAt3": 0.9167, "recallAt5": 0.9792, "mrr": 0.8976, "n": 48 },
     "perTier": {
       "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
-      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
-      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8333, "recallAt5": 0.9444, "mrr": 0.8333, "n": 18 },
+      "hard":   { "recallAt1": 0.8333, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8819, "n": 12 }
     },
     "perFixture": {
-      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
-      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
-      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
-      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+      "nl-freelance":        { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "fr-commercial-lease": { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "de-employment":       { "recallAt1": 0.375, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.5729, "n": 8 },
+      "es-saas-services":    { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "it-employment":       { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
   "hybrid_metadata": {
-    "generated_at": "2026-04-23",
+    "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
     "note": "Identical to `hybrid` on the current golden set: statute aliases in `query-analysis.ts` fire on ~0 of 48 questions (golden set uses natural-language phrasing, not legally-literate citations). Category boost was tried at 0.006 and regressed overall recall@1 by 0.062 (uniform boost across all same-category clauses adds noise without signal); disabled. Infrastructure retained for Arc 3 cross-contract search where metadata is the primary discriminator. See EVAL.md §6 for the full reasoning.",
-    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "overall": { "recallAt1": 0.8542, "recallAt3": 0.9167, "recallAt5": 0.9792, "mrr": 0.8976, "n": 48 },
     "perTier": {
       "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
-      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
-      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8333, "recallAt5": 0.9444, "mrr": 0.8333, "n": 18 },
+      "hard":   { "recallAt1": 0.8333, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8819, "n": 12 }
     },
     "perFixture": {
-      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
-      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
-      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
-      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+      "nl-freelance":        { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "fr-commercial-lease": { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "de-employment":       { "recallAt1": 0.375, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.5729, "n": 8 },
+      "es-saas-services":    { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "it-employment":       { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
   "hybrid_graph": {
-    "generated_at": "2026-04-23",
+    "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
-    "note": "Identical to `hybrid_metadata` on the current golden set. Widening is strictly additive (tail-append of cross-ref neighbours + definitions below the existing fused+boosted rank), so it can only lift a gold clause that was outside top-20 on BM25+cosine — none of the 48 golden questions have that profile. An earlier multiplicative-boost variant (1.5× on widening ids) regressed overall recall@1 by 0.083 on definition-heavy fixtures (nl-freelance recall@1 fell 0.875→0.375 as the definitions clause kept displacing the true answer); disabled. The additive layer stays on for production chat context — graph widening's job is context completeness, not relevance re-ranking. See EVAL.md §7 for the full reasoning.",
-    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "note": "Identical to `hybrid_metadata` on the current golden set. Widening is strictly additive (tail-append of cross-ref neighbours + definitions below the existing fused+boosted rank), so it can only lift a gold clause that was outside top-20 on BM25+cosine — none of the 48 golden questions have that profile. An earlier multiplicative-boost variant (1.5× on widening ids) regressed overall recall@1 by 0.083 on definition-heavy fixtures; disabled. The additive layer stays on for production chat context — graph widening's job is context completeness, not relevance re-ranking. See EVAL.md §7 for the full reasoning.",
+    "overall": { "recallAt1": 0.8542, "recallAt3": 0.9167, "recallAt5": 0.9792, "mrr": 0.8976, "n": 48 },
     "perTier": {
       "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
-      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
-      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8333, "recallAt5": 0.9444, "mrr": 0.8333, "n": 18 },
+      "hard":   { "recallAt1": 0.8333, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8819, "n": 12 }
     },
     "perFixture": {
-      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
-      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
-      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
-      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+      "nl-freelance":        { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "fr-commercial-lease": { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "de-employment":       { "recallAt1": 0.375, "recallAt3": 0.75, "recallAt5": 0.875, "mrr": 0.5729, "n": 8 },
+      "es-saas-services":    { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "it-employment":       { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
   "hybrid_rerank": {
     "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
-    "note": "Identical to `hybrid_graph` on the current golden set. Jina `jina-reranker-v2-base-multilingual` reordered the top-20 fused head for every question, but none of the 48 golden questions had a gold clause *sitting below its own siblings inside that head* — which is the only situation a cross-encoder rerank can actually fix. The retriever already ranks every gold clause in the top-20 pre-rerank (that's the `recall@5 = 0.979` plateau hybrid_graph hit), so the reranker's job reduces to swapping ranks 1↔2 on a handful of questions where the swap is measure-neutral. Kept on in production anyway — the harness is pessimistic about rerank's value because the fixtures are small (12-18 clauses) and the golden questions have distinctive clause targets; on real customer libraries with adjacent near-duplicate clauses, the cross-encoder's ability to read full clause text is exactly the disambiguator we built this layer for. See EVAL.md §8 for the full reasoning.",
-    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "note": "First baseline after fixing the `c.text`→`c.clause_text` bug in golden-rerank-scores.freeze.test.ts — every prior hybrid_rerank freeze shipped all-zero rerank scores, which made the hybrid_rerank layer indistinguishable from hybrid_graph (the cross-encoder was effectively a no-op). Post-fix, Jina `jina-reranker-v2-base-multilingual` produces real lift over hybrid_graph: overall R@1 0.854 → 0.896 (+0.042), MRR 0.898 → 0.936 (+0.038). The lift is concentrated on de-employment (R@1 0.375 → 0.875) and medium/hard tier questions where the cross-encoder's ability to read full clause text disambiguates semantically close candidates. nl-freelance R@1 regresses 0.875 → 0.625 — Jina prefers a near-miss on three of the eight NL easy questions — but the overall + MRR gain more than offsets, and recall@5 is preserved at 0.979. See EVAL.md §8 for the full reasoning.",
+    "overall": { "recallAt1": 0.8958, "recallAt3": 0.9792, "recallAt5": 0.9792, "mrr": 0.9363, "n": 48 },
     "perTier": {
-      "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
-      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
-      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+      "easy":   { "recallAt1": 0.8889, "recallAt3": 0.9444, "recallAt5": 0.9444, "mrr": 0.9136, "n": 18 },
+      "medium": { "recallAt1": 0.8889, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9444, "n": 18 },
+      "hard":   { "recallAt1": 0.9167, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9583, "n": 12 }
     },
     "perFixture": {
-      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
-      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
-      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
-      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
-      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+      "nl-freelance":        { "recallAt1": 0.625, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7431, "n": 8 },
+      "fr-commercial-lease": { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "de-employment":       { "recallAt1": 0.875, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9375, "n": 8 },
+      "es-saas-services":    { "recallAt1": 0.875, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9375, "n": 8 },
+      "it-employment":       { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
   "cross_doc": {
-    "generated_at": "2026-04-23",
+    "generated_at": "2026-04-24",
     "generator": "claude-opus-4-7",
     "golden_set_review_status": "human-reviewed:SG:2026-04-24",
-    "note": "Cross-contract retrieval — 24-question golden set (`cross-doc-questions.ts`, human-reviewed by SG on 2026-04-24), merged candidate pool (83 clauses across 6 fixtures), pure pgvector-style cosine ranking (no BM25 — mirrors `services/semantic_search.py`). Floor for Arc 3 ship gate. Recall@5 = 1.000 across every tier says cosine alone is sufficient for the product surface; the separating metric is recall@1 / MRR.",
-    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9583, "recallAt5": 1, "mrr": 0.9063, "n": 24 },
+    "note": "Cross-contract retrieval — 24-question golden set (`cross-doc-questions.ts`), merged candidate pool (83 clauses across 6 fixtures — nl-freelance 13, fr-commercial-lease 15, de-employment 16, es-saas-services 12, it-employment 13, pl-distribution 14), pure pgvector-style cosine ranking (no BM25 — mirrors `services/semantic_search.py`). 2026-04-24: 10 of 24 entries were re-targeted or re-authored by claude-opus-4-7 after the fr-commercial-lease + de-employment fixture swap destroyed their old clause_index anchors, and the re-authored entries were hand-reviewed by SG in the same sweep. Post-swap numbers are a modest lift over the previous floor (easy R@1 0.875 → 1.000, overall R@1 0.833 → 0.875) driven by the re-authored questions leaning on unique lexical anchors (overtime flat-rate, restaurant lease).",
+    "overall": { "recallAt1": 0.875, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9375, "n": 24 },
     "perTier": {
-      "easy":   { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "easy":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
       "medium": { "recallAt1": 0.9, "recallAt3": 1, "recallAt5": 1, "mrr": 0.95, "n": 10 },
       "hard":   { "recallAt1": 0.6667, "recallAt3": 1, "recallAt5": 1, "mrr": 0.8333, "n": 6 }
     }

@@ -65,7 +65,7 @@ describeIfFreeze("golden rerank scores freeze harness", () => {
         const fixture = loadFixture(q.fixture);
         const candidates: RerankCandidate[] = fixture.clauses.map((c, i) => ({
           id: i,
-          text: c.text,
+          text: c.clause_text,
         }));
         // topN omitted → Jina returns scores for every clause, which
         // is what we need in the cache: the eval harness may hand the

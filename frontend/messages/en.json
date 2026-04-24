@@ -434,8 +434,8 @@
     "deepDesc": "Thorough per-clause analysis — Mistral Small (EU)",
     "demoIntro": "or try a demo with a sample EU contract",
     "demoNl": "NL · Freelance",
-    "demoFr": "FR · Employment",
-    "demoDe": "DE · SaaS + DPA",
+    "demoFr": "FR · Commercial lease",
+    "demoDe": "DE · Employment",
     "demoEs": "ES · SaaS services",
     "demoIt": "IT · Employment",
     "demoPl": "PL · Distribution",
@@ -800,8 +800,8 @@
     "noMatchingFilter": "No rows match this filter.",
     "samples": {
       "nl_freelance": "NL — Freelance agreement",
-      "fr_employment": "FR — Employment contract",
-      "de_saas_dpa": "DE — SaaS + DPA",
+      "fr_commercial_lease": "FR — Commercial lease",
+      "de_employment": "DE — Employment contract",
       "es_saas_services": "ES — SaaS / services agreement",
       "it_employment": "IT — Employment contract",
       "pl_distribution": "PL — Distribution agreement"

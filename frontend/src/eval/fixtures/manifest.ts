@@ -14,8 +14,8 @@
  */
 
 import { SAMPLE_CONTRACT_TEXT as NL_TEXT } from "@/data/sample-contracts/nl-freelance";
-import { FR_EMPLOYMENT_TEXT } from "@/data/sample-contracts/fr-employment";
-import { DE_SAAS_DPA_TEXT } from "@/data/sample-contracts/de-saas-dpa";
+import { FR_COMMERCIAL_LEASE_TEXT } from "@/data/sample-contracts/fr-commercial-lease";
+import { DE_EMPLOYMENT_TEXT } from "@/data/sample-contracts/de-employment";
 import { ES_SAAS_SERVICES_TEXT } from "@/data/sample-contracts/es-saas-services";
 import { IT_EMPLOYMENT_TEXT } from "@/data/sample-contracts/it-employment";
 import { PL_DISTRIBUTION_TEXT } from "@/data/sample-contracts/pl-distribution";
@@ -37,9 +37,10 @@ export interface FixtureSource {
 }
 
 /**
- * Six EU jurisdictions × three contract archetypes — chosen so the eval
- * spans DE/NL/FR/ES/IT/PL statute shortlists and mixes employment,
- * freelance, SaaS, DPA, and distribution flavours.
+ * Six EU jurisdictions × diverse contract archetypes — chosen so the
+ * eval spans DE/NL/FR/ES/IT/PL statute shortlists and mixes
+ * employment, freelance, SaaS, commercial lease, and distribution
+ * flavours.
  */
 export const FIXTURES: FixtureSource[] = [
   {
@@ -51,18 +52,18 @@ export const FIXTURES: FixtureSource[] = [
     withCitations: true,
   },
   {
-    slug: "fr-employment",
-    label: "FR employment",
-    text: FR_EMPLOYMENT_TEXT,
-    userRole: "Employee",
+    slug: "fr-commercial-lease",
+    label: "FR commercial lease",
+    text: FR_COMMERCIAL_LEASE_TEXT,
+    userRole: "Preneur",
     mode: "fast",
     withCitations: true,
   },
   {
-    slug: "de-saas-dpa",
-    label: "DE SaaS + DPA",
-    text: DE_SAAS_DPA_TEXT,
-    userRole: "Customer",
+    slug: "de-employment",
+    label: "DE employment",
+    text: DE_EMPLOYMENT_TEXT,
+    userRole: "Arbeitnehmer",
     mode: "fast",
     withCitations: true,
   },

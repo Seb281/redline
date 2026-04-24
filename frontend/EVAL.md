@@ -140,7 +140,7 @@ re-pin. Per-fixture breakdowns are in the per-layer sections below.
 | **`hybrid`** (+ cosine/RRF)         | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 | **`hybrid_metadata`** (+ boost)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 | **`hybrid_graph`** (+ widening)     | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
-| **`hybrid_rerank`** (+ Jina)        | _pending_   | _pending_   | _pending_   | _pending_  | _pending_  | _pending_ | _pending_ |
+| **`hybrid_rerank`** (+ Jina)        | 0.833       | 0.979       | 0.898       | 0.778      | 0.944      | 0.750    | 1.000    |
 
 ### Arc 2 targets vs current
 
@@ -167,10 +167,14 @@ re-pin. Per-fixture breakdowns are in the per-layer sections below.
   on every multi-clause question the eval can't score (context
   completeness vs relevance ranking). Multiplicative-boost variant
   regressed and was disabled.
-- **Jina rerank (§8)** — numbers pending the first live freeze
-  against `JINA_API_KEY`. Cross-encoder over full clause text is
-  the only remaining lever with plausible lift on medium tier; the
-  plan earmarks it as the biggest expected single-layer delta.
+- **Jina rerank (§8)** — zero delta on this eval. Cross-encoder over
+  full clause text reordered the top-20 head on every question, but
+  no gold clause was sitting below its own siblings inside that head
+  (recall@5 already plateaued at 0.979 post-widening), so every
+  reorder was measure-neutral. Kept on in production — the eval is
+  pessimistic about rerank's value because the fixtures are small
+  and clause targets distinctive; customer libraries with adjacent
+  near-duplicate clauses are exactly what the cross-encoder buys.
 
 ## 5. Hybrid retrieval (BM25 ⊕ cosine via RRF)
 
@@ -362,7 +366,7 @@ the chat context when they weren't already there.
   actual clause text, not metadata tags. Expected to be the biggest
   single-layer delta per the plan — the only remaining lever.
 
-## 8. Jina Rerank — Arc 2 Task 2.3 (client shipped; eval deferred to freeze)
+## 8. Jina Rerank — Arc 2 Task 2.3 (shipped, no lift on this eval)
 
 The final retrieval stage is a cross-encoder rerank of the top-20
 fused+widened candidates via Jina's `/v1/rerank` endpoint
@@ -400,10 +404,9 @@ so chat answers never wedge on a best-effort ranker:
 ### Eval gate
 
 Gated on BOTH `golden-query-embeddings.json` AND
-`golden-rerank-scores.json` existing on disk. A fresh checkout with
-neither cache skips the `hybrid_rerank` block cleanly so BM25 still
-runs green. The baseline row will be pinned to `baseline.json` once
-the freeze runs against a live `JINA_API_KEY`.
+`golden-rerank-scores.json` existing on disk. A fresh checkout
+without the rerank cache skips the `hybrid_rerank` block cleanly so
+BM25 still runs green.
 
 Freeze command:
 
@@ -419,9 +422,62 @@ invalidates every cached score for that fixture.
 
 ### Numbers
 
-Pending the initial freeze. Ablation vs `hybrid_graph` will isolate
-Task 2.3's single-layer contribution and be re-pinned in the same PR
-as the first cached baseline row.
+| slice          | n  | recall@1 | recall@3 | recall@5 | MRR    |
+| -------------- | -- | -------- | -------- | -------- | ------ |
+| overall        | 48 | 0.833    | 0.938    | 0.979    | 0.898  |
+| tier: easy     | 18 | 0.944    | 1.000    | 1.000    | 0.972  |
+| tier: medium   | 18 | 0.778    | 0.889    | 0.944    | 0.854  |
+| tier: hard     | 12 | 0.750    | 0.917    | 1.000    | 0.854  |
+
+Per-fixture is identical to `hybrid_graph` row-for-row; see §5
+or `baseline.json#hybrid_rerank.perFixture`.
+
+### Ablation result (honest reporting)
+
+**The `hybrid_rerank` row in `baseline.json` equals `hybrid_graph`
+exactly on the current golden set.** The cross-encoder reordered the
+top-20 fused head for every question — the cache confirms it ran —
+but none of the 48 golden questions had a gold clause *sitting below
+its own siblings inside that head*, which is the only situation a
+rerank can actually fix. The retriever already placed every gold
+clause in the top-20 pre-rerank (that's the `recall@5 = 0.979`
+plateau hybrid_graph hit), so the reranker's job reduced to swapping
+ranks 1↔2 on a handful of questions where the swap was
+measure-neutral.
+
+### Why ship it anyway
+
+1. **Production surface differs from the eval corpus.** The golden
+   set's fixtures are small (12–18 clauses each) with distinctive
+   clause targets per question. Real customer libraries have dozens
+   of contracts and adjacent near-duplicate clauses (two
+   confidentiality clauses, three data-processor terms across
+   different DPAs) — the cross-encoder's ability to read full clause
+   text is exactly the disambiguator we built this layer for.
+   Turning it off because a narrow eval said "measure-neutral" would
+   be overfitting production to the eval.
+2. **Fail-soft means zero cost when wrong.** No `JINA_API_KEY`,
+   429/5xx, malformed response → identity ranking and the
+   cross-encoder is invisible. The worst case is the eval's measured
+   case (no delta); there is no failure mode where enabling rerank
+   underperforms the widened hybrid.
+3. **Arc 3 composition.** Cross-contract search (§8a) runs on
+   single-stage cosine today, but the infrastructure is already
+   plumbed to slot rerank in whenever cross-contract recall@1 needs
+   disambiguation across near-duplicate clauses from different
+   vendors — same pattern, same client.
+
+### What would actually lift medium/hard on this golden set
+
+The Arc 2 ceiling has been reached on this eval. Every retrieval
+lever below a new retriever family (e.g. learned-to-rank on clause
+features, per-user relevance feedback) composes no further on the
+pinned fixtures. Future lift will come from:
+
+- A golden set with adjacent near-duplicate clauses that expose
+  rerank's actual discriminator. Captured in the Arc 3 plan.
+- Graded-relevance metrics (nDCG) if partial-hit ordering ever
+  matters to a product surface that isn't top-1 chat context.
 
 ## 8a. Cross-contract retrieval — Arc 3 ship gate (2026-04-23)
 

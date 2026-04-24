@@ -78,6 +78,26 @@
       "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
     }
   },
+  "hybrid_rerank": {
+    "generated_at": "2026-04-24",
+    "generator": "claude-opus-4-7",
+    "golden_set_review_status": "human-reviewed:SG:2026-04-24",
+    "note": "Identical to `hybrid_graph` on the current golden set. Jina `jina-reranker-v2-base-multilingual` reordered the top-20 fused head for every question, but none of the 48 golden questions had a gold clause *sitting below its own siblings inside that head* — which is the only situation a cross-encoder rerank can actually fix. The retriever already ranks every gold clause in the top-20 pre-rerank (that's the `recall@5 = 0.979` plateau hybrid_graph hit), so the reranker's job reduces to swapping ranks 1↔2 on a handful of questions where the swap is measure-neutral. Kept on in production anyway — the harness is pessimistic about rerank's value because the fixtures are small (12-18 clauses) and the golden questions have distinctive clause targets; on real customer libraries with adjacent near-duplicate clauses, the cross-encoder's ability to read full clause text is exactly the disambiguator we built this layer for. See EVAL.md §8 for the full reasoning.",
+    "overall": { "recallAt1": 0.8333, "recallAt3": 0.9375, "recallAt5": 0.9792, "mrr": 0.8984, "n": 48 },
+    "perTier": {
+      "easy":   { "recallAt1": 0.9444, "recallAt3": 1, "recallAt5": 1, "mrr": 0.9722, "n": 18 },
+      "medium": { "recallAt1": 0.7778, "recallAt3": 0.8889, "recallAt5": 0.9444, "mrr": 0.8542, "n": 18 },
+      "hard":   { "recallAt1": 0.75, "recallAt3": 0.9167, "recallAt5": 1, "mrr": 0.8542, "n": 12 }
+    },
+    "perFixture": {
+      "nl-freelance":      { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "fr-employment":     { "recallAt1": 0.75, "recallAt3": 1, "recallAt5": 1, "mrr": 0.875, "n": 8 },
+      "de-saas-dpa":       { "recallAt1": 0.5, "recallAt3": 0.875, "recallAt5": 0.875, "mrr": 0.7031, "n": 8 },
+      "es-saas-services":  { "recallAt1": 0.875, "recallAt3": 0.875, "recallAt5": 1, "mrr": 0.9063, "n": 8 },
+      "it-employment":     { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 },
+      "pl-distribution":   { "recallAt1": 1, "recallAt3": 1, "recallAt5": 1, "mrr": 1, "n": 8 }
+    }
+  },
   "cross_doc": {
     "generated_at": "2026-04-23",
     "generator": "claude-opus-4-7",
